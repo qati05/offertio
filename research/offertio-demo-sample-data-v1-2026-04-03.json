@@ -1,0 +1,26 @@
+{
+  "businessType": "Malerbetrieb",
+  "customer": {
+    "name": "Martina Keller",
+    "city": "Zürich"
+  },
+  "document": {
+    "title": "Malerarbeiten Wohnzimmer",
+    "items": [
+      {
+        "title": "Abdeckarbeiten und Vorbereitung",
+        "quantity": 2,
+        "unitPriceChf": 85
+      },
+      {
+        "title": "Farbe und Material",
+        "quantity": 1,
+        "unitPriceChf": 120
+      }
+    ]
+  },
+  "positioning": {
+    "corePromise": "Offerten und Rechnungen in unter 60 Sekunden",
+    "heroLine": "Anfrage rein. Offerte raus."
+  }
+}

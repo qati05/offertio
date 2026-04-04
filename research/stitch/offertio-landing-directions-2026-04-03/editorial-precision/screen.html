@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+
+<html class="light" lang="de"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=Noto+Serif:ital,wght@0,400;0,700;1,400&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              "outline": "#8c7166",
+              "on-secondary-fixed-variant": "#474747",
+              "on-surface-variant": "#584238",
+              "on-primary": "#ffffff",
+              "surface-container-highest": "#e5e2dd",
+              "surface-container": "#f0ede8",
+              "surface": "#fcf9f4",
+              "outline-variant": "#e0c0b2",
+              "surface-bright": "#fcf9f4",
+              "secondary": "#5f5e5e",
+              "surface-container-high": "#ebe8e3",
+              "background": "#fcf9f4",
+              "on-tertiary-container": "#fffbff",
+              "on-error": "#ffffff",
+              "on-secondary-container": "#656464",
+              "on-primary-fixed-variant": "#7a3000",
+              "inverse-surface": "#31302d",
+              "tertiary-fixed": "#f1e0cc",
+              "primary-fixed-dim": "#ffb693",
+              "tertiary-container": "#807262",
+              "primary": "#9c3f00",
+              "on-primary-fixed": "#341000",
+              "secondary-container": "#e4e2e1",
+              "surface-container-low": "#f6f3ee",
+              "on-tertiary-fixed-variant": "#504536",
+              "on-secondary-fixed": "#1b1c1c",
+              "primary-fixed": "#ffdbcb",
+              "surface-container-lowest": "#ffffff",
+              "on-error-container": "#93000a",
+              "error": "#ba1a1a",
+              "surface-dim": "#dcdad5",
+              "on-secondary": "#ffffff",
+              "error-container": "#ffdad6",
+              "surface-variant": "#e5e2dd",
+              "surface-tint": "#a04100",
+              "secondary-fixed-dim": "#c8c6c6",
+              "on-primary-container": "#fffbff",
+              "primary-container": "#c0540e",
+              "on-background": "#1c1c19",
+              "secondary-fixed": "#e4e2e1",
+              "on-surface": "#1c1c19",
+              "inverse-on-surface": "#f3f0eb",
+              "on-tertiary": "#ffffff",
+              "inverse-primary": "#ffb693",
+              "tertiary-fixed-dim": "#d5c4b1",
+              "on-tertiary-fixed": "#231a0e",
+              "tertiary": "#665a4a"
+            },
+            fontFamily: {
+              "headline": ["Noto Serif"],
+              "body": ["Inter"],
+              "label": ["Inter"]
+            },
+            borderRadius: {"DEFAULT": "0px", "lg": "0px", "xl": "0px", "full": "0px"},
+          },
+        },
+      }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 24;
+            vertical-align: middle;
+        }
+        .editorial-grid {
+            display: grid;
+            grid-template-columns: repeat(12, 1fr);
+        }
+        .glass-overlay {
+            background: rgba(252, 249, 244, 0.8);
+            backdrop-filter: blur(20px);
+        }
+        .signature-cta {
+            background: linear-gradient(135deg, #9c3f00 0%, #c0540e 100%);
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-surface text-on-surface font-body selection:bg-primary-fixed selection:text-on-primary-fixed">
+<!-- TopAppBar -->
+<nav class="bg-[#fcf9f4] dark:bg-stone-950 flex justify-between items-center w-full px-6 md:px-12 py-8 max-w-[1440px] mx-auto sticky top-0 z-50">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-[#9c3f00]" data-icon="architecture">architecture</span>
+<span class="font-['Noto_Serif'] text-3xl font-bold text-stone-900 dark:text-stone-50">Offertio</span>
+</div>
+<div class="hidden md:flex gap-8">
+<a class="text-[#9c3f00] border-b-2 border-[#9c3f00] pb-1 font-['Inter'] text-xs uppercase tracking-widest" href="#">Philosophy</a>
+<a class="text-stone-600 dark:text-stone-400 font-medium hover:text-[#9c3f00] transition-colors duration-300 font-['Inter'] text-xs uppercase tracking-widest" href="#">Pricing</a>
+<a class="text-stone-600 dark:text-stone-400 font-medium hover:text-[#9c3f00] transition-colors duration-300 font-['Inter'] text-xs uppercase tracking-widest" href="#">Journal</a>
+</div>
+<button class="font-['Inter'] text-xs uppercase tracking-widest border border-outline-variant/30 px-6 py-2 hover:bg-surface-container-low transition-colors">
+            Contact
+        </button>
+</nav>
+<div class="bg-[#dcdad5] h-[1px] w-full"></div>
+<!-- Hero Section -->
+<header class="relative px-6 md:px-12 py-20 md:py-32 overflow-hidden">
+<div class="max-w-[1440px] mx-auto editorial-grid gap-y-12">
+<div class="col-span-12 md:col-span-8 lg:col-span-7">
+<span class="font-label text-xs uppercase tracking-[0.3em] text-primary mb-6 block">Digitales Handwerk</span>
+<h1 class="font-headline text-5xl md:text-7xl lg:text-8xl font-bold tracking-tighter leading-[0.95] mb-8">
+                    Weniger Büro.<br/>Mehr erledigte Aufträge.
+                </h1>
+<p class="font-body text-lg md:text-xl text-on-surface-variant max-w-lg mb-12 leading-relaxed">
+                    Offerten und Rechnungen dort erstellen, wo kleine Betriebe wirklich arbeiten. Mit Swiss QR und ZUGFeRD im Blick.
+                </p>
+<div class="flex flex-col sm:flex-row gap-4">
+<button class="signature-cta text-on-primary px-10 py-5 font-bold tracking-tight text-lg shadow-sm hover:scale-[1.02] transition-transform">
+                        Kostenlos starten
+                    </button>
+<button class="border border-outline px-10 py-5 font-medium text-lg hover:bg-surface-container-low transition-colors">
+                        Demo anfordern
+                    </button>
+</div>
+</div>
+<div class="col-span-12 lg:col-span-5 relative mt-12 lg:mt-0">
+<div class="bg-surface-container-low aspect-[4/5] w-full relative p-8 shadow-2xl">
+<img class="w-full h-full object-cover grayscale brightness-105 contrast-110 shadow-lg" data-alt="extreme close-up of a high-end architectural invoice print with crisp typography, Swiss QR code in corner, on premium cream paper texture" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCB7tt71p2ItmHbsYpoFsPTSH5XYklGcRHN_uEojwrNZ5F2n_bmC11s4pbq48OmcMvpJUqro2dzQsydtjuRK0x1yzZOpa_X-D1-k6ky7f6dNhtofsS1A-bpE5zoq_y7_rJQIBquQwWsUebYRcU1dM8wfr6pbKkYiy63p3Zx0sF4Spyp8MAmLXKSkdDyvLA7FfbLvjP0Z7WVSRJAp80X2HC539okUHTSkTGZvHvRpgQb-I9gFNuq-94VoKl3YvrTJvV2XI84fndszCs"/>
+<div class="absolute -bottom-6 -left-6 bg-surface-container-lowest p-6 border border-outline-variant/20 shadow-xl max-w-[240px]">
+<p class="font-label text-[10px] uppercase tracking-widest text-on-surface-variant mb-2">Status: Validiert</p>
+<p class="font-headline text-lg italic">"Präzision bis ins letzte Detail."</p>
+</div>
+</div>
+</div>
+</div>
+</header>
+<!-- Trust Section -->
+<section class="bg-surface-container-high py-16 px-6">
+<div class="max-w-[1440px] mx-auto">
+<p class="font-label text-[10px] uppercase tracking-[0.4em] text-center mb-12 opacity-60">Vertraut von führenden Schweizer Handwerksbetrieben</p>
+<div class="flex flex-wrap justify-center items-center gap-12 md:gap-24 opacity-40 grayscale">
+<span class="font-headline text-2xl font-bold">SCHMID BAU</span>
+<span class="font-headline text-2xl font-bold">METALL-ART</span>
+<span class="font-headline text-2xl font-bold">HOLZWERK AG</span>
+<span class="font-headline text-2xl font-bold">DESIGNSTROM</span>
+</div>
+</div>
+</section>
+<!-- Pain Points (Asymmetric Editorial) -->
+<section class="py-32 px-6 md:px-12 bg-surface">
+<div class="max-w-[1440px] mx-auto editorial-grid">
+<div class="col-span-12 md:col-span-5 mb-16 md:mb-0">
+<h2 class="font-headline text-4xl md:text-5xl font-bold leading-tight mb-8">
+                    Bürokratie darf kein Hindernis für wahre Qualität sein.
+                </h2>
+<div class="bg-surface-dim h-[1px] w-24 mb-8"></div>
+<p class="text-on-surface-variant leading-loose max-w-sm">
+                    Stundenlanges Formatieren und fehlerhafte Rechnungen kosten nicht nur Zeit, sondern auch Ansehen. Wir haben den Prozess auf das Wesentliche reduziert.
+                </p>
+</div>
+<div class="col-span-12 md:col-start-7 md:col-span-6 space-y-20">
+<div class="group">
+<span class="font-headline text-7xl text-outline-variant/30 font-bold block -mb-6 group-hover:text-primary/20 transition-colors">01</span>
+<h3 class="font-headline text-2xl font-bold mb-4">Kein Excel-Chaos mehr</h3>
+<p class="text-on-surface-variant leading-relaxed">Verabschieden Sie sich von zerstückelten Tabellen. Offertio bietet eine einzige, saubere Wahrheit für all Ihre Dokumente.</p>
+</div>
+<div class="group">
+<span class="font-headline text-7xl text-outline-variant/30 font-bold block -mb-6 group-hover:text-primary/20 transition-colors">02</span>
+<h3 class="font-headline text-2xl font-bold mb-4">Rechtskonform in Sekunden</h3>
+<p class="text-on-surface-variant leading-relaxed">Vollständige Integration von Swiss QR und ZUGFeRD. Ihre Dokumente sind technisch perfekt und rechtlich sicher.</p>
+</div>
+<div class="group">
+<span class="font-headline text-7xl text-outline-variant/30 font-bold block -mb-6 group-hover:text-primary/20 transition-colors">03</span>
+<h3 class="font-headline text-2xl font-bold mb-4">Überall einsatzbereit</h3>
+<p class="text-on-surface-variant leading-relaxed">Vom Baugerüst oder direkt beim Kunden – erstellen Sie professionelle Angebote mobil, ohne Verzögerung.</p>
+</div>
+</div>
+</div>
+</section>
+<!-- Product Proof (High-End Gallery) -->
+<section class="bg-surface-container-low py-32 px-6">
+<div class="max-w-[1440px] mx-auto">
+<div class="mb-24 text-center">
+<h2 class="font-headline text-5xl md:text-6xl font-bold mb-6">Präzision als Standard.</h2>
+<p class="font-body text-on-surface-variant tracking-wide uppercase text-xs">Ästhetik trifft Funktionalität</p>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-12">
+<div class="bg-surface-container-lowest p-1 shadow-sm border border-outline-variant/10">
+<img class="w-full aspect-[3/4] object-cover" data-alt="architectural layout of a professional quotation with precise lines, high contrast typography, and subtle shadows on a warm paper background" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCFER2MUpVwCiTq9ufLtZvBX_zEVoZgnv6NRgP8Z6TrOz5PAcrvUUx2DwcKmjkqbAd6wFsN5356XVdLazj9oiDz2KTQNuy87vhTZ6wrIWXHhcI2VqFkfzIzXo1X18aVAMas9DuphXcueVSoJqZWpshxMS81WjLoUotX47ZjQ-tr3-LFAOTP_TqWsT2gD_mIoaxLP8x4cJOlGWwl4e-YI_DNTsOmJt422LL9ULucJ-0tGLgfo8AVOMrHf6jRr8fQ3NlzSZJVTIWU1ig"/>
+<div class="p-8">
+<h4 class="font-headline text-xl font-bold mb-2">Die Offerte</h4>
+<p class="text-on-surface-variant text-sm italic">Strukturiert, klar, überzeugend.</p>
+</div>
+</div>
+<div class="bg-surface-container-lowest p-1 shadow-sm border border-outline-variant/10 md:mt-24">
+<img class="w-full aspect-[3/4] object-cover" data-alt="detailed close-up of a Swiss QR code section on a clean white invoice, with minimalist branding and technical precision" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDcul9gwwnriXRTNJYDozkdJUTmE40M7DKfQcQU7ampZlb2Vo0wOFQc8yiaIIhzii2etfIB-u_tAtdOFaU0W1wKJqoyA1GxrEToHVPgBrVE8wsK0kI258MLIcrkz1HWTEZoqWd4QzK7ac4f7DARXUMyeUa2vrz8X_HJnsKWI1tW5Lt5GD-hJEEDVb-F0Mm1VHbXjpiR74E1g1r4FOld2_g05wI3zOZFCN0aQX2q9JQex7Pqn70ex1Vh3YH6952i0A8Io6qZ2oRetuI"/>
+<div class="p-8">
+<h4 class="font-headline text-xl font-bold mb-2">Die Rechnung</h4>
+<p class="text-on-surface-variant text-sm italic">Mit Swiss QR – direkt bereit zur Zahlung.</p>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- Pricing Section -->
+<section class="py-32 px-6 bg-surface">
+<div class="max-w-[1440px] mx-auto">
+<div class="max-w-2xl mx-auto text-center mb-20">
+<h2 class="font-headline text-4xl font-bold mb-6">Einfache Tarife für echte Arbeit.</h2>
+<p class="text-on-surface-variant">Keine versteckten Gebühren. Keine Komplexität.</p>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-3 gap-0 border border-outline-variant/30">
+<!-- Solo -->
+<div class="p-12 border-b md:border-b-0 md:border-r border-outline-variant/30">
+<span class="font-label text-[10px] uppercase tracking-widest text-primary font-bold mb-4 block">Solo</span>
+<h3 class="font-headline text-3xl font-bold mb-8">CHF 29<span class="text-sm font-normal text-on-surface-variant">/Mt.</span></h3>
+<ul class="space-y-4 text-sm text-on-surface-variant mb-12">
+<li class="flex items-center gap-2"><span class="material-symbols-outlined text-xs" data-icon="check">check</span> Unbegrenzte Rechnungen</li>
+<li class="flex items-center gap-2"><span class="material-symbols-outlined text-xs" data-icon="check">check</span> Swiss QR Integration</li>
+<li class="flex items-center gap-2"><span class="material-symbols-outlined text-xs" data-icon="check">check</span> 1 Benutzer</li>
+</ul>
+<button class="w-full border border-outline py-4 font-bold hover:bg-surface-container-low transition-colors">Wählen</button>
+</div>
+<!-- Atelier -->
+<div class="p-12 border-b md:border-b-0 md:border-r border-outline-variant/30 bg-surface-container-lowest relative">
+<div class="absolute top-0 right-0 bg-primary text-on-primary px-4 py-1 text-[10px] uppercase tracking-widest font-bold">Empfohlen</div>
+<span class="font-label text-[10px] uppercase tracking-widest text-primary font-bold mb-4 block">Atelier</span>
+<h3 class="font-headline text-3xl font-bold mb-8">CHF 59<span class="text-sm font-normal text-on-surface-variant">/Mt.</span></h3>
+<ul class="space-y-4 text-sm text-on-surface-variant mb-12">
+<li class="flex items-center gap-2"><span class="material-symbols-outlined text-xs" data-icon="check">check</span> Alles aus Solo</li>
+<li class="flex items-center gap-2"><span class="material-symbols-outlined text-xs" data-icon="check">check</span> ZUGFeRD Support</li>
+<li class="flex items-center gap-2"><span class="material-symbols-outlined text-xs" data-icon="check">check</span> Bis zu 5 Benutzer</li>
+</ul>
+<button class="w-full signature-cta text-on-primary py-4 font-bold">Wählen</button>
+</div>
+<!-- Werkstatt -->
+<div class="p-12">
+<span class="font-label text-[10px] uppercase tracking-widest text-primary font-bold mb-4 block">Werkstatt</span>
+<h3 class="font-headline text-3xl font-bold mb-8">CHF 99<span class="text-sm font-normal text-on-surface-variant">/Mt.</span></h3>
+<ul class="space-y-4 text-sm text-on-surface-variant mb-12">
+<li class="flex items-center gap-2"><span class="material-symbols-outlined text-xs" data-icon="check">check</span> Alles aus Atelier</li>
+<li class="flex items-center gap-2"><span class="material-symbols-outlined text-xs" data-icon="check">check</span> API Zugriff</li>
+<li class="flex items-center gap-2"><span class="material-symbols-outlined text-xs" data-icon="check">check</span> Unbegrenzte Benutzer</li>
+</ul>
+<button class="w-full border border-outline py-4 font-bold hover:bg-surface-container-low transition-colors">Wählen</button>
+</div>
+</div>
+</div>
+</section>
+<!-- FAQ Section -->
+<section class="py-32 px-6 bg-surface-container-low">
+<div class="max-w-3xl mx-auto">
+<h2 class="font-headline text-4xl font-bold mb-16 text-center">Fragen zur Präzision.</h2>
+<div class="space-y-0">
+<div class="border-t border-outline-variant/30 py-8">
+<details class="group">
+<summary class="flex justify-between items-center cursor-pointer list-none font-headline text-xl font-bold">
+                            Ist Offertio mit meiner Buchhaltung kompatibel?
+                            <span class="material-symbols-outlined group-open:rotate-45 transition-transform" data-icon="add">add</span>
+</summary>
+<p class="mt-6 text-on-surface-variant leading-relaxed">
+                            Dank der Unterstützung von ZUGFeRD und standardisierten Exportformaten lassen sich Ihre Dokumente nahtlos in alle gängigen Buchhaltungssysteme in der Schweiz und Deutschland integrieren.
+                        </p>
+</details>
+</div>
+<div class="border-t border-outline-variant/30 py-8">
+<details class="group">
+<summary class="flex justify-between items-center cursor-pointer list-none font-headline text-xl font-bold">
+                            Wie sicher sind meine Daten gespeichert?
+                            <span class="material-symbols-outlined group-open:rotate-45 transition-transform" data-icon="add">add</span>
+</summary>
+<p class="mt-6 text-on-surface-variant leading-relaxed">
+                            Wir nutzen ausschliesslich Serverstandorte in der Schweiz. Alle Daten werden nach höchsten Industriestandards verschlüsselt und mehrfach redundant gesichert.
+                        </p>
+</details>
+</div>
+<div class="border-t border-b border-outline-variant/30 py-8">
+<details class="group">
+<summary class="flex justify-between items-center cursor-pointer list-none font-headline text-xl font-bold">
+                            Kann ich mein eigenes Logo verwenden?
+                            <span class="material-symbols-outlined group-open:rotate-45 transition-transform" data-icon="add">add</span>
+</summary>
+<p class="mt-6 text-on-surface-variant leading-relaxed">
+                            Absolut. Unser Editor ist darauf ausgelegt, Ihre Marke perfekt in Szene zu setzen. Sie können Farben, Logos und Typografie an Ihr Corporate Design anpassen.
+                        </p>
+</details>
+</div>
+</div>
+</div>
+</section>
+<!-- Final CTA -->
+<section class="relative py-40 px-6 overflow-hidden">
+<div class="absolute inset-0 bg-[#1c1c19]">
+<img class="w-full h-full object-cover opacity-20 grayscale" data-alt="abstract architectural textures with light and shadow, moody and sophisticated dark background with high contrast" src="https://lh3.googleusercontent.com/aida-public/AB6AXuByqxEetu86XVp2qnF9CLj3cnP5xEXSWrQ2et3feTgW-Fsh_RpylDJ-Ktg9uozlLfFcMixZbeuqw60pw4qtSx7kUeGejKbIYyCuYfJ5x6TCdsn8kTpdUiimPq2Y7-8Esqa9-gz19ezkZQbUbCcuS8rYflUn6x2jlByRUQgxMGUZ9PGs7w4IgMz6yFRtm6y_5DUrPHIanqHRHo6RuNO7ctewpVpDaJHiT22Jda0tb1lk4MRjmqnn8NWgMC-847dMg3FELV2qEArR4Ps"/>
+</div>
+<div class="relative max-w-4xl mx-auto text-center">
+<h2 class="font-headline text-5xl md:text-7xl font-bold text-surface mb-12 leading-tight">
+                Bereit für das nächste<br/>Level an Handwerk?
+            </h2>
+<div class="flex flex-col sm:flex-row justify-center gap-6">
+<button class="signature-cta text-on-primary px-12 py-6 font-bold text-xl shadow-xl">
+                    Kostenlos testen
+                </button>
+<button class="border border-surface/30 text-surface px-12 py-6 font-bold text-xl hover:bg-surface/10 transition-colors">
+                    Kontakt aufnehmen
+                </button>
+</div>
+</div>
+</section>
+<!-- Footer -->
+<footer class="bg-[#e5e2dd] dark:bg-stone-900 flex flex-col md:flex-row justify-between items-center w-full px-12 py-16 mt-24 border-t border-stone-300 dark:border-stone-800">
+<div class="mb-12 md:mb-0 text-center md:text-left">
+<div class="flex items-center gap-2 mb-4 justify-center md:justify-start">
+<span class="material-symbols-outlined text-[#9c3f00]" data-icon="architecture">architecture</span>
+<span class="font-['Noto_Serif'] text-xl font-bold text-stone-800">Offertio</span>
+</div>
+<p class="font-['Inter'] text-xs uppercase tracking-widest text-stone-500 dark:text-stone-500">
+                © 2024 Offertio. Built for the modern craft.
+            </p>
+</div>
+<div class="flex flex-wrap justify-center gap-8 md:gap-12">
+<a class="font-['Inter'] text-xs uppercase tracking-widest text-stone-500 dark:text-stone-500 hover:underline decoration-[#9c3f00] underline-offset-4 transition-opacity duration-300" href="#">Philosophy</a>
+<a class="font-['Inter'] text-xs uppercase tracking-widest text-stone-500 dark:text-stone-500 hover:underline decoration-[#9c3f00] underline-offset-4 transition-opacity duration-300" href="#">Pricing</a>
+<a class="font-['Inter'] text-xs uppercase tracking-widest text-stone-500 dark:text-stone-500 hover:underline decoration-[#9c3f00] underline-offset-4 transition-opacity duration-300" href="#">Journal</a>
+<a class="font-['Inter'] text-xs uppercase tracking-widest text-stone-500 dark:text-stone-500 hover:underline decoration-[#9c3f00] underline-offset-4 transition-opacity duration-300" href="#">Impressum</a>
+</div>
+</footer>
+</body></html>

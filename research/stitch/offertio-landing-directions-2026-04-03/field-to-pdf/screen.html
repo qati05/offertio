@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="de"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Offertio | Vom Termin zur Offerte</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@300;400;500;600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "on-primary-fixed-variant": "#254e3d",
+                        "tertiary-fixed": "#ffdad5",
+                        "on-primary": "#0b3728",
+                        "error-container": "#93000a",
+                        "on-tertiary-fixed-variant": "#613d38",
+                        "inverse-primary": "#3d6654",
+                        "surface-container": "#1e201e",
+                        "surface-bright": "#383a37",
+                        "on-tertiary-fixed": "#2f1310",
+                        "surface": "#121412",
+                        "on-error-container": "#ffdad6",
+                        "on-error": "#690005",
+                        "on-surface": "#e2e3df",
+                        "tertiary-container": "#623e39",
+                        "primary-fixed": "#bfedd5",
+                        "tertiary": "#edbbb3",
+                        "tertiary-fixed-dim": "#edbbb3",
+                        "secondary-container": "#65411a",
+                        "on-primary-container": "#93bfa9",
+                        "on-tertiary": "#482823",
+                        "on-surface-variant": "#c1c8c4",
+                        "on-primary-fixed": "#002115",
+                        "outline": "#8b928e",
+                        "surface-container-low": "#1a1c1a",
+                        "primary-fixed-dim": "#a4d0ba",
+                        "surface-tint": "#a4d0ba",
+                        "on-secondary-fixed": "#2c1600",
+                        "background": "#121412",
+                        "secondary": "#f0bd8b",
+                        "primary-container": "#264f3e",
+                        "surface-variant": "#333533",
+                        "primary": "#a4d0ba",
+                        "inverse-surface": "#e2e3df",
+                        "on-tertiary-container": "#dbaaa3",
+                        "inverse-on-surface": "#2f312f",
+                        "secondary-fixed-dim": "#f0bd8b",
+                        "error": "#ffb4ab",
+                        "on-secondary": "#482904",
+                        "on-secondary-fixed-variant": "#623f18",
+                        "surface-container-high": "#282a28",
+                        "secondary-fixed": "#ffdcbd",
+                        "on-secondary-container": "#e1af7e",
+                        "surface-dim": "#121412",
+                        "surface-container-lowest": "#0d0f0d",
+                        "surface-container-highest": "#333533",
+                        "outline-variant": "#414845",
+                        "on-background": "#e2e3df"
+                    },
+                    fontFamily: {
+                        "headline": ["Manrope"],
+                        "body": ["Manrope"],
+                        "label": ["Manrope"]
+                    },
+                    borderRadius: { "DEFAULT": "0.125rem", "lg": "0.25rem", "xl": "0.5rem", "full": "0.75rem" },
+                },
+            },
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        body {
+            font-family: 'Manrope', sans-serif;
+            background-color: #121412;
+            color: #e2e3df;
+        }
+        .hero-gradient {
+            background: linear-gradient(135deg, #a4d0ba 0%, #264f3e 100%);
+        }
+        .cinematic-shadow {
+            box-shadow: 0 0 24px rgba(0, 0, 0, 0.06);
+        }
+        .glass-panel {
+            background: rgba(30, 32, 30, 0.6);
+            backdrop-filter: blur(20px);
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-surface text-on-surface selection:bg-primary-container selection:text-primary overflow-x-hidden">
+<!-- TopAppBar -->
+<header class="fixed top-0 w-full flex justify-between items-center px-6 py-4 max-w-screen-xl mx-auto bg-[#121412]/80 backdrop-blur-xl z-50">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-[#a4d0ba]" data-icon="speed">speed</span>
+<span class="text-xl font-bold tracking-tighter text-[#e2e3df]">Offertio</span>
+</div>
+<div class="hidden md:flex gap-8 items-center">
+<a class="text-[#a4d0ba] font-manrope font-bold tracking-tight hover:opacity-80 transition-opacity" href="#">Starten</a>
+<a class="text-[#c1c8c4] font-manrope font-bold tracking-tight hover:opacity-80 transition-opacity" href="#">Funktionen</a>
+<a class="text-[#c1c8c4] font-manrope font-bold tracking-tight hover:opacity-80 transition-opacity" href="#">Preise</a>
+</div>
+<button class="bg-[#a4d0ba] text-[#0b3728] px-5 py-2 rounded-xl font-bold tracking-tight hover:opacity-90 active:scale-95 duration-200">
+            Starten
+        </button>
+</header>
+<main class="pt-24">
+<!-- Section 1: Hero -->
+<section class="relative px-6 pt-16 pb-24 flex flex-col items-center text-center max-w-4xl mx-auto">
+<div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-surface-container-highest text-secondary text-xs font-bold tracking-widest mb-8">
+<span class="material-symbols-outlined text-sm" data-icon="verified">verified</span>
+                FÜR HANDWERKER &amp; DIENSTLEISTER
+            </div>
+<h1 class="font-headline text-5xl md:text-7xl font-extrabold tracking-tighter mb-6 leading-[1.1]">
+                Vom Termin direkt zur <span class="text-primary italic">sauberen Offerte.</span>
+</h1>
+<p class="font-body text-lg md:text-xl text-on-surface-variant max-w-2xl mb-10 leading-relaxed">
+                Offertio begleitet kleine Betriebe vom Kundentermin bis zum versendeten PDF. Mit Swiss QR und ZUGFeRD dort, wo es zählt.
+            </p>
+<div class="flex flex-col sm:flex-row gap-4 w-full sm:w-auto">
+<button class="hero-gradient text-on-primary font-bold px-8 py-4 rounded-xl text-lg cinematic-shadow active:scale-95 transition-transform">
+                    Kostenlos starten
+                </button>
+<button class="bg-surface-container-highest text-on-surface font-bold px-8 py-4 rounded-xl text-lg hover:bg-surface-variant transition-colors">
+                    Demo ansehen
+                </button>
+</div>
+</section>
+<!-- Section 2: Timeline Workflow -->
+<section class="py-24 px-6 bg-surface-container-lowest">
+<div class="max-w-screen-xl mx-auto">
+<div class="mb-16 md:mb-24 flex flex-col md:flex-row md:items-end justify-between gap-6">
+<div>
+<h2 class="font-headline text-3xl md:text-4xl font-bold mb-4 tracking-tight">Ihr Workflow, <br/>aber digital.</h2>
+<p class="text-on-surface-variant text-lg">In drei Schritten von der Baustelle zum PDF-Versand.</p>
+</div>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-3 gap-12 relative">
+<!-- Workflow Item 1 -->
+<div class="relative group">
+<div class="mb-6 flex items-center justify-center w-16 h-16 rounded-2xl bg-surface-container-highest text-primary">
+<span class="material-symbols-outlined text-3xl" data-icon="location_on">location_on</span>
+</div>
+<h3 class="text-xl font-bold mb-3">1. Termin vor Ort</h3>
+<p class="text-on-surface-variant leading-relaxed mb-6">Erfassen Sie alle Leistungen und Materialien direkt beim Kunden auf dem Tablet oder Smartphone.</p>
+<div class="h-1 w-full bg-surface-container rounded-full overflow-hidden">
+<div class="h-full w-1/3 bg-primary"></div>
+</div>
+</div>
+<!-- Workflow Item 2 -->
+<div class="relative group">
+<div class="mb-6 flex items-center justify-center w-16 h-16 rounded-2xl bg-surface-container-highest text-secondary">
+<span class="material-symbols-outlined text-3xl" data-icon="edit_document">edit_document</span>
+</div>
+<h3 class="text-xl font-bold mb-3">2. Kalkulation</h3>
+<p class="text-on-surface-variant leading-relaxed mb-6">Offertio berechnet MwSt., Rabatte und Summen automatisch. Keine Rechenfehler mehr in Excel.</p>
+<div class="h-1 w-full bg-surface-container rounded-full overflow-hidden">
+<div class="h-full w-2/3 bg-secondary"></div>
+</div>
+</div>
+<!-- Workflow Item 3 -->
+<div class="relative group">
+<div class="mb-6 flex items-center justify-center w-16 h-16 rounded-2xl bg-surface-container-highest text-primary-fixed">
+<span class="material-symbols-outlined text-3xl" data-icon="picture_as_pdf">picture_as_pdf</span>
+</div>
+<h3 class="text-xl font-bold mb-3">3. PDF &amp; Versand</h3>
+<p class="text-on-surface-variant leading-relaxed mb-6">Professionelles PDF mit Swiss QR-Code generieren und direkt per Mail oder WhatsApp versenden.</p>
+<div class="h-1 w-full bg-surface-container rounded-full overflow-hidden">
+<div class="h-full w-full bg-primary-fixed"></div>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- Section 3: Product Proof (Mockups) -->
+<section class="py-24 px-6 overflow-hidden">
+<div class="max-w-screen-xl mx-auto flex flex-col lg:flex-row items-center gap-16">
+<div class="w-full lg:w-1/2">
+<h2 class="font-headline text-4xl md:text-5xl font-bold mb-8 leading-tight">Präzision auf <br/><span class="text-secondary">jedem Screen.</span></h2>
+<ul class="space-y-6">
+<li class="flex gap-4">
+<div class="mt-1 flex-shrink-0 w-6 h-6 rounded-full bg-primary/20 flex items-center justify-center">
+<span class="material-symbols-outlined text-primary text-sm" data-icon="check">check</span>
+</div>
+<div>
+<h4 class="font-bold text-lg">Einfache Materialerfassung</h4>
+<p class="text-on-surface-variant">Schnellsuche für Ihre gängigen Artikel und Leistungen.</p>
+</div>
+</li>
+<li class="flex gap-4">
+<div class="mt-1 flex-shrink-0 w-6 h-6 rounded-full bg-primary/20 flex items-center justify-center">
+<span class="material-symbols-outlined text-primary text-sm" data-icon="check">check</span>
+</div>
+<div>
+<h4 class="font-bold text-lg">Swiss QR Integration</h4>
+<p class="text-on-surface-variant">Rechnungen nach Schweizer Standard inkl. QR-Einzahlungsschein.</p>
+</div>
+</li>
+<li class="flex gap-4">
+<div class="mt-1 flex-shrink-0 w-6 h-6 rounded-full bg-primary/20 flex items-center justify-center">
+<span class="material-symbols-outlined text-primary text-sm" data-icon="check">check</span>
+</div>
+<div>
+<h4 class="font-bold text-lg">ZUGFeRD Kompatibel</h4>
+<p class="text-on-surface-variant">Elektronischer Rechnungsdatenaustausch für Ihre Buchhaltung.</p>
+</div>
+</li>
+</ul>
+</div>
+<div class="w-full lg:w-1/2 relative">
+<div class="bg-surface-container rounded-3xl p-4 border border-outline-variant/20 shadow-2xl scale-105">
+<img alt="Mobile App Interface" class="rounded-2xl w-full object-cover aspect-[4/5]" data-alt="close-up of a premium mobile application interface showing a professional invoice layout with green accents on a dark smartphone screen" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDRmP93mphitf-PVRifTjG4nAVtKXZC9z2IolIUXcnW3yvYf9zT-u_cG7WkgTYZHQZN1cC_3KQ2SU4nPH4yDbEgDjTDGvW4TZllMNr7g4Bu9ZdQTWL5kFcfavhGnFU_PhLhDUzTgSl_XotusuhoGGEeaI2mHbB4Ya7W5nXkjnYRgfzFtEbvtzxmUuKVuWL_iv7hWwWx1S_QFs19lk3Sa42bNRicmudRKl80qXMY7iFpR4madWvhH-ZLt0l74P0bgGXr88kZVm_aases"/>
+</div>
+<div class="absolute -bottom-8 -left-8 bg-surface-container-high p-6 rounded-2xl shadow-xl hidden md:block max-w-[240px]">
+<div class="flex items-center gap-3 mb-2">
+<div class="w-10 h-10 rounded-full bg-secondary flex items-center justify-center">
+<span class="material-symbols-outlined text-on-secondary" data-icon="receipt_long">receipt_long</span>
+</div>
+<span class="font-bold">Neue Offerte</span>
+</div>
+<div class="h-2 w-full bg-outline-variant/30 rounded-full mb-2"></div>
+<div class="h-2 w-3/4 bg-outline-variant/30 rounded-full mb-4"></div>
+<div class="text-primary font-bold text-xl">CHF 4'250.00</div>
+</div>
+</div>
+</div>
+</section>
+<!-- Section 4: Trust -->
+<section class="py-20 px-6 bg-surface-container">
+<div class="max-w-screen-xl mx-auto text-center">
+<p class="text-on-surface-variant font-bold tracking-widest text-sm mb-10">UNTERSTÜTZTE STANDARDS &amp; VERTRAUEN</p>
+<div class="flex flex-wrap justify-center items-center gap-12 md:gap-24 opacity-60 grayscale mb-20">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-3xl" data-icon="qr_code_2">qr_code_2</span>
+<span class="font-bold text-xl tracking-tighter">SWISS QR</span>
+</div>
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-3xl" data-icon="lan">lan</span>
+<span class="font-bold text-xl tracking-tighter">ZUGFeRD</span>
+</div>
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-3xl" data-icon="shield">shield</span>
+<span class="font-bold text-xl tracking-tighter">ISO 27001</span>
+</div>
+</div>
+<div class="max-w-2xl mx-auto bg-surface p-8 rounded-3xl border border-outline-variant/10">
+<div class="flex justify-center mb-6">
+<span class="material-symbols-outlined text-secondary" data-icon="star" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="material-symbols-outlined text-secondary" data-icon="star" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="material-symbols-outlined text-secondary" data-icon="star" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="material-symbols-outlined text-secondary" data-icon="star" style="font-variation-settings: 'FILL' 1;">star</span>
+<span class="material-symbols-outlined text-secondary" data-icon="star" style="font-variation-settings: 'FILL' 1;">star</span>
+</div>
+<p class="italic text-xl mb-6">"Seit ich Offertio nutze, schreibe ich meine Rechnungen abends nicht mehr stundenlang am PC. Ich erledige das direkt im Auto nach dem Termin."</p>
+<div class="font-bold">— Markus Frei, Elektroinstallationen</div>
+</div>
+</div>
+</section>
+<!-- Section 5: Simple Pricing Card -->
+<section class="py-24 px-6">
+<div class="max-w-screen-xl mx-auto text-center mb-16">
+<h2 class="font-headline text-4xl font-bold mb-4">Transparentes Pricing.</h2>
+<p class="text-on-surface-variant">Keine versteckten Kosten. Keine Kündigungsfristen.</p>
+</div>
+<div class="max-w-md mx-auto relative group">
+<div class="absolute -inset-0.5 bg-gradient-to-r from-primary to-secondary rounded-3xl opacity-20 group-hover:opacity-40 transition duration-500"></div>
+<div class="relative bg-surface-container p-10 rounded-3xl text-center">
+<span class="text-secondary font-bold tracking-widest text-sm block mb-4">ALLE FUNKTIONEN</span>
+<div class="flex items-center justify-center gap-1 mb-6">
+<span class="text-5xl font-extrabold tracking-tighter">29.</span>
+<span class="text-2xl font-bold pt-2">CHF</span>
+<span class="text-on-surface-variant self-end mb-1">/Monat</span>
+</div>
+<ul class="text-left space-y-4 mb-10">
+<li class="flex items-center gap-3">
+<span class="material-symbols-outlined text-primary text-xl" data-icon="check_circle">check_circle</span>
+<span>Unlimitierte Offerten &amp; Rechnungen</span>
+</li>
+<li class="flex items-center gap-3">
+<span class="material-symbols-outlined text-primary text-xl" data-icon="check_circle">check_circle</span>
+<span>Swiss QR &amp; ZUGFeRD Support</span>
+</li>
+<li class="flex items-center gap-3">
+<span class="material-symbols-outlined text-primary text-xl" data-icon="check_circle">check_circle</span>
+<span>Cloud-Backup &amp; Sicherheit</span>
+</li>
+<li class="flex items-center gap-3">
+<span class="material-symbols-outlined text-primary text-xl" data-icon="check_circle">check_circle</span>
+<span>WhatsApp &amp; Mail Versand</span>
+</li>
+</ul>
+<button class="w-full bg-primary text-on-primary font-bold py-4 rounded-xl text-lg cinematic-shadow hover:opacity-90 transition-opacity">
+                        Jetzt Kostenlos Testen
+                    </button>
+<p class="text-xs text-on-surface-variant mt-4">14 Tage kostenlos testen. Keine Kreditkarte nötig.</p>
+</div>
+</div>
+</section>
+<!-- Section 6: FAQ -->
+<section class="py-24 px-6 bg-surface-container-lowest">
+<div class="max-w-3xl mx-auto">
+<h2 class="font-headline text-3xl font-bold mb-12 text-center">Häufige Fragen</h2>
+<div class="space-y-4">
+<details class="group bg-surface-container p-6 rounded-2xl cursor-pointer">
+<summary class="flex justify-between items-center font-bold list-none">
+                            Ist Offertio auch offline nutzbar?
+                            <span class="material-symbols-outlined group-open:rotate-180 transition-transform" data-icon="expand_more">expand_more</span>
+</summary>
+<p class="mt-4 text-on-surface-variant leading-relaxed">
+                            Ja, Sie können Daten auch ohne aktive Internetverbindung erfassen. Sobald Sie wieder online sind, werden alle Änderungen automatisch synchronisiert.
+                        </p>
+</details>
+<details class="group bg-surface-container p-6 rounded-2xl cursor-pointer">
+<summary class="flex justify-between items-center font-bold list-none">
+                            Was ist ZUGFeRD?
+                            <span class="material-symbols-outlined group-open:rotate-180 transition-transform" data-icon="expand_more">expand_more</span>
+</summary>
+<p class="mt-4 text-on-surface-variant leading-relaxed">
+                            ZUGFeRD ist ein Format für den Austausch elektronischer Rechnungen. Es ermöglicht das automatisierte Auslesen von Rechnungsdaten durch Buchhaltungsprogramme.
+                        </p>
+</details>
+<details class="group bg-surface-container p-6 rounded-2xl cursor-pointer">
+<summary class="flex justify-between items-center font-bold list-none">
+                            Kann ich mein eigenes Logo verwenden?
+                            <span class="material-symbols-outlined group-open:rotate-180 transition-transform" data-icon="expand_more">expand_more</span>
+</summary>
+<p class="mt-4 text-on-surface-variant leading-relaxed">
+                            Selbstverständlich. In den Einstellungen können Sie Ihr Logo hochladen und die Farben des PDF-Templates an Ihr Firmendesign anpassen.
+                        </p>
+</details>
+</div>
+</div>
+</section>
+<!-- Section 7: Final CTA -->
+<section class="py-24 px-6 relative overflow-hidden">
+<div class="absolute inset-0 z-0">
+<img alt="Construction site professional using tablet" class="w-full h-full object-cover opacity-20" data-alt="construction site professional in work clothes holding a tablet at dusk with soft ambient work lights in the background" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBOqbQs1eYi3ke-NOe5QQ2XG_rUmvaFATdaOQKe0PZYxzBqNvAoYVngBeodKIZsA6qMlJNvmVE2m7wCTd6NZbr3ydJ6jPaLsWW4se44FqRFHWoIWP8JtLuS2fZlqtk9ReANfv8qriPo521aYp4KTo4Se3QZETVzPVBF92rTqIYcJU6mC3mVjJCFQ3rfUEJF4yKMUEOn-eF7N3aOGaLaQ7oRpFxoG80Nwpha6Y5LWiWyjO0Cs1JVqB20OWPGrtu021JxEQThlswgNgUr"/>
+<div class="absolute inset-0 bg-gradient-to-t from-surface via-surface/60 to-surface"></div>
+</div>
+<div class="max-w-4xl mx-auto relative z-10 text-center">
+<h2 class="font-headline text-4xl md:text-5xl font-extrabold tracking-tighter mb-8 leading-tight">
+                    Bereit für das digitale <br/><span class="text-primary">Handwerk?</span>
+</h2>
+<p class="text-xl text-on-surface-variant mb-12 max-w-xl mx-auto">Schliessen Sie sich hunderten Betrieben an, die ihre Büroarbeit bereits von unterwegs erledigen.</p>
+<div class="flex flex-col sm:flex-row justify-center gap-6">
+<button class="bg-[#a4d0ba] text-[#0b3728] font-bold px-10 py-5 rounded-xl text-xl cinematic-shadow hover:scale-105 transition-transform">
+                        Kostenlos starten
+                    </button>
+<button class="glass-panel text-on-surface font-bold px-10 py-5 rounded-xl text-xl border border-outline-variant/30 hover:bg-surface-container-highest transition-colors">
+                        Kontakt aufnehmen
+                    </button>
+</div>
+</div>
+</section>
+</main>
+<!-- Footer -->
+<footer class="w-full px-8 py-12 flex flex-col items-center gap-6 bg-[#0d0f0d] rounded-t-xl">
+<div class="flex items-center gap-2 mb-4">
+<span class="material-symbols-outlined text-[#a4d0ba]" data-icon="speed">speed</span>
+<span class="text-lg font-bold text-[#e2e3df]">Offertio</span>
+</div>
+<div class="flex flex-wrap justify-center gap-6 md:gap-12 mb-8">
+<a class="text-[#c1c8c4] font-manrope body-lg hover:text-[#f0bd8b] transition-colors" href="#">Impressum</a>
+<a class="text-[#c1c8c4] font-manrope body-lg hover:text-[#f0bd8b] transition-colors" href="#">Datenschutz</a>
+<a class="text-[#c1c8c4] font-manrope body-lg hover:text-[#f0bd8b] transition-colors" href="#">AGB</a>
+<a class="text-[#c1c8c4] font-manrope body-lg hover:text-[#f0bd8b] transition-colors" href="#">Kontakt</a>
+</div>
+<div class="text-[#c1c8c4] text-sm text-center">
+            © 2024 Offertio. Handgefertigt für das Handwerk.
+        </div>
+</footer>
+</body></html>

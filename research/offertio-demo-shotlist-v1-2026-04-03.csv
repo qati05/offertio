@@ -1,0 +1,7 @@
+scene,start_sec,end_sec,duration_sec,screen_action,visual_goal,overlay_text
+hook,0,3,3,land directly in active document flow,instant momentum,Anfrage rein.
+build-fast,3,10,7,select customer and enter first line item,show speed and clarity,Offerte raus.
+totals,10,15,5,show totals and MWST resolving,trustworthy pricing,Sauber berechnet
+pdf-reveal,15,22,7,reveal generated PDF,professional output,Professionelles PDF automatisch erstellt
+qr-shot,22,26,4,tight crop on QR invoice block,Swiss trust signal,Swiss QR-Rechnung inklusive
+finish,26,30,4,end on clean final state,ready-to-send payoff,Bereit zum Senden

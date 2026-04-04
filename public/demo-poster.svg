@@ -1,0 +1,55 @@
+<svg width="1600" height="900" viewBox="0 0 1600 900" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg" x1="180" y1="80" x2="1320" y2="860" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#231811"/>
+      <stop offset="1" stop-color="#120D09"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="0" cy="0" r="1" gradientUnits="userSpaceOnUse" gradientTransform="translate(896 370) rotate(131.669) scale(521.629 703.634)">
+      <stop stop-color="#D94F00" stop-opacity="0.42"/>
+      <stop offset="1" stop-color="#D94F00" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="card" x1="928" y1="152" x2="1258" y2="694" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FFFDFB"/>
+      <stop offset="1" stop-color="#F4EEE8"/>
+    </linearGradient>
+  </defs>
+  <rect width="1600" height="900" fill="url(#bg)"/>
+  <rect width="1600" height="900" fill="url(#glow)"/>
+  <g opacity="0.18">
+    <circle cx="176" cy="138" r="2.5" fill="#FFF7F1"/>
+    <circle cx="238" cy="182" r="1.5" fill="#FFF7F1"/>
+    <circle cx="316" cy="124" r="2" fill="#FFF7F1"/>
+    <circle cx="1302" cy="198" r="2.5" fill="#FFF7F1"/>
+    <circle cx="1396" cy="160" r="2" fill="#FFF7F1"/>
+    <circle cx="1452" cy="250" r="1.5" fill="#FFF7F1"/>
+  </g>
+  <rect x="118" y="126" width="560" height="648" rx="36" fill="#18120E" stroke="rgba(255,255,255,0.08)"/>
+  <rect x="146" y="164" width="504" height="64" rx="18" fill="rgba(255,255,255,0.06)"/>
+  <rect x="146" y="254" width="342" height="24" rx="12" fill="#D94F00" fill-opacity="0.24"/>
+  <rect x="146" y="298" width="448" height="18" rx="9" fill="rgba(255,255,255,0.12)"/>
+  <rect x="146" y="340" width="378" height="18" rx="9" fill="rgba(255,255,255,0.12)"/>
+  <rect x="146" y="412" width="232" height="16" rx="8" fill="rgba(255,255,255,0.08)"/>
+  <rect x="146" y="442" width="504" height="72" rx="18" fill="rgba(255,255,255,0.06)"/>
+  <rect x="146" y="534" width="308" height="72" rx="18" fill="rgba(255,255,255,0.06)"/>
+  <rect x="470" y="534" width="180" height="72" rx="18" fill="rgba(255,255,255,0.06)"/>
+  <rect x="146" y="626" width="504" height="120" rx="24" fill="rgba(255,255,255,0.04)"/>
+  <circle cx="612" cy="196" r="12" fill="#D94F00"/>
+  <rect x="844" y="154" width="428" height="564" rx="30" fill="url(#card)" transform="rotate(8 844 154)"/>
+  <rect x="886" y="222" width="172" height="18" rx="9" fill="#D94F00" transform="rotate(8 886 222)"/>
+  <rect x="886" y="262" width="274" height="12" rx="6" fill="#DCCFC3" transform="rotate(8 886 262)"/>
+  <rect x="886" y="291" width="328" height="12" rx="6" fill="#E7DDD4" transform="rotate(8 886 291)"/>
+  <rect x="886" y="345" width="332" height="86" rx="16" fill="#F7F2ED" transform="rotate(8 886 345)"/>
+  <rect x="914" y="377" width="214" height="12" rx="6" fill="#DCCFC3" transform="rotate(8 914 377)"/>
+  <rect x="914" y="404" width="246" height="12" rx="6" fill="#E7DDD4" transform="rotate(8 914 404)"/>
+  <rect x="886" y="471" width="332" height="140" rx="16" fill="#FBF8F5" transform="rotate(8 886 471)"/>
+  <rect x="916" y="509" width="212" height="10" rx="5" fill="#DCCFC3" transform="rotate(8 916 509)"/>
+  <rect x="916" y="534" width="246" height="10" rx="5" fill="#E7DDD4" transform="rotate(8 916 534)"/>
+  <rect x="916" y="559" width="170" height="10" rx="5" fill="#D94F00" fill-opacity="0.36" transform="rotate(8 916 559)"/>
+  <rect x="1100" y="640" width="76" height="76" rx="10" fill="#18120E" transform="rotate(8 1100 640)"/>
+  <path d="M1119 658H1157V696H1119V658Z" fill="#FFFDFB" fill-opacity="0.92" transform="rotate(8 1119 658)"/>
+  <rect x="242" y="704" width="206" height="48" rx="24" fill="#D94F00"/>
+  <text x="156" y="738" fill="#FFF7F1" font-family="Arial, sans-serif" font-size="18" letter-spacing="2.5">TRAILER STARTS IMMEDIATELY</text>
+  <text x="156" y="294" fill="#FFF7F1" font-family="Arial, sans-serif" font-size="54" font-weight="700">Anfrage rein.</text>
+  <text x="156" y="356" fill="#FFF7F1" font-family="Arial, sans-serif" font-size="54" font-weight="700">Offerte raus.</text>
+  <text x="156" y="394" fill="#C7B7A9" font-family="Arial, sans-serif" font-size="22">Swiss QR-Rechnung in Sekunden — gemacht für mobile Hero autoplay.</text>
+</svg>

@@ -1,0 +1,12 @@
+User-agent: *
+Allow: /
+
+Disallow: /api/
+Disallow: /dashboard
+Disallow: /dokument/
+Disallow: /einstellungen/
+Disallow: /onboarding
+Disallow: /callback
+Disallow: /confirm
+
+Sitemap: https://offert.io/sitemap.xml

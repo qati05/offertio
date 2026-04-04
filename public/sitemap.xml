@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
+        xmlns:xhtml="http://www.w3.org/1999/xhtml">
+  <url>
+    <loc>https://offert.io/</loc>
+    <changefreq>weekly</changefreq>
+    <priority>1.0</priority>
+    <xhtml:link rel="alternate" hreflang="de-CH" href="https://offert.io/" />
+    <xhtml:link rel="alternate" hreflang="de-DE" href="https://offert.io/" />
+    <xhtml:link rel="alternate" hreflang="de-AT" href="https://offert.io/" />
+  </url>
+</urlset>

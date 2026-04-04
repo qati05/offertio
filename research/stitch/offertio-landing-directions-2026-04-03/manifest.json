@@ -1,0 +1,38 @@
+{
+  "exported_at": "2026-04-03",
+  "source": "Stitch MCP",
+  "replaced_existing_files": false,
+  "base_folder": "research/stitch/offertio-landing-directions-2026-04-03",
+  "directions": [
+    {
+      "slug": "editorial-precision",
+      "title": "Offertio - Editorial Precision Mobile Landing Page",
+      "project_id": "4859868219715715104",
+      "screen_id": "56e959d6f02e45d98870e0f161ae8b3c",
+      "files": {
+        "screenshot": "editorial-precision/screenshot.png",
+        "html": "editorial-precision/screen.html"
+      }
+    },
+    {
+      "slug": "proof-and-momentum",
+      "title": "Offertio - Proof and Momentum Mobile Landing Page",
+      "project_id": "4859868219715715104",
+      "screen_id": "1115a4d3680d40658cee75eef086de9e",
+      "files": {
+        "screenshot": "proof-and-momentum/screenshot.png",
+        "html": "proof-and-momentum/screen.html"
+      }
+    },
+    {
+      "slug": "field-to-pdf",
+      "title": "Offertio Landing Page (Mobile)",
+      "project_id": "15651442586647147153",
+      "screen_id": "db5a62b47bcb492bb5350e3ade0f56e2",
+      "files": {
+        "screenshot": "field-to-pdf/screenshot.png",
+        "html": "field-to-pdf/screen.html"
+      }
+    }
+  ]
+}

@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+
+<html class="light" lang="de"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&amp;family=Noto+Serif:wght@900&amp;family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "surface-variant": "#e4e2df",
+                        "tertiary-fixed": "#e2e2e5",
+                        "on-primary": "#ffffff",
+                        "surface": "#fbf9f6",
+                        "on-tertiary-fixed": "#1a1c1e",
+                        "tertiary-container": "#1a1c1e",
+                        "error": "#ba1a1a",
+                        "surface-container-highest": "#e4e2df",
+                        "primary": "#020000",
+                        "outline-variant": "#c5c6ca",
+                        "on-error-container": "#93000a",
+                        "on-secondary-fixed-variant": "#454749",
+                        "inverse-surface": "#30312f",
+                        "surface-container-lowest": "#ffffff",
+                        "on-surface-variant": "#44474a",
+                        "on-primary-container": "#da5f0f",
+                        "on-error": "#ffffff",
+                        "surface-container-high": "#eae8e5",
+                        "surface-bright": "#fbf9f6",
+                        "surface-dim": "#dbdad7",
+                        "secondary-fixed": "#e2e2e5",
+                        "on-primary-fixed": "#351000",
+                        "secondary-container": "#e2e2e5",
+                        "secondary": "#5d5e61",
+                        "on-secondary-container": "#636467",
+                        "primary-container": "#351100",
+                        "inverse-on-surface": "#f2f0ed",
+                        "error-container": "#ffdad6",
+                        "on-primary-fixed-variant": "#7a3000",
+                        "on-tertiary-container": "#838486",
+                        "on-tertiary-fixed-variant": "#454749",
+                        "tertiary": "#000101",
+                        "on-secondary": "#ffffff",
+                        "outline": "#75777a",
+                        "inverse-primary": "#ffb693",
+                        "primary-fixed": "#ffdbcc",
+                        "on-secondary-fixed": "#1a1c1e",
+                        "background": "#fbf9f6",
+                        "surface-container-low": "#f5f3f0",
+                        "on-surface": "#1b1c1a",
+                        "on-tertiary": "#ffffff",
+                        "surface-container": "#efeeeb",
+                        "surface-tint": "#a04100",
+                        "on-background": "#1b1c1a",
+                        "primary-fixed-dim": "#ffb693",
+                        "tertiary-fixed-dim": "#c6c6c9",
+                        "secondary-fixed-dim": "#c6c6c9"
+                    },
+                    fontFamily: {
+                        "headline": ["Noto Serif"],
+                        "body": ["Inter"],
+                        "label": ["Inter"]
+                    },
+                    borderRadius: { "DEFAULT": "0px", "lg": "0px", "xl": "0px", "full": "9999px" },
+                },
+            },
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        body {
+            background-color: #fbf9f6;
+            color: #1b1c1a;
+            font-family: 'Inter', sans-serif;
+        }
+        .noto-serif { font-family: 'Noto Serif', serif; }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="antialiased overflow-x-hidden">
+<!-- TopAppBar -->
+<nav class="fixed top-0 w-full flex justify-between items-center px-6 h-20 backdrop-blur-md bg-opacity-80 bg-[#F9F7F4] z-50">
+<div class="text-2xl font-['Noto_Serif'] font-black uppercase tracking-tighter text-[#020000]">OFFERTIO</div>
+<div class="flex items-center gap-4">
+<button class="bg-[#CC5500] text-white px-4 py-2 font-bold text-xs tracking-widest uppercase active:scale-95 duration-100 transition-colors hover:bg-[#A34400]">
+                ANFRAGE
+            </button>
+<span class="material-symbols-outlined text-[#020000]">menu</span>
+</div>
+</nav>
+<!-- Separation Logic line -->
+<div class="fixed top-20 w-full h-[2px] bg-[#e4e2df] z-50"></div>
+<main class="mt-20">
+<!-- Hero Section -->
+<section class="px-6 py-16 bg-[#F9F7F4]">
+<div class="max-w-screen-xl mx-auto">
+<h1 class="font-['Noto_Serif'] font-black text-4xl md:text-6xl uppercase tracking-tighter text-[#020000] leading-none mb-6">
+                    Die Offerte raus, bevor der Abend weg ist.
+                </h1>
+<p class="font-['Inter'] text-lg text-[#1b1c1a] mb-10 max-w-lg leading-relaxed opacity-90">
+                    Angebot, Rechnung, Swiss QR und ZUGFeRD in einem klaren Ablauf für kleine Betriebe.
+                </p>
+<div class="flex flex-col gap-4 mb-16">
+<button class="bg-[#CC5500] text-white py-5 px-8 font-bold text-sm tracking-[0.1em] uppercase text-center active:scale-95 duration-100">
+                        Jetzt kostenlos testen
+                    </button>
+</div>
+<!-- Swiss QR Mockup -->
+<div class="relative w-full bg-white p-4 outline outline-1 outline-black/10">
+<div class="uppercase font-bold text-[10px] tracking-widest text-[#CC5500] mb-4">Originaler Beleg-Standard</div>
+<img alt="Swiss QR Standard" class="w-full grayscale brightness-95 contrast-125 border border-black/5" data-alt="Detailed macro shot of a printed Swiss QR bill with precision alignment, black and white contrast, and high-quality paper texture." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBHJHi2slAdNFI0I-w3QzoB7JpuIsin-jwc2XKMbQXpmLvytYOnMs6FuzRqK8pNfwS5CaavYKZVGCfesgLkVYHca6cO1RZfx0BozQJh_wKzdvU9yqtuKJ7rNHVAOyCLxxlE2SyK9sX7-2fA51yUCcuVLN3Y5MOGUaKizxS8rwFKQGEhykkKW_jfQ3VBXrcrLf8k5E-l9injrA0bh-QQ25D3OPj_H4PRlRieVpDC-eQ40kdcRbH2Z-Ay3TAIZ6EYFD29cOnoulB3Oe0"/>
+<div class="absolute -bottom-4 -right-4 bg-[#020000] text-[#F9F7F4] p-4 font-bold text-[10px] tracking-widest uppercase">
+                        Präzision garantiert
+                    </div>
+</div>
+</div>
+</section>
+<!-- Trust Bar -->
+<section class="bg-[#e4e2df] py-8 border-y border-[#c5c6ca]">
+<div class="flex overflow-x-auto no-scrollbar gap-12 px-6 items-center whitespace-nowrap">
+<div class="font-black text-sm tracking-tighter opacity-40">SCHMID BAU</div>
+<div class="font-black text-sm tracking-tighter opacity-40">METALL-ART</div>
+<div class="font-black text-sm tracking-tighter opacity-40">HOLZWERK AG</div>
+<div class="font-black text-sm tracking-tighter opacity-40">PRÄZISIONSTECHNIK CH</div>
+<div class="font-black text-sm tracking-tighter opacity-40">LUMINA ELEKTRO</div>
+</div>
+</section>
+<!-- The Momentum Shift -->
+<section class="bg-[#1a1c1e] text-[#F9F7F4] py-20 px-6">
+<div class="max-w-screen-xl mx-auto">
+<div class="uppercase font-bold text-[10px] tracking-widest text-[#CC5500] mb-4">Operativer Wandel</div>
+<h2 class="font-['Noto_Serif'] font-black text-3xl uppercase tracking-tighter leading-none mb-12">
+                    Vom Chaos zur<br/>Schweizer Ordnung.
+                </h2>
+<div class="grid grid-cols-1 gap-0 border border-[#44474a]">
+<!-- Before -->
+<div class="p-8 border-b border-[#44474a]">
+<div class="flex items-center gap-2 mb-6 text-error">
+<span class="material-symbols-outlined text-sm">history</span>
+<span class="font-bold text-[10px] tracking-[0.15em] uppercase">Status Quo</span>
+</div>
+<h3 class="text-xl font-black mb-4">Manuelle Qual</h3>
+<p class="text-sm opacity-60 leading-relaxed font-body">Word-Vorlagen, Excel-Fehler, QR-Code manuell generieren. Lange Nächte im Büro statt Zeit für die Baustelle.</p>
+</div>
+<!-- After -->
+<div class="p-8 bg-[#020000]">
+<div class="flex items-center gap-2 mb-6 text-[#CC5500]">
+<span class="material-symbols-outlined text-sm" data-weight="fill" style="font-variation-settings: 'FILL' 1;">bolt</span>
+<span class="font-bold text-[10px] tracking-[0.15em] uppercase">Der Shift</span>
+</div>
+<h3 class="text-xl font-black mb-4">Offertio Momentum</h3>
+<p class="text-sm opacity-80 leading-relaxed font-body">5 Minuten Prozess. Automatische Schweizer Compliance. ZUGFeRD-Standard nativ. Die Offerte ist fertig, bevor das Feierabendbier offen ist.</p>
+</div>
+</div>
+</div>
+</section>
+<!-- Product Proof (Bento Grid Style) -->
+<section class="bg-[#F9F7F4] py-20 px-6">
+<div class="max-w-screen-xl mx-auto">
+<div class="uppercase font-bold text-[10px] tracking-widest text-[#CC5500] mb-4">Technische Beweise</div>
+<h2 class="font-['Noto_Serif'] font-black text-3xl uppercase tracking-tighter mb-12">Detailversessenheit.</h2>
+<div class="grid grid-cols-1 gap-6">
+<!-- ZUGFeRD validation -->
+<div class="bg-white p-6 border border-[#e4e2df]">
+<div class="h-48 overflow-hidden mb-6">
+<img alt="ZUGFeRD" class="w-full h-full object-cover grayscale" data-alt="Close-up of high-end business accounting software interface showing ZUGFeRD electronic invoice validation process with clean typography and technical lines." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDsPJ-LEO_xHFexftzdjSytkqQj5ehZ1SCVrW6NtwFHrkhRHPg9X9-DgqKPD8wRhX3BhPRf3GoWhdbcby8Pao2C3IJBVFOCdm3HwJQ1XqrQ-GX5JmGN8nqcwf82pHxVNwXr42lSx7Uvb52Lxe1s-wNYz9DDXXQGbMmtfUF933yMolZKWAvP-rJkzRzGj_XXkxuuS0L6gFeCoARC-wQwLBJDnU3qa7wDGsy5GxI8bpXJ9jdfuZPe92FIzXcFWNsfKcd41n3HJ4NcHX4"/>
+</div>
+<span class="font-bold text-[10px] tracking-widest uppercase opacity-40">Modul 01</span>
+<h4 class="text-lg font-black mt-1 mb-2">ZUGFeRD Validation</h4>
+<p class="text-xs opacity-60 font-body">Rechtssichere E-Invoicing-Strukturen für die grenzüberschreitende Buchhaltung.</p>
+</div>
+<!-- QR Code Gen -->
+<div class="bg-[#020000] text-white p-6 border border-[#020000]">
+<div class="h-48 overflow-hidden mb-6 flex items-center justify-center bg-[#F9F7F4]">
+<img alt="Swiss QR Code" class="w-32 h-32 grayscale contrast-150" data-alt="Macro photography of a Swiss QR code printed on high-quality paper with sharp edges and architectural precision." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDR2pjBMtVGFwsbugNIQ5f5Cl7HZSbMrPU66ImuHSxtPfWMGVGvh-riu0rkV9gIV9RXTRuMKMsocwkHbiVz7fObY-K2Rf9NziWP_kGLwbODgXi_j1bJMM22F6sKZ13LjONuuQtlt6b2daiHzn8hUHvgLO2RFXgXaOoFeAEj2-GYUnKfy2atpNT2M21VoZEK-s26YrliAcyRJ7w8VGGt1bW63W2OI3-RCpRo8O0IsaZYIcsgTJhaWekFpmYKInaOq4ghXFdmAaN-V38"/>
+</div>
+<span class="font-bold text-[10px] tracking-widest uppercase text-[#CC5500]">Modul 02</span>
+<h4 class="text-lg font-black mt-1 mb-2 text-[#F9F7F4]">Swiss QR Generator</h4>
+<p class="text-xs opacity-60 font-body">Integrierte Erstellung des Zahlteils mit Schweizer Kreuz. Null Fehlerquote.</p>
+</div>
+</div>
+</div>
+</section>
+<!-- Pricing Section -->
+<section class="bg-[#efeeeb] py-20 px-6">
+<div class="max-w-screen-xl mx-auto">
+<div class="uppercase font-bold text-[10px] tracking-widest text-[#CC5500] mb-4">Konditionen</div>
+<h2 class="font-['Noto_Serif'] font-black text-3xl uppercase tracking-tighter mb-12">Klare Tarife.</h2>
+<div class="flex flex-col gap-8">
+<!-- Basis -->
+<div class="bg-[#F9F7F4] p-8 border border-black/5 flex flex-col">
+<div class="flex justify-between items-start mb-8">
+<span class="font-black text-xl tracking-tighter">BASIS</span>
+<div class="text-right">
+<span class="text-3xl font-black">29.-</span>
+<span class="block text-[10px] font-bold uppercase opacity-40">CHF / Monat</span>
+</div>
+</div>
+<ul class="space-y-4 mb-10 text-sm opacity-70">
+<li class="flex items-center gap-2"><span class="material-symbols-outlined text-xs">check</span> Unbegrenzte Offerten</li>
+<li class="flex items-center gap-2"><span class="material-symbols-outlined text-xs">check</span> Swiss QR Standard</li>
+<li class="flex items-center gap-2"><span class="material-symbols-outlined text-xs">check</span> 1 Benutzer</li>
+</ul>
+<button class="w-full border-2 border-black py-4 font-black text-[10px] tracking-widest uppercase hover:bg-black hover:text-white transition-colors">Auswählen</button>
+</div>
+<!-- Pro (Featured) -->
+<div class="bg-[#020000] text-[#F9F7F4] p-8 flex flex-col relative">
+<div class="absolute top-0 right-0 bg-[#CC5500] px-4 py-1 text-[10px] font-bold uppercase">Empfehlung</div>
+<div class="flex justify-between items-start mb-8">
+<span class="font-black text-xl tracking-tighter">PRO</span>
+<div class="text-right">
+<span class="text-3xl font-black">59.-</span>
+<span class="block text-[10px] font-bold uppercase text-[#CC5500]">CHF / Monat</span>
+</div>
+</div>
+<ul class="space-y-4 mb-10 text-sm opacity-80">
+<li class="flex items-center gap-2"><span class="material-symbols-outlined text-xs">check</span> Alles aus Basis</li>
+<li class="flex items-center gap-2"><span class="material-symbols-outlined text-xs">check</span> ZUGFeRD Export</li>
+<li class="flex items-center gap-2"><span class="material-symbols-outlined text-xs">check</span> Mahnwesen integriert</li>
+<li class="flex items-center gap-2"><span class="material-symbols-outlined text-xs">check</span> 5 Benutzer</li>
+</ul>
+<button class="w-full bg-[#CC5500] text-white py-4 font-black text-[10px] tracking-widest uppercase">Jetzt Starten</button>
+</div>
+</div>
+</div>
+</section>
+<!-- FAQ Section -->
+<section class="bg-[#F9F7F4] py-20 px-6">
+<div class="max-w-screen-xl mx-auto">
+<div class="uppercase font-bold text-[10px] tracking-widest text-[#CC5500] mb-4">FAQ</div>
+<h2 class="font-['Noto_Serif'] font-black text-3xl uppercase tracking-tighter mb-12">Fragen zur Präzision.</h2>
+<div class="space-y-8">
+<div class="border-b border-[#e4e2df] pb-6">
+<h4 class="text-sm font-black uppercase tracking-wider mb-2">Sind die QR-Rechnungen bankenkonform?</h4>
+<p class="text-xs opacity-60 leading-relaxed font-body">Ja, alle generierten QR-Belege entsprechen exakt dem Schweizer Standard (ISO 20022) und werden von allen Schweizer Banken akzeptiert.</p>
+</div>
+<div class="border-b border-[#e4e2df] pb-6">
+<h4 class="text-sm font-black uppercase tracking-wider mb-2">Was bedeutet ZUGFeRD Compliance?</h4>
+<p class="text-xs opacity-60 leading-relaxed font-body">Es handelt sich um einen Standard für elektronische Rechnungen, der eine PDF-Datei mit eingebetteten XML-Daten kombiniert – ideal für automatisierte Buchhaltung.</p>
+</div>
+<div class="border-b border-[#e4e2df] pb-6">
+<h4 class="text-sm font-black uppercase tracking-wider mb-2">Kann ich meine Daten exportieren?</h4>
+<p class="text-xs opacity-60 leading-relaxed font-body">Absolute Datenhoheit. Sie können jederzeit alle Kunden, Offerten und Buchungen als CSV oder strukturiertes XML exportieren.</p>
+</div>
+</div>
+</div>
+</section>
+<!-- Final CTA -->
+<section class="bg-[#020000] py-24 px-6 text-center border-t border-[#CC5500]">
+<h2 class="font-['Noto_Serif'] font-black text-3xl uppercase tracking-tighter text-[#F9F7F4] leading-tight mb-8">
+                Starten Sie jetzt.
+            </h2>
+<button class="bg-[#CC5500] text-white py-5 px-12 font-bold text-sm tracking-[0.2em] uppercase active:scale-95 duration-100 w-full md:w-auto">
+                Jetzt kostenlos testen
+            </button>
+<p class="mt-8 text-[10px] font-bold tracking-widest uppercase text-[#F9F7F4] opacity-40">Keine Kreditkarte erforderlich. 14 Tage Testphase.</p>
+</section>
+</main>
+<!-- Footer -->
+<footer class="w-full py-12 px-8 flex flex-col items-start gap-8 bg-[#020000] border-t-2 border-[#1A1C1E]">
+<div class="text-white font-bold text-lg">OFFERTIO</div>
+<div class="grid grid-cols-2 gap-x-12 gap-y-4">
+<a class="font-['Inter'] text-[10px] uppercase tracking-[0.1em] text-[#e4e2df] opacity-70 hover:opacity-100 hover:text-[#CC5500] transition-opacity" href="#">Impressum</a>
+<a class="font-['Inter'] text-[10px] uppercase tracking-[0.1em] text-[#e4e2df] opacity-70 hover:opacity-100 hover:text-[#CC5500] transition-opacity" href="#">Datenschutz</a>
+<a class="font-['Inter'] text-[10px] uppercase tracking-[0.1em] text-[#e4e2df] opacity-70 hover:opacity-100 hover:text-[#CC5500] transition-opacity underline decoration-[#CC5500] underline-offset-4" href="#">QR-Bill Compliance</a>
+<a class="font-['Inter'] text-[10px] uppercase tracking-[0.1em] text-[#e4e2df] opacity-70 hover:opacity-100 hover:text-[#CC5500] transition-opacity" href="#">ZUGFeRD Standard</a>
+</div>
+<div class="mt-8 font-['Inter'] text-[10px] uppercase tracking-[0.1em] leading-relaxed text-[#F9F7F4] opacity-50">
+            © 2024 Offertio AG. Schweizer Präzision.
+        </div>
+</footer>
+</body></html>
