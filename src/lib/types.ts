@@ -24,6 +24,14 @@ export interface Profile {
   beruf: string;
   zahlungsfrist: number;
   plan: "free" | "pro_monthly" | "pro_yearly";
+  /** Lemon Squeezy subscription ID for customer portal access */
+  ls_subscription_id?: string | null;
+  /** Lemon Squeezy customer ID for portal access */
+  ls_customer_id?: string | null;
+  /** When the current Pro period ends (ISO timestamp) */
+  plan_expires_at?: string | null;
+  /** Set when subscription is cancelled but still in grace period */
+  plan_cancelled_at?: string | null;
   onboarding_complete?: boolean;
   pdf_template?: "classic" | "modern" | "minimal" | "professionell";
   created_at: string;

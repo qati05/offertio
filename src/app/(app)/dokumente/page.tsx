@@ -3,21 +3,30 @@
 export const dynamic = "force-dynamic";
 
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useCallback } from "react";
 import { createSupabaseBrowser } from "@/lib/supabase-browser";
 import { getDachConfig } from "@/lib/dach";
 import { buildDokumentCsv } from "@/lib/export";
 import { groupDocumentsByCustomer } from "@/lib/customer-folders";
+import { computeDocumentStatus } from "@/lib/dokument-status";
 import type { DokumentHistorie, Profile } from "@/lib/types";
 
-const STATUS: Record<string, { label: string; color: string; bg: string }> = {
-  entwurf: { label: "Entwurf", color: "#6b7280", bg: "rgba(107,114,128,0.08)" },
-  gesendet: { label: "Gesendet", color: "#A8622E", bg: "rgba(200,121,61,0.08)" },
-  bezahlt: { label: "Bezahlt", color: "#15803d", bg: "rgba(21,128,61,0.08)" },
-  angenommen: { label: "Angenommen", color: "#15803d", bg: "rgba(21,128,61,0.08)" },
-  abgelaufen: { label: "Abgelaufen", color: "#92400e", bg: "rgba(146,64,14,0.08)" },
-  ueberfaellig: { label: "Überfällig", color: "#92400e", bg: "rgba(146,64,14,0.08)" },
+const STATUS_META: Record<string, { label: string; color: string; bg: string }> = {
+  entwurf:     { label: "Entwurf",     color: "#6b7280", bg: "rgba(107,114,128,0.08)" },
+  gesendet:    { label: "Gesendet",    color: "#A8622E", bg: "rgba(200,121,61,0.08)"  },
+  bezahlt:     { label: "Bezahlt",     color: "#15803d", bg: "rgba(21,128,61,0.08)"   },
+  angenommen:  { label: "Angenommen",  color: "#15803d", bg: "rgba(21,128,61,0.08)"   },
+  abgelaufen:  { label: "Abgelaufen",  color: "#92400e", bg: "rgba(146,64,14,0.08)"   },
+  ueberfaellig:{ label: "Überfällig",  color: "#b91c1c", bg: "rgba(185,28,28,0.08)"   },
 };
+
+/** Status options available per document type */
+function statusOptionsFor(typ: "offerte" | "rechnung") {
+  if (typ === "offerte") {
+    return ["entwurf", "gesendet", "angenommen", "abgelaufen"] as const;
+  }
+  return ["entwurf", "gesendet", "bezahlt", "ueberfaellig"] as const;
+}
 
 type ViewMode = "history" | "customers" | "export";
 
@@ -32,6 +41,7 @@ export default function DokumentePage() {
   const [exportFrom, setExportFrom] = useState("");
   const [exportTo, setExportTo] = useState("");
   const [exportCustomer, setExportCustomer] = useState("");
+  const [updatingId, setUpdatingId] = useState<string | null>(null);
 
   useEffect(() => {
     void loadData();
@@ -49,7 +59,12 @@ export default function DokumentePage() {
 
     const [profileRes, docsRes] = await Promise.all([
       supabase.from("profiles").select("*").eq("id", user.id).maybeSingle(),
-      supabase.from("dokumente").select("*").eq("user_id", user.id).order("datum", { ascending: false }).limit(200),
+      supabase
+        .from("dokumente")
+        .select("*")
+        .eq("user_id", user.id)
+        .order("datum", { ascending: false })
+        .limit(200),
     ]);
 
     if (profileRes.data) setProfile(profileRes.data as Profile);
@@ -57,21 +72,59 @@ export default function DokumentePage() {
     if (docsRes.error) {
       try {
         const local = JSON.parse(localStorage.getItem("dokument-history") || "[]");
-        setHistory(local.map((d: any) => ({ ...d, betrag: Number(d.betrag) })));
+        setHistory(local.map((d: Record<string, unknown>) => ({ ...d, betrag: Number(d.betrag) })));
         setSource("local");
       } catch {
         setHistory([]);
         setSource("local");
       }
     } else {
-      setHistory((docsRes.data || []).map((d: any) => ({ ...d, betrag: Number(d.betrag) })));
+      const docs = (docsRes.data || []).map((d: Record<string, unknown>) => ({
+        ...d,
+        betrag: Number(d.betrag),
+      })) as DokumentHistorie[];
+      // Apply auto-computed statuses (überfällig / abgelaufen)
+      setHistory(docs.map((doc) => computeDocumentStatus(doc, profile?.zahlungsfrist ?? 30)));
       setSource("cloud");
     }
 
     setLoading(false);
   }
 
+  /** Update a single document's status via API, optimistically update UI. */
+  const handleStatusChange = useCallback(
+    async (doc: DokumentHistorie, newStatus: string) => {
+      if (!doc.id || source === "local") return;
+      setUpdatingId(doc.id);
+
+      const optimistic = (prev: DokumentHistorie[]) =>
+        prev.map((d: DokumentHistorie) =>
+          d.id === doc.id ? { ...d, status: newStatus as DokumentHistorie["status"] } : d,
+        );
+      const revert = (prev: DokumentHistorie[]) =>
+        prev.map((d: DokumentHistorie) => (d.id === doc.id ? { ...d, status: doc.status } : d));
+
+      // Optimistic update
+      setHistory(optimistic);
+
+      try {
+        const res = await fetch("/api/dokument/update-status", {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ id: doc.id, status: newStatus }),
+        });
+        if (!res.ok) setHistory(revert);
+      } catch {
+        setHistory(revert);
+      } finally {
+        setUpdatingId(null);
+      }
+    },
+    [source],
+  );
+
   const currency = getDachConfig(profile?.land).currency;
+  const zahlungsfrist = profile?.zahlungsfrist ?? 30;
   const customerFolders = useMemo(() => groupDocumentsByCustomer(history), [history]);
   const convertedInvoicesBySourceId = useMemo(
     () =>
@@ -104,6 +157,105 @@ export default function DokumentePage() {
     setTimeout(() => URL.revokeObjectURL(url), 3000);
   }
 
+  function DocRow({ doc, compact = false }: { doc: DokumentHistorie; compact?: boolean }) {
+    const status = STATUS_META[doc.status] ?? STATUS_META.entwurf;
+    const isRechnung = doc.typ === "rechnung";
+    const convertedInvoice = doc.id ? convertedInvoicesBySourceId.get(doc.id) : null;
+    const isUpdating = doc.id === updatingId;
+    const options = statusOptionsFor(doc.typ);
+    const canEdit = !!doc.id && source === "cloud";
+
+    return (
+      <div
+        className={compact ? "flex items-center justify-between rounded-2xl px-4 py-3" : "app-shell-panel flex items-center gap-4 p-5"}
+        style={compact ? { background: "var(--app-card-muted)" } : undefined}
+      >
+        {!compact && (
+          <div
+            className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl text-xs font-bold"
+            style={{
+              background: isRechnung ? "rgba(200,121,61,0.08)" : "rgba(26,28,27,0.06)",
+              color: isRechnung ? "var(--color-primary-strong)" : "var(--app-text)",
+            }}
+          >
+            {isRechnung ? "RG" : "OF"}
+          </div>
+        )}
+        <div className="min-w-0 flex-1">
+          {!compact && (
+            <div className="truncate text-sm font-semibold" style={{ color: "var(--app-text)" }}>
+              {doc.kundenname || "Unbekannter Kunde"}
+            </div>
+          )}
+          <div className={`${compact ? "" : "mt-1 "}text-xs`} style={{ color: "var(--app-text-muted)" }}>
+            {compact ? (
+              <>{new Date(doc.datum).toLocaleDateString("de-CH")} · {doc.typ === "rechnung" ? "Rechnung" : "Offerte"}</>
+            ) : (
+              <>{doc.nummer} · {new Date(doc.datum).toLocaleDateString("de-CH")}{doc.objekt ? ` · ${doc.objekt}` : ""}</>
+            )}
+          </div>
+          {(doc.source_document_nummer || doc.converted_document_nummer || convertedInvoice) && (
+            <div className="mt-1 text-xs" style={{ color: "var(--color-primary-strong)" }}>
+              {doc.source_document_nummer
+                ? `Aus ${doc.source_document_nummer}`
+                : `→ ${doc.converted_document_nummer || convertedInvoice?.nummer}`}
+            </div>
+          )}
+          {compact && (
+            <div className="mt-0.5 text-xs font-medium" style={{ color: "var(--app-text)" }}>
+              {doc.nummer}
+            </div>
+          )}
+        </div>
+        <div className="flex shrink-0 flex-col items-end gap-1.5">
+          <div className="text-sm font-bold tabular-nums" style={{ color: "var(--app-text)" }}>
+            {currency} {doc.betrag.toLocaleString("de-CH", { minimumFractionDigits: 2 })}
+          </div>
+          {canEdit ? (
+            <div className="relative">
+              <select
+                disabled={isUpdating}
+                value={doc.status}
+                onChange={(e) => void handleStatusChange(doc, e.target.value)}
+                className="status-badge cursor-pointer appearance-none pr-5 text-xs"
+                style={{
+                  color: status.color,
+                  background: status.bg,
+                  border: "none",
+                  outline: "none",
+                  fontWeight: 600,
+                  borderRadius: "6px",
+                  padding: "2px 20px 2px 7px",
+                  opacity: isUpdating ? 0.5 : 1,
+                }}
+              >
+                {options.map((s) => (
+                  <option key={s} value={s}>
+                    {STATUS_META[s]?.label ?? s}
+                  </option>
+                ))}
+              </select>
+              <svg
+                className="pointer-events-none absolute right-1.5 top-1/2 -translate-y-1/2"
+                width="10"
+                height="10"
+                viewBox="0 0 10 10"
+                fill="none"
+                style={{ color: status.color }}
+              >
+                <path d="M2 3.5l3 3 3-3" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            </div>
+          ) : (
+            <span className="status-badge" style={{ color: status.color, background: status.bg }}>
+              {status.label}
+            </span>
+          )}
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="animate-flow min-h-full">
       <div className="mx-auto max-w-6xl px-5 py-8 sm:px-8 sm:py-10">
@@ -112,7 +264,10 @@ export default function DokumentePage() {
             <div className="app-kicker">Dokumente</div>
             <h1 className="app-title-display mt-2">Verlauf</h1>
             <p className="mt-3 max-w-2xl text-sm leading-6" style={{ color: "var(--app-text-muted)" }}>
-              Alle Offerten und Rechnungen an einem Ort. {source === "local" ? "Aktuell aus der lokalen Geräte-Historie." : "Aktuell aus deiner Konto-Historie."}
+              Alle Offerten und Rechnungen an einem Ort.{" "}
+              {source === "local"
+                ? "Aktuell aus der lokalen Geräte-Historie."
+                : "Aktuell aus deiner Konto-Historie."}
             </p>
           </div>
           <Link href="/dokument/neu" className="btn-premium btn-premium-primary shrink-0">
@@ -120,11 +275,15 @@ export default function DokumentePage() {
           </Link>
         </header>
 
-        <div className="mb-6 grid grid-cols-3 gap-2 rounded-[20px] border p-1.5" style={{ borderColor: "var(--color-border)", background: "rgba(255,255,255,0.64)" }}>
+        {/* Tab bar */}
+        <div
+          className="mb-6 grid grid-cols-3 gap-2 rounded-[20px] border p-1.5"
+          style={{ borderColor: "var(--color-border)", background: "rgba(255,255,255,0.64)" }}
+        >
           {[
-            { key: "history", label: "Dokumente" },
+            { key: "history",   label: "Dokumente"    },
             { key: "customers", label: "Kundenordner" },
-            { key: "export", label: "Export" },
+            { key: "export",    label: "Export"        },
           ].map((tab) => {
             const active = view === tab.key;
             return (
@@ -154,40 +313,18 @@ export default function DokumentePage() {
         ) : view === "history" ? (
           history.length === 0 ? (
             <div className="app-shell-panel flex flex-col items-center justify-center px-6 py-16 text-center">
-              <div className="text-lg font-semibold" style={{ color: "var(--app-text)" }}>Noch keine Dokumente vorhanden</div>
+              <div className="text-lg font-semibold" style={{ color: "var(--app-text)" }}>
+                Noch keine Dokumente vorhanden
+              </div>
               <p className="mt-2 max-w-md text-sm leading-6" style={{ color: "var(--app-text-muted)" }}>
                 Sobald du deine erste Offerte oder Rechnung erstellst, erscheint sie hier automatisch im Verlauf.
               </p>
             </div>
           ) : (
             <div className="space-y-3">
-              {history.map((doc, i) => {
-                const status = STATUS[doc.status] || STATUS.entwurf;
-                const isRechnung = doc.typ === "rechnung";
-                const convertedInvoice = doc.id ? convertedInvoicesBySourceId.get(doc.id) : null;
-                return (
-                  <div key={`${doc.nummer}-${i}`} className="app-shell-panel flex items-center gap-4 p-5">
-                    <div className="flex h-12 w-12 items-center justify-center rounded-xl text-xs font-bold" style={{ background: isRechnung ? "rgba(200,121,61,0.08)" : "rgba(26,28,27,0.06)", color: isRechnung ? "var(--color-primary-strong)" : "var(--app-text)" }}>
-                      {isRechnung ? "RG" : "OF"}
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <div className="truncate text-sm font-semibold" style={{ color: "var(--app-text)" }}>{doc.kundenname || "Unbekannter Kunde"}</div>
-                      <div className="mt-1 text-xs" style={{ color: "var(--app-text-muted)" }}>{doc.nummer} · {new Date(doc.datum).toLocaleDateString("de-CH")}{doc.objekt ? ` · ${doc.objekt}` : ""}</div>
-                      {(doc.source_document_nummer || doc.converted_document_nummer || convertedInvoice) && (
-                        <div className="mt-1 text-xs" style={{ color: "var(--color-primary-strong)" }}>
-                          {doc.source_document_nummer
-                            ? `Weitergeführt aus ${doc.source_document_nummer}`
-                            : `Weitergeführt zu ${doc.converted_document_nummer || convertedInvoice?.nummer}`}
-                        </div>
-                      )}
-                    </div>
-                    <div className="text-right">
-                      <div className="text-sm font-bold" style={{ color: "var(--app-text)" }}>{currency} {doc.betrag.toLocaleString("de-CH", { minimumFractionDigits: 2 })}</div>
-                      <span className="status-badge mt-1" style={{ color: status.color, background: status.bg }}>{status.label}</span>
-                    </div>
-                  </div>
-                );
-              })}
+              {history.map((doc, i) => (
+                <DocRow key={`${doc.id ?? doc.nummer}-${i}`} doc={doc} />
+              ))}
             </div>
           )
         ) : view === "customers" ? (
@@ -197,14 +334,16 @@ export default function DokumentePage() {
               <input
                 className="field mt-4"
                 value={customerQuery}
-                onChange={(event) => setCustomerQuery(event.target.value)}
+                onChange={(e) => setCustomerQuery(e.target.value)}
                 placeholder="Kundenordner suchen"
               />
             </div>
 
             {filteredFolders.length === 0 ? (
               <div className="app-shell-panel px-6 py-14 text-center">
-                <div className="text-lg font-semibold" style={{ color: "var(--app-text)" }}>Kein Kundenordner gefunden</div>
+                <div className="text-lg font-semibold" style={{ color: "var(--app-text)" }}>
+                  Kein Kundenordner gefunden
+                </div>
                 <p className="mt-2 text-sm leading-6" style={{ color: "var(--app-text-muted)" }}>
                   Kundenordner entstehen automatisch, sobald du Dokumente für einen Kunden erstellst.
                 </p>
@@ -212,6 +351,11 @@ export default function DokumentePage() {
             ) : (
               filteredFolders.map((folder) => {
                 const expanded = expandedCustomer === folder.slug;
+                // Compute total revenue for customer
+                const totalRevenue = folder.docs
+                  .filter((d) => d.typ === "rechnung" && d.status === "bezahlt")
+                  .reduce((sum, d) => sum + d.betrag, 0);
+
                 return (
                   <div key={folder.slug} className="app-shell-panel overflow-hidden">
                     <button
@@ -220,40 +364,34 @@ export default function DokumentePage() {
                       onClick={() => setExpandedCustomer(expanded ? null : folder.slug)}
                     >
                       <div>
-                        <div className="text-sm font-semibold" style={{ color: "var(--app-text)" }}>{folder.name}</div>
+                        <div className="text-sm font-semibold" style={{ color: "var(--app-text)" }}>
+                          {folder.name}
+                        </div>
                         <div className="mt-1 text-xs" style={{ color: "var(--app-text-muted)" }}>
-                          {folder.docs.length} Dokumente · zuletzt {new Date(folder.latestDate).toLocaleDateString("de-CH")}
+                          {folder.docs.length} {folder.docs.length === 1 ? "Dokument" : "Dokumente"}
+                          {" · "}zuletzt {new Date(folder.latestDate).toLocaleDateString("de-CH")}
+                          {totalRevenue > 0 && (
+                            <span className="ml-2 font-medium" style={{ color: "var(--color-primary-strong)" }}>
+                              · {currency} {totalRevenue.toLocaleString("de-CH", { minimumFractionDigits: 2 })} bezahlt
+                            </span>
+                          )}
                         </div>
                       </div>
-                      <div className="text-sm font-semibold" style={{ color: "var(--color-primary-strong)" }}>{expanded ? "-" : "+"}</div>
+                      <div className="text-sm font-semibold" style={{ color: "var(--color-primary-strong)" }}>
+                        {expanded ? "−" : "+"}
+                      </div>
                     </button>
 
                     {expanded && (
                       <div className="border-t px-5 pb-5 pt-4" style={{ borderColor: "var(--app-border)" }}>
                         <div className="space-y-3">
-                          {folder.docs.map((doc, idx) => {
-                            const status = STATUS[doc.status] || STATUS.entwurf;
-                            const convertedInvoice = doc.id ? convertedInvoicesBySourceId.get(doc.id) : null;
-                            return (
-                              <div key={`${doc.nummer}-${idx}`} className="flex items-center justify-between rounded-2xl px-4 py-3" style={{ background: "var(--app-card-muted)" }}>
-                                <div>
-                                  <div className="text-sm font-semibold" style={{ color: "var(--app-text)" }}>{doc.nummer}</div>
-                                  <div className="mt-1 text-xs" style={{ color: "var(--app-text-muted)" }}>{new Date(doc.datum).toLocaleDateString("de-CH")} · {doc.typ === "rechnung" ? "Rechnung" : "Offerte"}</div>
-                                  {(doc.source_document_nummer || doc.converted_document_nummer || convertedInvoice) && (
-                                    <div className="mt-1 text-xs" style={{ color: "var(--color-primary-strong)" }}>
-                                      {doc.source_document_nummer
-                                        ? `Weitergeführt aus ${doc.source_document_nummer}`
-                                        : `Weitergeführt zu ${doc.converted_document_nummer || convertedInvoice?.nummer}`}
-                                    </div>
-                                  )}
-                                </div>
-                                <div className="text-right">
-                                  <div className="text-sm font-bold" style={{ color: "var(--app-text)" }}>{currency} {doc.betrag.toLocaleString("de-CH", { minimumFractionDigits: 2 })}</div>
-                                  <span className="status-badge mt-1" style={{ color: status.color, background: status.bg }}>{status.label}</span>
-                                </div>
-                              </div>
-                            );
-                          })}
+                          {folder.docs.map((doc, idx) => (
+                            <DocRow
+                              key={`${doc.id ?? doc.nummer}-${idx}`}
+                              doc={computeDocumentStatus(doc, zahlungsfrist)}
+                              compact
+                            />
+                          ))}
                         </div>
                       </div>
                     )}
@@ -266,7 +404,12 @@ export default function DokumentePage() {
           <div className="space-y-4">
             <div className="app-shell-panel p-6">
               <div className="app-kicker">Buchhaltungs-Export</div>
-              <h2 className="mt-3 text-2xl font-bold tracking-[-0.03em]" style={{ color: "var(--app-text)" }}>Dokumente für Buchhaltung vorbereiten</h2>
+              <h2
+                className="mt-3 text-2xl font-bold tracking-[-0.03em]"
+                style={{ color: "var(--app-text)" }}
+              >
+                Dokumente für Buchhaltung vorbereiten
+              </h2>
               <p className="mt-3 text-sm leading-6" style={{ color: "var(--app-text-muted)" }}>
                 Zeitraum wählen, optional nach Kunde filtern und dann alle passenden Dokumente als CSV exportieren.
               </p>
@@ -274,30 +417,52 @@ export default function DokumentePage() {
               <div className="mt-6 grid gap-4 sm:grid-cols-3">
                 <div>
                   <label className="form-label">Von</label>
-                  <input type="date" className="field" value={exportFrom} onChange={(event) => setExportFrom(event.target.value)} />
+                  <input
+                    type="date"
+                    className="field"
+                    value={exportFrom}
+                    onChange={(e) => setExportFrom(e.target.value)}
+                  />
                 </div>
                 <div>
                   <label className="form-label">Bis</label>
-                  <input type="date" className="field" value={exportTo} onChange={(event) => setExportTo(event.target.value)} />
+                  <input
+                    type="date"
+                    className="field"
+                    value={exportTo}
+                    onChange={(e) => setExportTo(e.target.value)}
+                  />
                 </div>
                 <div>
                   <label className="form-label">Kunde</label>
                   <div className="select-wrap">
-                    <select value={exportCustomer} onChange={(event) => setExportCustomer(event.target.value)}>
+                    <select
+                      value={exportCustomer}
+                      onChange={(e) => setExportCustomer(e.target.value)}
+                    >
                       <option value="">Alle Kunden</option>
                       {customerFolders.map((folder) => (
-                        <option key={folder.slug} value={folder.name}>{folder.name}</option>
+                        <option key={folder.slug} value={folder.name}>
+                          {folder.name}
+                        </option>
                       ))}
                     </select>
                   </div>
                 </div>
               </div>
 
-              <div className="mt-6 rounded-[18px] px-4 py-4 text-sm" style={{ background: "var(--app-card-muted)", color: "var(--app-text-muted)" }}>
+              <div
+                className="mt-6 rounded-[18px] px-4 py-4 text-sm"
+                style={{ background: "var(--app-card-muted)", color: "var(--app-text-muted)" }}
+              >
                 {exportableDocs.length} Dokumente im aktuellen Export.
               </div>
 
-              <button className="btn-premium btn-premium-primary mt-6" onClick={downloadCsv} disabled={exportableDocs.length === 0}>
+              <button
+                className="btn-premium btn-premium-primary mt-6"
+                onClick={downloadCsv}
+                disabled={exportableDocs.length === 0}
+              >
                 CSV exportieren
               </button>
             </div>
@@ -307,6 +472,3 @@ export default function DokumentePage() {
     </div>
   );
 }
-
-
-
