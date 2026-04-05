@@ -36,7 +36,7 @@
   --app-border-strong: rgba(26, 25, 22, 0.13);
   --app-text: #1A1916;
   --app-text-muted: #5A5750;    /* secondary label — consolidated from two similar grays */
-  --app-text-soft: #8C8880;     /* tertiary / placeholder — lower emphasis */
+  --app-text-soft: #706C68;     /* tertiary / placeholder — 4.74:1 on #F5F4F0, WCAG AA */
 
   /* ── Sidebar ─────────────────────────────────────── */
   --sidebar-bg: #F0EFEB;
@@ -60,8 +60,8 @@
   --radius-2xl: 20px;
   --radius-xl: 16px;
   --radius-lg: 12px;
-  --radius-md: 10px;
-  --radius-sm: 7px;
+  --radius-md: 12px;
+  --radius-sm: 8px;
 
   /* ── Typography ──────────────────────────────────── */
   --font-display: var(--font-bricolage), "Bricolage Grotesque", sans-serif;
@@ -543,7 +543,6 @@ button, input, textarea, select { font: inherit; }
     font-weight: 700;
     letter-spacing: 0.03em;
     flex-shrink: 0;
-    font-variant-numeric: tabular-nums;
   }
 
   /* Monetary amount — always tabular, consistent column alignment */
