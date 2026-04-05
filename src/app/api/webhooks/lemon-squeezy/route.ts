@@ -87,12 +87,15 @@ export async function POST(request: NextRequest) {
 
     const supabase = getSupabaseAdmin();
 
-    /** Update a profile row identified by UUID or email. */
+    /** Update a profile row identified by UUID or email. Throws on DB error so
+     *  Lemon Squeezy receives a non-2xx and retries the webhook delivery. */
     async function updateProfile(updates: Record<string, unknown>) {
-      if (isValidUUID(userId)) {
-        await supabase.from("profiles").update(updates).eq("id", userId);
-      } else if (email) {
-        await supabase.from("profiles").update(updates).eq("email", email);
+      const { error } = isValidUUID(userId)
+        ? await supabase.from("profiles").update(updates).eq("id", userId)
+        : await supabase.from("profiles").update(updates).eq("email", email!);
+      if (error) {
+        logger.error("webhook:profile-update", error);
+        throw error;
       }
     }
 
