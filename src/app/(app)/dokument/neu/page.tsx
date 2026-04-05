@@ -34,6 +34,8 @@ export default function DokumentNeuPage() {
   const [customerReuseHint, setCustomerReuseHint] = useState("");
   const [sourceDocumentId, setSourceDocumentId] = useState<string | null>(null);
   const [sourceDocumentNumber, setSourceDocumentNumber] = useState<string | null>(null);
+  // Cloud draft ID: set when we've already saved this draft to Supabase as "entwurf"
+  const [cloudDraftId, setCloudDraftId] = useState<string | null>(null);
 
   const [nummer, setNummer] = useState("");
   const [datum, setDatum] = useState("");
@@ -124,6 +126,7 @@ export default function DokumentNeuPage() {
         if (d.leistungsdatum) setLeistungsdatum(d.leistungsdatum);
         if (d.sourceDocumentId) setSourceDocumentId(d.sourceDocumentId);
         if (d.sourceDocumentNumber) setSourceDocumentNumber(d.sourceDocumentNumber);
+        if (d.cloudDraftId) setCloudDraftId(d.cloudDraftId);
       }
     } catch { /* ignore corrupt draft */ }
 
@@ -694,30 +697,90 @@ export default function DokumentNeuPage() {
     }
   }
 
-  function saveDraft() {
+  async function saveDraft() {
+    const draftPayload = {
+      dokumentTyp,
+      kunde,
+      positionen,
+      nummer,
+      datum,
+      gueltigBis,
+      leistungsdatum,
+      mwstSatz,
+      notiz,
+      objekt,
+      rabatt,
+      preisMode,
+      sourceDocumentId,
+      sourceDocumentNumber,
+      cloudDraftId,
+    };
+
+    // Always persist to localStorage first (instant, offline-safe).
     try {
-      localStorage.setItem(
-        "dokument-draft",
-        JSON.stringify({
-          dokumentTyp,
-          kunde,
-          positionen,
-          nummer,
-          datum,
-          gueltigBis,
-          leistungsdatum,
-          mwstSatz,
-          notiz,
-          objekt,
-          rabatt,
-          preisMode,
-          sourceDocumentId,
-          sourceDocumentNumber,
-        })
-      );
+      localStorage.setItem("dokument-draft", JSON.stringify(draftPayload));
+    } catch { /* ignore quota errors */ }
+
+    // If there's already a cloud draft, just update its status (it's still "entwurf").
+    if (cloudDraftId) {
       showToast("Entwurf gespeichert.");
+      return;
+    }
+
+    // Try to generate a PDF and save to Supabase as "entwurf" for cross-device access.
+    if (!profil) {
+      showToast("Entwurf lokal gespeichert.");
+      return;
+    }
+
+    try {
+      const blob = await generatePdfBlob();
+      const base64 = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onloadend = () => resolve((reader.result as string).split(",")[1]);
+        reader.onerror = () => reject(new Error("read error"));
+        reader.readAsDataURL(blob);
+      });
+
+      const saveRes = await fetch("/api/dokument/save", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          pdfBase64: base64,
+          typ: dokumentTyp,
+          nummer,
+          objekt,
+          kundenname: getCustomerDisplayName(kunde),
+          kunde,
+          betrag: total,
+          datum,
+          status: "entwurf",
+          sourceDocumentId,
+          sourceDocumentNummer: sourceDocumentNumber,
+          sourceDocumentTyp: sourceDocumentId ? "offerte" : null,
+        }),
+      });
+
+      if (saveRes.ok) {
+        const saveData = await saveRes.json();
+        const newCloudDraftId = saveData.document?.id ?? null;
+        if (newCloudDraftId) {
+          setCloudDraftId(newCloudDraftId);
+          // Persist cloudDraftId into localStorage draft so it survives page reload.
+          try {
+            localStorage.setItem(
+              "dokument-draft",
+              JSON.stringify({ ...draftPayload, cloudDraftId: newCloudDraftId }),
+            );
+          } catch { /* ignore */ }
+        }
+        showToast("Entwurf in der Cloud gespeichert.");
+      } else {
+        showToast("Entwurf lokal gespeichert.");
+      }
     } catch {
-      showToast("Fehler beim Speichern des Entwurfs.");
+      // PDF generation or network failure — localStorage save already succeeded.
+      showToast("Entwurf lokal gespeichert.");
     }
   }
 

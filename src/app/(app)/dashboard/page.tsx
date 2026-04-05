@@ -13,13 +13,17 @@ import {
   getCheckoutUrl,
 } from "@/lib/payment";
 import { trackUpgradeClick } from "@/lib/analytics";
+import { computeDocumentStatus, countOpenActions } from "@/lib/dokument-status";
 import type { Profile, DokumentHistorie } from "@/lib/types";
 
 const STATUS: Record<string, { label: string; color: string; bg: string }> = {
-  entwurf: { label: "Entwurf", color: "#6b7280", bg: "rgba(107,114,128,0.06)" },
-  gesendet: { label: "Gesendet", color: "#A8622E", bg: "rgba(200,121,61,0.06)" },
-  bezahlt: { label: "Bezahlt", color: "#1A7F42", bg: "rgba(26,127,66,0.06)" },
-  offen: { label: "Offen", color: "#A8622E", bg: "rgba(200,121,61,0.06)" },
+  entwurf:      { label: "Entwurf",     color: "#6b7280", bg: "rgba(107,114,128,0.06)" },
+  gesendet:     { label: "Gesendet",    color: "#A8622E", bg: "rgba(200,121,61,0.06)"  },
+  bezahlt:      { label: "Bezahlt",     color: "#1A7F42", bg: "rgba(26,127,66,0.06)"   },
+  angenommen:   { label: "Angenommen",  color: "#1A7F42", bg: "rgba(26,127,66,0.06)"   },
+  abgelaufen:   { label: "Abgelaufen",  color: "#92400e", bg: "rgba(146,64,14,0.06)"   },
+  ueberfaellig: { label: "Überfällig",  color: "#b91c1c", bg: "rgba(185,28,28,0.06)"   },
+  offen:        { label: "Offen",       color: "#A8622E", bg: "rgba(200,121,61,0.06)"  },
 };
 
 function Skeleton({ w, h, className = "" }: { w?: string; h?: string; className?: string }) {
@@ -64,17 +68,28 @@ export default function DashboardPage() {
 
     if (profilRes.data) setProfil(profilRes.data as Profile);
 
+    const zahlungsfrist = (profilRes.data as Profile | null)?.zahlungsfrist ?? 30;
+
     if (docsRes.error) {
       try {
         const local = JSON.parse(localStorage.getItem("dokument-history") || "[]");
-        setHistory(local.map((d: any) => ({ ...d, betrag: Number(d.betrag) })));
+        setHistory(
+          local.map((d: Record<string, unknown>) => ({
+            ...d,
+            betrag: Number(d.betrag),
+          })),
+        );
         setHistorySource("local");
       } catch {
         setHistory([]);
         setHistorySource("local");
       }
     } else {
-      setHistory((docsRes.data || []).map((d: any) => ({ ...d, betrag: Number(d.betrag) })));
+      const docs = (docsRes.data || []).map((d: Record<string, unknown>) => ({
+        ...d,
+        betrag: Number(d.betrag),
+      })) as DokumentHistorie[];
+      setHistory(docs.map((doc) => computeDocumentStatus(doc, zahlungsfrist)));
       setHistorySource("cloud");
     }
 
@@ -85,7 +100,7 @@ export default function DashboardPage() {
   const proUser = isPro(profil?.plan);
   const remaining = remainingFreeDocuments(profil?.plan);
   const companyName = profil?.firmenname || profil?.vorname || "Offertio";
-  const reminderCount = history.filter((doc) => ["gesendet", "angenommen", "ueberfaellig"].includes(doc.status)).length;
+  const reminderCount = countOpenActions(history, profil?.zahlungsfrist ?? 30);
   const totalDocs = history.length;
 
   const hour = new Date().getHours();

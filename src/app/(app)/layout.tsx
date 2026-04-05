@@ -9,7 +9,9 @@ import type { TranslationKey } from "@/lib/i18n";
 import { createSupabaseBrowser } from "@/lib/supabase-browser";
 import OfflineBanner from "@/components/OfflineBanner";
 import PwaInstallPrompt from "@/components/PwaInstallPrompt";
+import PlanExpiryBanner from "@/components/PlanExpiryBanner";
 import { I18nProvider, useT } from "@/lib/i18n";
+import type { Profile } from "@/lib/types";
 
 /* ── Icons ────────────────────────────────────────────── */
 const IconOverview = () => (
@@ -101,6 +103,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
 function AppLayoutInner({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
+  const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
   const [collapsed, setCollapsed] = useState(false);
   const [theme, setTheme] = useState<"light" | "dark">("light");
@@ -144,17 +147,19 @@ function AppLayoutInner({ children }: { children: React.ReactNode }) {
 
       setUser(currentUser);
 
-      const { data: profile } = await supabase
+      const { data: profileData } = await supabase
         .from("profiles")
-        .select("id, onboarding_complete")
+        .select("*")
         .eq("id", currentUser.id)
         .maybeSingle();
 
+      if (profileData) setProfile(profileData as Profile);
+
       const onOnboarding = pathname === "/onboarding";
 
-      if (!profile?.onboarding_complete && !onOnboarding) {
+      if (!profileData?.onboarding_complete && !onOnboarding) {
         router.replace("/onboarding");
-      } else if (profile?.onboarding_complete && onOnboarding) {
+      } else if (profileData?.onboarding_complete && onOnboarding) {
         router.replace("/dashboard");
       }
 
@@ -339,9 +344,10 @@ function AppLayoutInner({ children }: { children: React.ReactNode }) {
 
       {/* ── Main Content ───────────────────────────────── */}
       <main
-        className="flex-1 overflow-y-auto pb-20 md:pb-0"
+        className="flex flex-col flex-1 overflow-y-auto pb-20 md:pb-0"
         style={{ background: "var(--app-bg)" }}
       >
+        {profile && <PlanExpiryBanner profile={profile} />}
         {children}
       </main>
 

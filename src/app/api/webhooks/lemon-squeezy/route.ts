@@ -24,7 +24,9 @@ function json(body: unknown, status = 200) {
 
 /**
  * Lemon Squeezy webhook handler.
- * Verifies signature with timing-safe comparison, then updates user plan.
+ * Verifies signature with timing-safe comparison, then updates user plan
+ * and persists subscription metadata (ls_subscription_id, ls_customer_id,
+ * plan_expires_at, plan_cancelled_at).
  */
 export async function POST(request: NextRequest) {
   const secret = process.env.LEMON_SQUEEZY_WEBHOOK_SECRET;
@@ -66,10 +68,13 @@ export async function POST(request: NextRequest) {
 
   try {
     const payload = JSON.parse(rawBody);
-    const eventName = payload.meta?.event_name;
-    const email = typeof payload.data?.attributes?.user_email === "string"
-      ? payload.data.attributes.user_email.trim().toLowerCase()
-      : null;
+    const eventName = payload.meta?.event_name as string | undefined;
+    const attrs = payload.data?.attributes ?? {};
+
+    const email =
+      typeof attrs.user_email === "string"
+        ? attrs.user_email.trim().toLowerCase()
+        : null;
     const userId = payload.meta?.custom_data?.user_id;
 
     if (!HANDLED_EVENTS.has(String(eventName))) {
@@ -80,16 +85,30 @@ export async function POST(request: NextRequest) {
       return json({ ok: true, message: "No identifier in payload" });
     }
 
-    // Use the service-role client so the update succeeds regardless of RLS policies.
     const supabase = getSupabaseAdmin();
 
-    async function updatePlan(plan: string) {
+    /** Update a profile row identified by UUID or email. */
+    async function updateProfile(updates: Record<string, unknown>) {
       if (isValidUUID(userId)) {
-        await supabase.from("profiles").update({ plan }).eq("id", userId);
-      } else if (email && typeof email === "string") {
-        await supabase.from("profiles").update({ plan }).eq("email", email);
+        await supabase.from("profiles").update(updates).eq("id", userId);
+      } else if (email) {
+        await supabase.from("profiles").update(updates).eq("email", email);
       }
     }
+
+    // Extract subscription metadata present in most events.
+    const lsSubscriptionId =
+      typeof payload.data?.id === "string" ? payload.data.id : null;
+    const lsCustomerId =
+      typeof attrs.customer_id === "number"
+        ? String(attrs.customer_id)
+        : typeof attrs.customer_id === "string"
+          ? attrs.customer_id
+          : null;
+
+    // renewsAt / endsAt gives us the current period end.
+    const renewsAt: string | null = attrs.renews_at ?? attrs.ends_at ?? null;
+    const planExpiresAt = renewsAt ? new Date(renewsAt).toISOString() : null;
 
     if (
       eventName === "subscription_created" ||
@@ -98,21 +117,40 @@ export async function POST(request: NextRequest) {
       eventName === "order_created"
     ) {
       const billingInterval =
-        payload.data?.attributes?.first_subscription_item?.interval ||
-        payload.data?.attributes?.variant_name ||
+        attrs.first_subscription_item?.interval ||
+        attrs.variant_name ||
         "";
       const plan = String(billingInterval).toLowerCase().includes("year")
         ? "pro_yearly"
         : "pro_monthly";
 
-      await updatePlan(plan);
+      await updateProfile({
+        plan,
+        ls_subscription_id: lsSubscriptionId,
+        ls_customer_id: lsCustomerId,
+        plan_expires_at: planExpiresAt,
+        plan_cancelled_at: null, // clear any previous cancellation
+      });
     }
 
-    if (
-      eventName === "subscription_cancelled" ||
-      eventName === "subscription_expired"
-    ) {
-      await updatePlan("free");
+    if (eventName === "subscription_cancelled") {
+      // Subscription cancelled but still active until period end.
+      await updateProfile({
+        plan_cancelled_at: new Date().toISOString(),
+        plan_expires_at: planExpiresAt,
+        ls_subscription_id: lsSubscriptionId,
+        ls_customer_id: lsCustomerId,
+        // Keep plan as-is until subscription_expired fires.
+      });
+    }
+
+    if (eventName === "subscription_expired") {
+      // Grace period over – downgrade to free.
+      await updateProfile({
+        plan: "free",
+        plan_expires_at: null,
+        plan_cancelled_at: null,
+      });
     }
 
     return json({ ok: true, event: eventName });
