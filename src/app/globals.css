@@ -23,7 +23,7 @@
   /* ── Text ────────────────────────────────────────── */
   --color-text: #F0EDE8;
   --color-text-muted: #918A80;
-  --color-text-soft: #5C5650;
+  --color-text-soft: #7A7470;   /* secondary label — min 4.5:1 on #09090B */
   --color-ink: #F0EDE8;
   --color-highlight: rgba(200, 121, 61, 0.14);
 
@@ -35,8 +35,8 @@
   --app-border: rgba(26, 25, 22, 0.07);
   --app-border-strong: rgba(26, 25, 22, 0.13);
   --app-text: #1A1916;
-  --app-text-muted: #38352F;
-  --app-text-soft: #5A5750;
+  --app-text-muted: #5A5750;    /* secondary label — consolidated from two similar grays */
+  --app-text-soft: #8C8880;     /* tertiary / placeholder — lower emphasis */
 
   /* ── Sidebar ─────────────────────────────────────── */
   --sidebar-bg: #F0EFEB;
@@ -48,20 +48,20 @@
   --sidebar-item-active: rgba(200, 121, 61, 0.08);
 
   /* ── Shadows ─────────────────────────────────────── */
-  --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.04);
-  --shadow-soft: 0 1px 3px rgba(0, 0, 0, 0.03), 0 8px 32px rgba(0, 0, 0, 0.04);
-  --shadow-card: 0 1px 4px rgba(0, 0, 0, 0.03), 0 12px 40px rgba(0, 0, 0, 0.06);
-  --shadow-float: 0 4px 12px rgba(0, 0, 0, 0.05), 0 24px 64px rgba(0, 0, 0, 0.08);
+  --shadow-xs: 0 1px 2px rgba(26, 20, 10, 0.05);
+  --shadow-soft: 0 1px 3px rgba(26, 20, 10, 0.04), 0 8px 32px rgba(26, 20, 10, 0.05);
+  --shadow-card: 0 1px 4px rgba(26, 20, 10, 0.04), 0 12px 40px rgba(26, 20, 10, 0.08);
+  --shadow-float: 0 4px 12px rgba(26, 20, 10, 0.06), 0 24px 64px rgba(26, 20, 10, 0.10);
   --shadow-brand: 0 4px 16px rgba(168, 98, 46, 0.20), 0 1px 4px rgba(168, 98, 46, 0.12);
   --shadow-inner-card: inset 0 1px 0 rgba(255,255,255,0.50);
 
   /* ── Radii ───────────────────────────────────────── */
   --radius-pill: 9999px;
-  --radius-2xl: 28px;
-  --radius-xl: 20px;
-  --radius-lg: 16px;
-  --radius-md: 12px;
-  --radius-sm: 8px;
+  --radius-2xl: 20px;
+  --radius-xl: 16px;
+  --radius-lg: 12px;
+  --radius-md: 10px;
+  --radius-sm: 7px;
 
   /* ── Typography ──────────────────────────────────── */
   --font-display: var(--font-bricolage), "Bricolage Grotesque", sans-serif;
@@ -87,8 +87,8 @@
   --app-border: rgba(255, 255, 255, 0.07);
   --app-border-strong: rgba(255, 255, 255, 0.13);
   --app-text: #F0EDE8;
-  --app-text-muted: #918A80;
-  --app-text-soft: #6B6860;
+  --app-text-muted: #918A80;    /* secondary label dark */
+  --app-text-soft: #6B6860;     /* tertiary / placeholder dark */
 
   --sidebar-bg: #1A1916;
   --sidebar-border: rgba(255, 255, 255, 0.06);
@@ -98,10 +98,10 @@
   --sidebar-item-hover: rgba(255, 255, 255, 0.04);
   --sidebar-item-active: rgba(200, 121, 61, 0.12);
 
-  --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.20);
-  --shadow-soft: 0 1px 3px rgba(0, 0, 0, 0.15), 0 8px 32px rgba(0, 0, 0, 0.20);
-  --shadow-card: 0 1px 4px rgba(0, 0, 0, 0.15), 0 12px 40px rgba(0, 0, 0, 0.25);
-  --shadow-float: 0 4px 12px rgba(0, 0, 0, 0.20), 0 24px 64px rgba(0, 0, 0, 0.30);
+  --shadow-xs: 0 1px 2px rgba(10, 8, 5, 0.22);
+  --shadow-soft: 0 1px 3px rgba(10, 8, 5, 0.18), 0 8px 32px rgba(10, 8, 5, 0.22);
+  --shadow-card: 0 1px 4px rgba(10, 8, 5, 0.18), 0 12px 40px rgba(10, 8, 5, 0.28);
+  --shadow-float: 0 4px 12px rgba(10, 8, 5, 0.22), 0 24px 64px rgba(10, 8, 5, 0.34);
   --shadow-inner-card: inset 0 1px 0 rgba(255,255,255,0.04);
 }
 
@@ -192,19 +192,19 @@ button, input, textarea, select { font: inherit; }
 
   /* Cards */
   .landing-card {
-    border-radius: 20px;
+    border-radius: 16px;
     border: 1px solid rgba(255, 255, 255, 0.06);
     background: rgba(255, 255, 255, 0.03);
     backdrop-filter: blur(24px);
-    box-shadow: 0 1px 0 rgba(255, 255, 255, 0.04) inset, 0 8px 40px rgba(0, 0, 0, 0.20);
+    box-shadow: 0 1px 0 rgba(255, 255, 255, 0.04) inset, 0 8px 40px rgba(10, 8, 5, 0.22);
   }
 
   .landing-card-strong {
-    border-radius: 24px;
+    border-radius: 20px;
     border: 1px solid rgba(255, 255, 255, 0.08);
     background: rgba(255, 255, 255, 0.05);
     backdrop-filter: blur(32px);
-    box-shadow: 0 1px 0 rgba(255, 255, 255, 0.06) inset, 0 12px 48px rgba(0, 0, 0, 0.24);
+    box-shadow: 0 1px 0 rgba(255, 255, 255, 0.06) inset, 0 12px 48px rgba(10, 8, 5, 0.28);
   }
 
   /* Eyebrow chip */
@@ -352,7 +352,7 @@ button, input, textarea, select { font: inherit; }
   .glass-card {
     background: var(--app-card);
     border: 1px solid var(--app-border);
-    border-radius: 20px;
+    border-radius: 16px;
     box-shadow: var(--shadow-soft);
   }
 
@@ -360,7 +360,7 @@ button, input, textarea, select { font: inherit; }
   .app-stat-card {
     background: var(--app-card);
     border: 1px solid var(--app-border);
-    border-radius: 20px;
+    border-radius: 16px;
     box-shadow: var(--shadow-soft);
     transition: box-shadow 0.2s, transform 0.2s var(--ease-out-expo);
   }
@@ -441,7 +441,7 @@ button, input, textarea, select { font: inherit; }
   .app-shell-panel {
     background: rgba(255, 255, 255, 0.82);
     border: 1px solid var(--app-border);
-    border-radius: 20px;
+    border-radius: 16px;
     box-shadow: var(--shadow-soft);
     backdrop-filter: blur(20px);
     transition: box-shadow 0.2s, border-color 0.2s;
@@ -472,7 +472,7 @@ button, input, textarea, select { font: inherit; }
     flex-direction: column;
     justify-content: center;
     min-height: 120px;
-    border-radius: 18px;
+    border-radius: 14px;
     border: 1px solid var(--app-border);
     background: var(--app-card);
     box-shadow: var(--shadow-soft);
@@ -543,19 +543,36 @@ button, input, textarea, select { font: inherit; }
     font-weight: 700;
     letter-spacing: 0.03em;
     flex-shrink: 0;
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* Monetary amount — always tabular, consistent column alignment */
+  .amount {
+    font-variant-numeric: tabular-nums;
+    font-feature-settings: "tnum";
+    letter-spacing: -0.01em;
   }
 
   /* Loading skeleton */
   .skeleton {
     background: linear-gradient(
       90deg,
-      rgba(0,0,0,0.04) 25%,
-      rgba(0,0,0,0.07) 50%,
-      rgba(0,0,0,0.04) 75%
+      rgba(26, 20, 10, 0.04) 25%,
+      rgba(26, 20, 10, 0.08) 50%,
+      rgba(26, 20, 10, 0.04) 75%
     );
     background-size: 200% 100%;
     animation: shimmer 1.5s ease-in-out infinite;
     border-radius: 8px;
+  }
+  [data-theme="dark"] .skeleton {
+    background: linear-gradient(
+      90deg,
+      rgba(255, 248, 235, 0.04) 25%,
+      rgba(255, 248, 235, 0.08) 50%,
+      rgba(255, 248, 235, 0.04) 75%
+    );
+    background-size: 200% 100%;
   }
 
   /* Dashboard animate-flow */
@@ -627,7 +644,7 @@ button, input, textarea, select { font: inherit; }
 
   .form-section {
     border: 1px solid var(--app-border);
-    border-radius: 20px;
+    border-radius: 16px;
     background: rgba(255,255,255,0.92);
     box-shadow: var(--shadow-soft);
     padding: 20px;
