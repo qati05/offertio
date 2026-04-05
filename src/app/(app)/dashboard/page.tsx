@@ -16,10 +16,10 @@ import { trackUpgradeClick } from "@/lib/analytics";
 import type { Profile, DokumentHistorie } from "@/lib/types";
 
 const STATUS: Record<string, { label: string; color: string; bg: string }> = {
-  entwurf: { label: "Entwurf", color: "#6b7280", bg: "rgba(107,114,128,0.06)" },
-  gesendet: { label: "Gesendet", color: "#A8622E", bg: "rgba(200,121,61,0.06)" },
-  bezahlt: { label: "Bezahlt", color: "#1A7F42", bg: "rgba(26,127,66,0.06)" },
-  offen: { label: "Offen", color: "#A8622E", bg: "rgba(200,121,61,0.06)" },
+  entwurf: { label: "Entwurf", color: "var(--status-draft-color)", bg: "var(--status-draft-bg)" },
+  gesendet: { label: "Gesendet", color: "var(--status-sent-color)", bg: "var(--status-sent-bg)" },
+  bezahlt: { label: "Bezahlt", color: "var(--status-paid-color)", bg: "var(--status-paid-bg)" },
+  offen: { label: "Offen", color: "var(--status-sent-color)", bg: "var(--status-sent-bg)" },
 };
 
 function Skeleton({ w, h, className = "" }: { w?: string; h?: string; className?: string }) {
@@ -159,7 +159,7 @@ export default function DashboardPage() {
                 {historySource === "local" ? (
                   <span className="text-[10px] font-medium uppercase tracking-wider" style={{ color: "var(--app-text-soft)" }}>Lokal</span>
                 ) : history.length > 0 ? (
-                  <Link href="/dokumente" className="text-sm font-medium" style={{ color: "var(--color-primary)" }}>
+                  <Link href="/dokumente" className="text-sm font-medium" style={{ color: "var(--color-primary-strong)" }}>
                     Alle ansehen
                   </Link>
                 ) : null}
@@ -201,8 +201,8 @@ export default function DashboardPage() {
                         <div
                           className="doc-type-badge"
                           style={{
-                            background: isRechnung ? "rgba(200,121,61,0.06)" : "rgba(26,25,22,0.04)",
-                            color: isRechnung ? "var(--color-primary)" : "var(--app-text-muted)",
+                            background: isRechnung ? "var(--status-sent-bg)" : "var(--app-card-muted)",
+                            color: isRechnung ? "var(--color-primary-strong)" : "var(--app-text-muted)",
                           }}
                         >
                           {isRechnung ? "RG" : "OF"}

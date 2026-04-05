@@ -38,6 +38,16 @@
   --app-text-muted: #38352F;
   --app-text-soft: #5A5750;
 
+  /* ── Status Badge Colors ─────────────────────────── */
+  --status-draft-color: #6b7280;
+  --status-draft-bg: rgba(107, 114, 128, 0.08);
+  --status-sent-color: #A8622E;
+  --status-sent-bg: rgba(200, 121, 61, 0.08);
+  --status-paid-color: #15803d;
+  --status-paid-bg: rgba(21, 128, 61, 0.08);
+  --status-overdue-color: #92400e;
+  --status-overdue-bg: rgba(146, 64, 14, 0.08);
+
   /* ── Sidebar ─────────────────────────────────────── */
   --sidebar-bg: #F0EFEB;
   --sidebar-border: rgba(26, 25, 22, 0.06);
@@ -88,7 +98,13 @@
   --app-border-strong: rgba(255, 255, 255, 0.13);
   --app-text: #F0EDE8;
   --app-text-muted: #918A80;
-  --app-text-soft: #6B6860;
+  --app-text-soft: #8A8480;
+
+  /* ── Status Badge Colors (dark) ──────────────────── */
+  --status-draft-color: #9CA3AF;
+  --status-sent-color: #D4874A;
+  --status-paid-color: #34D374;
+  --status-overdue-color: #FBBF24;
 
   --sidebar-bg: #1A1916;
   --sidebar-border: rgba(255, 255, 255, 0.06);
@@ -329,6 +345,16 @@ button, input, textarea, select { font: inherit; }
     box-shadow: 0 0 0 3px rgba(200, 121, 61, 0.08);
   }
 
+  /* Override .field for app (light) context — landing .field uses dark-bg colors */
+  .app-body .field {
+    background: var(--app-card);
+    color: var(--app-text);
+    border-color: var(--app-border);
+  }
+  .app-body .field::placeholder {
+    color: var(--app-text-soft);
+  }
+
   /* Scroll progress bar */
   .scroll-progress-bar {
     width: calc(var(--scroll-progress) * 100%);
@@ -394,7 +420,7 @@ button, input, textarea, select { font: inherit; }
     box-shadow: 0 6px 24px rgba(168,98,46,0.30);
   }
   .btn-premium-secondary {
-    background: white;
+    background: var(--app-card);
     color: var(--app-text);
     border: 1px solid var(--app-border-strong);
     box-shadow: var(--shadow-xs);
@@ -409,7 +435,7 @@ button, input, textarea, select { font: inherit; }
     border: 1px solid var(--app-border);
   }
   .btn-premium-ghost:hover {
-    background: white;
+    background: var(--app-card-strong);
     color: var(--app-text);
   }
 
@@ -507,6 +533,44 @@ button, input, textarea, select { font: inherit; }
   }
   [data-theme="dark"] .app-shell-panel {
     background: rgba(30,29,26,0.82);
+  }
+  [data-theme="dark"] .skeleton {
+    background: linear-gradient(
+      90deg,
+      rgba(255,255,255,0.04) 25%,
+      rgba(255,255,255,0.08) 50%,
+      rgba(255,255,255,0.04) 75%
+    );
+    background-size: 200% 100%;
+  }
+  [data-theme="dark"] .nav-back {
+    background: rgba(30,29,26,0.80);
+  }
+  [data-theme="dark"] .top-nav {
+    background: rgba(20,19,16,0.90);
+  }
+  [data-theme="dark"] .form-section {
+    background: rgba(30,29,26,0.92);
+  }
+  [data-theme="dark"] .chip {
+    background: rgba(30,29,26,0.86);
+  }
+  [data-theme="dark"] .pos-input {
+    background: var(--app-card);
+  }
+  [data-theme="dark"] .pos-del,
+  [data-theme="dark"] .add-pos-btn {
+    background: rgba(30,29,26,0.82);
+  }
+  [data-theme="dark"] .total-box {
+    background: linear-gradient(180deg, var(--app-card) 0%, rgba(30,29,26,0.40) 100%);
+  }
+  [data-theme="dark"] .pdf-preview,
+  [data-theme="dark"] .app-preview-card {
+    background: rgba(30,29,26,0.94);
+  }
+  [data-theme="dark"] .step-dot {
+    background: rgba(255,255,255,0.10);
   }
 
   /* Status badge */

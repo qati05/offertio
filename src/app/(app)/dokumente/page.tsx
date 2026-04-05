@@ -11,12 +11,12 @@ import { groupDocumentsByCustomer } from "@/lib/customer-folders";
 import type { DokumentHistorie, Profile } from "@/lib/types";
 
 const STATUS: Record<string, { label: string; color: string; bg: string }> = {
-  entwurf: { label: "Entwurf", color: "#6b7280", bg: "rgba(107,114,128,0.08)" },
-  gesendet: { label: "Gesendet", color: "#A8622E", bg: "rgba(200,121,61,0.08)" },
-  bezahlt: { label: "Bezahlt", color: "#15803d", bg: "rgba(21,128,61,0.08)" },
-  angenommen: { label: "Angenommen", color: "#15803d", bg: "rgba(21,128,61,0.08)" },
-  abgelaufen: { label: "Abgelaufen", color: "#92400e", bg: "rgba(146,64,14,0.08)" },
-  ueberfaellig: { label: "Überfällig", color: "#92400e", bg: "rgba(146,64,14,0.08)" },
+  entwurf: { label: "Entwurf", color: "var(--status-draft-color)", bg: "var(--status-draft-bg)" },
+  gesendet: { label: "Gesendet", color: "var(--status-sent-color)", bg: "var(--status-sent-bg)" },
+  bezahlt: { label: "Bezahlt", color: "var(--status-paid-color)", bg: "var(--status-paid-bg)" },
+  angenommen: { label: "Angenommen", color: "var(--status-paid-color)", bg: "var(--status-paid-bg)" },
+  abgelaufen: { label: "Abgelaufen", color: "var(--status-overdue-color)", bg: "var(--status-overdue-bg)" },
+  ueberfaellig: { label: "Überfällig", color: "var(--status-overdue-color)", bg: "var(--status-overdue-bg)" },
 };
 
 type ViewMode = "history" | "customers" | "export";
@@ -120,7 +120,7 @@ export default function DokumentePage() {
           </Link>
         </header>
 
-        <div className="mb-6 grid grid-cols-3 gap-2 rounded-[20px] border p-1.5" style={{ borderColor: "var(--color-border)", background: "rgba(255,255,255,0.64)" }}>
+        <div className="mb-6 grid grid-cols-3 gap-2 rounded-[20px] border p-1.5" style={{ borderColor: "var(--app-border)", background: "var(--app-card-muted)" }}>
           {[
             { key: "history", label: "Dokumente" },
             { key: "customers", label: "Kundenordner" },
@@ -134,8 +134,8 @@ export default function DokumentePage() {
                 onClick={() => setView(tab.key as ViewMode)}
                 className="rounded-[14px] px-3 py-3 text-sm font-semibold transition"
                 style={{
-                  background: active ? "white" : "transparent",
-                  color: active ? "var(--color-text)" : "var(--color-text-muted)",
+                  background: active ? "var(--app-card)" : "transparent",
+                  color: active ? "var(--app-text)" : "var(--app-text-muted)",
                   boxShadow: active ? "var(--shadow-xs)" : "none",
                 }}
               >
@@ -167,7 +167,7 @@ export default function DokumentePage() {
                 const convertedInvoice = doc.id ? convertedInvoicesBySourceId.get(doc.id) : null;
                 return (
                   <div key={`${doc.nummer}-${i}`} className="app-shell-panel flex items-center gap-4 p-5">
-                    <div className="flex h-12 w-12 items-center justify-center rounded-xl text-xs font-bold" style={{ background: isRechnung ? "rgba(200,121,61,0.08)" : "rgba(26,28,27,0.06)", color: isRechnung ? "var(--color-primary-strong)" : "var(--app-text)" }}>
+                    <div className="flex h-12 w-12 items-center justify-center rounded-xl text-xs font-bold" style={{ background: isRechnung ? "var(--status-sent-bg)" : "var(--app-card-muted)", color: isRechnung ? "var(--color-primary-strong)" : "var(--app-text-muted)" }}>
                       {isRechnung ? "RG" : "OF"}
                     </div>
                     <div className="min-w-0 flex-1">
