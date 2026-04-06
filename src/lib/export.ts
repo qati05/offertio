@@ -1,8 +1,10 @@
 import type { DokumentHistorie } from "@/lib/types";
 
-function escapeCsv(value: string | number) {
+function escapeCsv(value: string | number | undefined) {
   const stringValue = String(value ?? "");
-  if (/[",\n]/.test(stringValue)) {
+  // Quote values that require it: contain commas/quotes/newlines,
+  // OR start with formula-injection characters (=, +, -, @) per OWASP CSV injection guidance.
+  if (/[",\n]/.test(stringValue) || /^[=+\-@]/.test(stringValue)) {
     return `"${stringValue.replace(/"/g, '""')}"`;
   }
   return stringValue;

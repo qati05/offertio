@@ -2,9 +2,10 @@
 
 export const dynamic = "force-dynamic";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
+import { motion } from "framer-motion";
 import OffertioLogo from "@/components/OffertioLogo";
 
 interface SuccessInfo {
@@ -19,9 +20,58 @@ interface SuccessInfo {
   carryoverDraft?: Record<string, unknown> | null;
 }
 
+const CONFETTI_COLORS = ["#C8793D", "#F5A623", "#22C55E", "#3B82F6", "#A855F7", "#EC4899", "#F59E0B"];
+
+function ConfettiBurst() {
+  const particles = useMemo(
+    () =>
+      Array.from({ length: 28 }, (_, i) => ({
+        id: i,
+        color: CONFETTI_COLORS[i % CONFETTI_COLORS.length],
+        x: (Math.random() - 0.5) * 220,
+        y: -(Math.random() * 140 + 60),
+        rotate: Math.random() * 540 - 270,
+        scale: 0.4 + Math.random() * 0.9,
+        delay: Math.random() * 0.35,
+        isCircle: i % 3 === 0,
+      })),
+    [],
+  );
+
+  return (
+    <div
+      style={{
+        position: "absolute",
+        top: "50%",
+        left: "50%",
+        pointerEvents: "none",
+        zIndex: 10,
+      }}
+    >
+      {particles.map((p) => (
+        <motion.div
+          key={p.id}
+          initial={{ x: 0, y: 0, scale: 0, rotate: 0, opacity: 1 }}
+          animate={{ x: p.x, y: p.y, scale: p.scale, rotate: p.rotate, opacity: 0 }}
+          transition={{ duration: 1.1 + Math.random() * 0.4, delay: p.delay, ease: "easeOut" }}
+          style={{
+            position: "absolute",
+            width: 7,
+            height: 7,
+            borderRadius: p.isCircle ? "50%" : 2,
+            background: p.color,
+            transform: "translate(-50%, -50%)",
+          }}
+        />
+      ))}
+    </div>
+  );
+}
+
 export default function DokumentSuccessPage() {
   const searchParams = useSearchParams();
   const [info, setInfo] = useState<SuccessInfo | null>(null);
+  const [showConfetti, setShowConfetti] = useState(false);
 
   useEffect(() => {
     try {
@@ -49,8 +99,12 @@ export default function DokumentSuccessPage() {
         }
       }
     } catch {
-      // Ignore corrupted session state and fall back to query params.
+      // Fall back to query params on corrupted session state.
     }
+
+    // Trigger confetti burst after mount
+    const t = setTimeout(() => setShowConfetti(true), 80);
+    return () => clearTimeout(t);
   }, [searchParams]);
 
   const typ = info?.typ || "offerte";
@@ -67,111 +121,142 @@ export default function DokumentSuccessPage() {
     share: "Teilen",
   };
 
-  let headline = `${nummer} wurde gesendet`;
-  if (delivery === "share") headline = `${nummer} ist bereit zum Teilen`;
-  if (delivery === "download") headline = `${nummer} wurde gespeichert`;
+  let headline = `${nummer} ist unterwegs.`;
+  if (delivery === "share") headline = `${nummer} ist bereit zum Teilen.`;
+  if (delivery === "download") headline = `${nummer} gesichert.`;
 
-  let message = "Dein Dokument ist fertig.";
+  let message = "Du hast gerade etwas Professionelles erschaffen.";
   if (delivery === "share") {
-    message = "Du kannst dein Dokument jetzt direkt über dein Gerät weitergeben oder zusätzlich als PDF sichern.";
+    message = "Du kannst dein Dokument jetzt direkt über dein Gerät weitergeben oder als PDF sichern.";
   } else if (email) {
-    message = `Eine Kopie wurde an ${email} gesendet.${downloaded ? " Das PDF wurde zusätzlich gespeichert." : ""}`;
+    message = `Eine Kopie wurde an ${email} gesendet.${downloaded ? " Das PDF liegt zusätzlich auf deinem Gerät." : ""}`;
   } else if (downloaded) {
-    message = "Das PDF wurde auf deinem Gerät gespeichert.";
+    message = "Das PDF liegt auf deinem Gerät — sauber und bereit.";
   }
+
+  const ease = [0.16, 1, 0.3, 1] as const;
 
   return (
     <div className="mx-auto max-w-3xl px-5 py-10 sm:px-8">
       <div className="mx-auto max-w-xl animate-flow">
         <div className="success-card">
-          <div className="flex justify-center">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.85 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.5, ease }}
+            className="flex justify-center"
+          >
             <div className="relative">
-              <OffertioLogo variant="icon" size={56} href={undefined} />
-              <div className="success-check-badge">
+              {showConfetti && <ConfettiBurst />}
+              <motion.div
+                animate={{ boxShadow: ["0 0 0 0 rgba(200,121,61,0)", "0 0 0 18px rgba(200,121,61,0.14)", "0 0 0 32px rgba(200,121,61,0.06)", "0 0 0 0 rgba(200,121,61,0)"] }}
+                transition={{ duration: 1.8, delay: 0.2, ease: "easeOut" }}
+                style={{ borderRadius: "50%" }}
+              >
+                <OffertioLogo variant="icon" size={56} href={undefined} />
+              </motion.div>
+              <motion.div
+                className="success-check-badge"
+                initial={{ scale: 0, rotate: -45, opacity: 0 }}
+                animate={{ scale: 1, rotate: 0, opacity: 1 }}
+                transition={{ duration: 0.5, delay: 0.3, ease: [0.34, 1.56, 0.64, 1] }}
+              >
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
                   <polyline points="20 6 9 17 4 12" />
                 </svg>
-              </div>
+              </motion.div>
             </div>
-          </div>
+          </motion.div>
 
-          <h1 className="success-title">{headline}</h1>
-          <p className="success-desc">{message}</p>
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.45, delay: 0.18, ease }}
+          >
+            <h1 className="success-title">{headline}</h1>
+            <p className="success-desc">{message}</p>
+          </motion.div>
 
-          <div className="success-summary">
-            <div className="text-[11px] font-semibold uppercase tracking-[0.14em]" style={{ color: "var(--app-text-soft)" }}>
-              Abschluss
-            </div>
-            <div className="mt-3 grid gap-3 sm:grid-cols-2">
-              <div>
-                <div className="text-xs" style={{ color: "var(--app-text-soft)" }}>Dokument</div>
-                <div className="mt-1 text-sm font-semibold" style={{ color: "var(--app-text)" }}>{nummer}</div>
+          <motion.div
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4, delay: 0.28, ease }}
+          >
+            <div className="success-summary">
+              <div className="text-[11px] font-semibold uppercase tracking-[0.14em]" style={{ color: "var(--app-text-soft)" }}>
+                Abschluss
               </div>
-              <div>
-                <div className="text-xs" style={{ color: "var(--app-text-soft)" }}>Versandart</div>
-                <div className="mt-1 text-sm font-semibold" style={{ color: "var(--app-text)" }}>
-                  {deliveryLabels[delivery]}
-                </div>
-              </div>
-              {amount ? (
+              <div className="mt-3 grid gap-3 sm:grid-cols-2">
                 <div>
-                  <div className="text-xs" style={{ color: "var(--app-text-soft)" }}>Betrag</div>
-                  <div className="mt-1 text-sm font-semibold" style={{ color: "var(--app-text)" }}>{amount}</div>
+                  <div className="text-xs" style={{ color: "var(--app-text-soft)" }}>Dokument</div>
+                  <div className="mt-1 text-sm font-semibold" style={{ color: "var(--app-text)" }}>{nummer}</div>
                 </div>
-              ) : null}
-              {email ? (
                 <div>
-                  <div className="text-xs" style={{ color: "var(--app-text-soft)" }}>Empfänger</div>
-                  <div className="mt-1 text-sm font-semibold" style={{ color: "var(--app-text)" }}>{email}</div>
+                  <div className="text-xs" style={{ color: "var(--app-text-soft)" }}>Versandart</div>
+                  <div className="mt-1 text-sm font-semibold" style={{ color: "var(--app-text)" }}>
+                    {deliveryLabels[delivery]}
+                  </div>
                 </div>
-              ) : null}
-            </div>
-          </div>
-
-          {!cloudSaved && (
-            <div className="auth-alert auth-alert-error mt-6 text-left">
-              Dein Dokument wurde erstellt, konnte aber noch nicht sauber im Konto gespeichert werden. Bitte bewahre das PDF auf und wiederhole den Speichervorgang später.
-            </div>
-          )}
-
-          {typ === "offerte" && (
-            <a
-              href="/dokument/neu?typ=rechnung"
-              onClick={() => {
-                if (carryoverDraft) {
-                  localStorage.setItem("dokument-draft", JSON.stringify(carryoverDraft));
-                }
-              }}
-              className="success-convert-card"
-            >
-              <div className="text-sm font-semibold" style={{ color: "var(--app-text)" }}>
-                {carryoverDraft ? "Als Rechnung weiterführen" : "Neue Rechnung erstellen"}
+                {amount ? (
+                  <div>
+                    <div className="text-xs" style={{ color: "var(--app-text-soft)" }}>Betrag</div>
+                    <div className="mt-1 text-sm font-semibold" style={{ color: "var(--app-text)" }}>{amount}</div>
+                  </div>
+                ) : null}
+                {email ? (
+                  <div>
+                    <div className="text-xs" style={{ color: "var(--app-text-soft)" }}>Empfänger</div>
+                    <div className="mt-1 text-sm font-semibold" style={{ color: "var(--app-text)" }}>{email}</div>
+                  </div>
+                ) : null}
               </div>
-              <div className="mt-1 text-xs leading-6" style={{ color: "var(--app-text-muted)" }}>
-                {carryoverDraft
-                  ? "Kundendaten und Positionen übernehmen und direkt den nächsten Schritt vorbereiten."
-                  : "Direkt von hier aus zur nächsten Rechnung wechseln."}
-              </div>
-            </a>
-          )}
+            </div>
 
-          <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:justify-center">
-            <a
-              href="/dokument/neu"
-              className="auth-submit"
-              style={{ textDecoration: "none", display: "flex", alignItems: "center", justifyContent: "center" }}
-              onClick={() => localStorage.removeItem("dokument-draft")}
-            >
-              {typ === "offerte" ? "Neue Offerte" : "Neue Rechnung"}
-            </a>
-            <Link
-              href="/dashboard"
-              className="onboarding-btn-back"
-              style={{ textDecoration: "none", textAlign: "center" }}
-            >
-              Zum Dashboard
-            </Link>
-          </div>
+            {!cloudSaved && (
+              <div className="auth-alert auth-alert-error mt-6 text-left">
+                Da ist etwas schiefgegangen. Dein Dokument wurde erstellt — bitte bewahre das PDF auf. Wir versuchen es beim nächsten Mal automatisch erneut.
+              </div>
+            )}
+
+            {typ === "offerte" && (
+              <a
+                href="/dokument/neu?typ=rechnung"
+                onClick={() => {
+                  if (carryoverDraft) {
+                    localStorage.setItem("dokument-draft", JSON.stringify(carryoverDraft));
+                  }
+                }}
+                className="success-convert-card"
+              >
+                <div className="text-sm font-semibold" style={{ color: "var(--app-text)" }}>
+                  {carryoverDraft ? "Als Rechnung weiterführen" : "Neue Rechnung erstellen"}
+                </div>
+                <div className="mt-1 text-xs leading-6" style={{ color: "var(--app-text-muted)" }}>
+                  {carryoverDraft
+                    ? "Kundendaten und Positionen direkt übernehmen."
+                    : "Direkt von hier aus zur nächsten Rechnung."}
+                </div>
+              </a>
+            )}
+
+            <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:justify-center">
+              <a
+                href="/dokument/neu"
+                className="auth-submit"
+                style={{ textDecoration: "none", display: "flex", alignItems: "center", justifyContent: "center" }}
+                onClick={() => localStorage.removeItem("dokument-draft")}
+              >
+                {typ === "offerte" ? "Neue Offerte" : "Neue Rechnung"}
+              </a>
+              <Link
+                href="/dashboard"
+                className="onboarding-btn-back"
+                style={{ textDecoration: "none", textAlign: "center" }}
+              >
+                Zum Dashboard
+              </Link>
+            </div>
+          </motion.div>
         </div>
       </div>
     </div>

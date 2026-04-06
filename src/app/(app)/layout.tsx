@@ -12,65 +12,70 @@ import PwaInstallPrompt from "@/components/PwaInstallPrompt";
 import PlanExpiryBanner from "@/components/PlanExpiryBanner";
 import { I18nProvider, useT } from "@/lib/i18n";
 import type { Profile } from "@/lib/types";
+import { OffertioIcon } from "@/components/OffertioLogo";
 
-/* ── Icons ────────────────────────────────────────────── */
+/* ── Haptic feedback ─────────────────────────────────────────── */
+function haptic(ms = 8) {
+  if (typeof navigator !== "undefined" && "vibrate" in navigator) {
+    navigator.vibrate(ms);
+  }
+}
+
+/* ── Icons — all 16×16, strokeWidth 1.5, optically balanced ── */
 const IconOverview = () => (
-  <svg width="17" height="17" viewBox="0 0 17 17" fill="none" aria-hidden="true">
-    <rect x="1.5" y="1.5" width="6" height="6" rx="1.5" stroke="currentColor" strokeWidth="1.5"/>
-    <rect x="9.5" y="1.5" width="6" height="6" rx="1.5" stroke="currentColor" strokeWidth="1.5"/>
-    <rect x="1.5" y="9.5" width="6" height="6" rx="1.5" stroke="currentColor" strokeWidth="1.5"/>
-    <rect x="9.5" y="9.5" width="6" height="6" rx="1.5" stroke="currentColor" strokeWidth="1.5"/>
+  <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+    <rect x="1.75" y="1.75" width="5.25" height="5.25" rx="1.25" stroke="currentColor" strokeWidth="1.5"/>
+    <rect x="9" y="1.75" width="5.25" height="5.25" rx="1.25" stroke="currentColor" strokeWidth="1.5"/>
+    <rect x="1.75" y="9" width="5.25" height="5.25" rx="1.25" stroke="currentColor" strokeWidth="1.5"/>
+    <rect x="9" y="9" width="5.25" height="5.25" rx="1.25" stroke="currentColor" strokeWidth="1.5"/>
   </svg>
 );
 
 const IconCreate = () => (
-  <svg width="17" height="17" viewBox="0 0 17 17" fill="none" aria-hidden="true">
-    <rect x="2" y="2" width="13" height="13" rx="2.5" stroke="currentColor" strokeWidth="1.5"/>
-    <path d="M8.5 5.5v6M5.5 8.5h6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+  <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+    <rect x="2" y="2" width="12" height="12" rx="2.5" stroke="currentColor" strokeWidth="1.5"/>
+    <path d="M8 5.5v5M5.5 8h5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
   </svg>
 );
 
 const IconTemplates = () => (
-  <svg width="17" height="17" viewBox="0 0 17 17" fill="none" aria-hidden="true">
-    <rect x="2" y="2" width="10" height="13" rx="2" stroke="currentColor" strokeWidth="1.5"/>
-    <path d="M5 6h4M5 9h2" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
-    <rect x="8" y="5.5" width="7" height="9" rx="1.5" stroke="currentColor" strokeWidth="1.3" fill="none"/>
+  <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+    <path d="M3 2h6.5l3.5 3.5V14a1 1 0 01-1 1H3a1 1 0 01-1-1V3a1 1 0 011-1z" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round"/>
+    <path d="M9.5 2v4h3.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+    <path d="M5 8.5h6M5 11h4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
   </svg>
 );
 
 const IconDocuments = () => (
-  <svg width="17" height="17" viewBox="0 0 17 17" fill="none" aria-hidden="true">
-    <rect x="2" y="2" width="13" height="13" rx="2.5" stroke="currentColor" strokeWidth="1.5"/>
-    <path d="M5.5 6h6M5.5 8.5h6M5.5 11h4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
+  <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+    <rect x="2" y="2" width="12" height="12" rx="2.5" stroke="currentColor" strokeWidth="1.5"/>
+    <path d="M5 6.5h6M5 9h6M5 11.5h4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
   </svg>
 );
 
 const IconSettings = () => (
-  <svg width="17" height="17" viewBox="0 0 17 17" fill="none" aria-hidden="true">
-    <circle cx="8.5" cy="8.5" r="2.5" stroke="currentColor" strokeWidth="1.5"/>
-    <path
-      d="M8.5 1.5V3M8.5 14v1.5M1.5 8.5H3M14 8.5h1.5M3.55 3.55l1.06 1.06M12.39 12.39l1.06 1.06M3.55 13.45l1.06-1.06M12.39 4.61l1.06-1.06"
-      stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"
-    />
+  <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+    <circle cx="8" cy="8" r="2.5" stroke="currentColor" strokeWidth="1.5"/>
+    <path d="M8 1.5V3M8 13v1.5M1.5 8H3M13 8h1.5M3.2 3.2l1.06 1.06M11.74 11.74l1.06 1.06M3.2 12.8l1.06-1.06M11.74 4.26l1.06-1.06" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
   </svg>
 );
 
 const IconCollapse = () => (
   <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
-    <path d="M10 3L5 8l5 5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+    <path d="M9.5 3.5L5 8l4.5 4.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
   </svg>
 );
 
 const IconSun = () => (
-  <svg width="15" height="15" viewBox="0 0 15 15" fill="none" aria-hidden="true">
-    <circle cx="7.5" cy="7.5" r="2.5" stroke="currentColor" strokeWidth="1.3"/>
-    <path d="M7.5 2v1.5M7.5 11.5V13M2 7.5h1.5M11.5 7.5H13M3.7 3.7l1.05 1.05M10.25 10.25l1.05 1.05M3.7 11.3l1.05-1.05M10.25 4.75l1.05-1.05" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round"/>
+  <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+    <circle cx="8" cy="8" r="2.75" stroke="currentColor" strokeWidth="1.5"/>
+    <path d="M8 2v1.75M8 12.25V14M2 8h1.75M12.25 8H14M3.64 3.64l1.24 1.24M11.12 11.12l1.24 1.24M3.64 12.36l1.24-1.24M11.12 4.88l1.24-1.24" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
   </svg>
 );
 
 const IconMoon = () => (
-  <svg width="15" height="15" viewBox="0 0 15 15" fill="none" aria-hidden="true">
-    <path d="M12.5 8.5a5.5 5.5 0 01-7-7 5.5 5.5 0 107 7z" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"/>
+  <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+    <path d="M13.5 10.5a6 6 0 01-8-8 6 6 0 108 8z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
   </svg>
 );
 
@@ -110,6 +115,9 @@ function AppLayoutInner({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
   const { t } = useT();
+
+  // Focus Mode: hide sidebar + bottom nav during document creation for a distraction-free flow
+  const isFocusMode = pathname === "/dokument/neu" || pathname?.startsWith("/dokument/neu?");
 
   useEffect(() => {
     const stored = getStoredTheme();
@@ -187,15 +195,8 @@ function AppLayoutInner({ children }: { children: React.ReactNode }) {
           transition={{ duration: 0.4 }}
           className="flex flex-col items-center gap-4"
         >
-          <div
-            className="w-10 h-10 rounded-xl flex items-center justify-center text-white font-bold text-base"
-            style={{
-              background: "var(--color-primary)",
-              boxShadow: "var(--shadow-brand)",
-              animation: "pulse-brand 2s ease-in-out infinite",
-            }}
-          >
-            O
+          <div style={{ animation: "pulse-brand 2s ease-in-out infinite" }}>
+            <OffertioIcon size={40} />
           </div>
           <div className="text-sm font-medium" style={{ color: "var(--app-text-muted)" }}>
             {t("nav.loading")}
@@ -213,9 +214,14 @@ function AppLayoutInner({ children }: { children: React.ReactNode }) {
       <OfflineBanner />
       <PwaInstallPrompt />
 
-      {/* ── Desktop Sidebar ────────────────────────────── */}
+      {/* ── Desktop Sidebar (hidden in Focus Mode) ─────── */}
+      <AnimatePresence initial={false}>
+      {!isFocusMode && (
       <motion.aside
-        animate={{ width: sidebarWidth }}
+        key="sidebar"
+        initial={{ width: 0, opacity: 0 }}
+        animate={{ width: sidebarWidth, opacity: 1 }}
+        exit={{ width: 0, opacity: 0 }}
         transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
         className="hidden md:flex flex-col shrink-0 z-20 overflow-hidden"
         style={{
@@ -227,13 +233,10 @@ function AppLayoutInner({ children }: { children: React.ReactNode }) {
         <div className="px-3 pt-4 pb-1 flex items-center justify-between">
           <Link
             href="/dashboard"
-            className="flex items-center gap-2 min-w-0"
+            className="flex items-center gap-2.5 min-w-0"
           >
-            <div
-              className="flex h-8 w-8 items-center justify-center rounded-xl text-white font-bold text-xs shrink-0"
-              style={{ background: "var(--color-primary)" }}
-            >
-              O
+            <div className="shrink-0">
+              <OffertioIcon size={30} />
             </div>
             <AnimatePresence>
               {!collapsed && (
@@ -242,10 +245,16 @@ function AppLayoutInner({ children }: { children: React.ReactNode }) {
                   animate={{ opacity: 1, width: "auto" }}
                   exit={{ opacity: 0, width: 0 }}
                   transition={{ duration: 0.2 }}
-                  className="text-[15px] font-bold tracking-[-0.02em] overflow-hidden whitespace-nowrap"
-                  style={{ color: "var(--app-text)", fontFamily: "var(--font-display)" }}
+                  className="overflow-hidden whitespace-nowrap"
+                  style={{
+                    fontSize: "14px",
+                    fontWeight: 600,
+                    letterSpacing: "-0.03em",
+                    color: "var(--app-text)",
+                    fontFamily: "var(--font-display)",
+                  }}
                 >
-                  Offertio
+                  offert<em style={{ fontStyle: "italic", fontWeight: 400, color: "var(--color-primary)" }}>io</em>
                 </motion.span>
               )}
             </AnimatePresence>
@@ -269,25 +278,17 @@ function AppLayoutInner({ children }: { children: React.ReactNode }) {
         </div>
 
         {/* Nav */}
-        <nav className="flex-1 px-2 pt-4 space-y-0.5" role="navigation">
-          {!collapsed && (
-            <div
-              className="px-2.5 pb-2 text-[10px] font-semibold uppercase tracking-[0.16em]"
-              style={{ color: "var(--app-text-soft)" }}
-            >
-              Workspace
-            </div>
-          )}
-
+        <nav className="flex-1 px-2 pt-3 space-y-0.5" role="navigation">
           {NAV_ITEMS.map(({ href, labelKey, Icon }) => {
             const isActive = pathname === href || (href !== "/dashboard" && pathname?.startsWith(href));
             return (
               <Link
                 key={href}
                 href={href}
+                prefetch={true}
                 className={`sidebar-item ${isActive ? "active" : ""}`}
                 title={collapsed ? t(labelKey) : undefined}
-                style={collapsed ? { justifyContent: "center", padding: "10px" } : undefined}
+                style={collapsed ? { justifyContent: "center", padding: "12px", minHeight: "44px" } : undefined}
               >
                 <Icon />
                 {!collapsed && <span>{t(labelKey)}</span>}
@@ -302,7 +303,7 @@ function AppLayoutInner({ children }: { children: React.ReactNode }) {
           <button
             onClick={toggleTheme}
             className="sidebar-item w-full"
-            style={collapsed ? { justifyContent: "center", padding: "10px" } : undefined}
+            style={collapsed ? { justifyContent: "center", padding: "12px", minHeight: "44px" } : undefined}
             title={collapsed ? (theme === "light" ? "Nachtmodus" : "Tagmodus") : undefined}
           >
             {theme === "light" ? <IconMoon /> : <IconSun />}
@@ -310,71 +311,113 @@ function AppLayoutInner({ children }: { children: React.ReactNode }) {
           </button>
 
           {/* User section */}
-          <div
-            className="rounded-xl overflow-hidden"
-            style={{ background: "var(--app-card)", border: "1px solid var(--app-border)" }}
-          >
-            <div className={`flex items-center ${collapsed ? "justify-center p-2" : "gap-2.5 px-3 py-2.5"}`}>
-              <div
-                className="flex h-7 w-7 items-center justify-center rounded-lg text-white text-[11px] font-bold shrink-0"
-                style={{ background: "var(--color-primary)" }}
-              >
-                {initial}
-              </div>
-              {!collapsed && (
-                <div className="flex-1 min-w-0">
-                  <div className="text-xs font-medium truncate" style={{ color: "var(--app-text-muted)" }}>
-                    {user?.email}
-                  </div>
-                  <button
-                    onClick={handleLogout}
-                    className="text-[10px] font-medium mt-0.5 transition-colors duration-150"
-                    style={{ color: "var(--app-text-soft)" }}
-                    onMouseEnter={(e) => (e.currentTarget.style.color = "var(--color-primary)")}
-                    onMouseLeave={(e) => (e.currentTarget.style.color = "var(--app-text-soft)")}
-                  >
-                    {t("nav.logout")}
-                  </button>
-                </div>
-              )}
+          <div className={`flex items-center ${collapsed ? "justify-center px-1 py-2" : "gap-2.5 px-3 py-2"}`}>
+            <div
+              className="flex h-6 w-6 items-center justify-center rounded-md text-white text-[10px] font-bold shrink-0"
+              style={{ background: "var(--color-primary)" }}
+            >
+              {initial}
             </div>
+            {!collapsed && (
+              <div className="flex-1 min-w-0">
+                <div
+                  className="text-[11px] truncate"
+                  style={{ color: "var(--sidebar-text)", letterSpacing: "-0.01em" }}
+                >
+                  {user?.email}
+                </div>
+                <button
+                  onClick={handleLogout}
+                  className="text-[10px] font-medium mt-0.5 transition-colors duration-150"
+                  style={{ color: "var(--sidebar-text)", letterSpacing: "-0.01em" }}
+                  onMouseEnter={(e) => (e.currentTarget.style.color = "var(--color-primary)")}
+                  onMouseLeave={(e) => (e.currentTarget.style.color = "var(--sidebar-text)")}
+                >
+                  {t("nav.logout")}
+                </button>
+              </div>
+            )}
           </div>
         </div>
       </motion.aside>
+      )}
+      </AnimatePresence>
 
       {/* ── Main Content ───────────────────────────────── */}
       <main
-        className="flex flex-col flex-1 overflow-y-auto pb-20 md:pb-0"
-        style={{ background: "var(--app-bg)" }}
+        className="flex-1 overflow-y-auto md:pb-0"
+        style={{
+          background: "var(--app-bg)",
+          paddingBottom: isFocusMode ? "0" : "calc(60px + env(safe-area-inset-bottom, 0px))",
+        }}
       >
         {profile && <PlanExpiryBanner profile={profile} />}
         {children}
       </main>
 
-      {/* ── Mobile Bottom Tab Bar ──────────────────────── */}
-      <div
-        className="app-bottom-nav md:hidden fixed bottom-0 inset-x-0 z-50 flex items-center justify-around px-2 py-1.5"
-        style={{ paddingBottom: "max(env(safe-area-inset-bottom), 6px)" }}
-      >
-        {NAV_ITEMS.map(({ href, labelKey, Icon }) => {
-          const isActive = pathname === href || (href !== "/dashboard" && pathname?.startsWith(href));
-          return (
-            <Link
-              key={href}
-              href={href}
-              className="relative flex flex-col items-center gap-0.5 px-3 py-1.5 rounded-lg transition-all duration-200"
-              style={{
-                color: isActive ? "var(--color-primary)" : "var(--app-text-soft)",
-                background: isActive ? "var(--color-primary-soft)" : "transparent",
-                minWidth: "52px",
-              }}
-            >
-              <Icon />
-              <span className="text-[10px] font-medium">{t(labelKey)}</span>
-            </Link>
-          );
-        })}
-      </div>
+      {/* ── Mobile Bottom Tab Bar (hidden in Focus Mode) ── */}
+      <AnimatePresence initial={false}>
+        {!isFocusMode && (
+          <motion.nav
+            key="bottom-nav"
+            initial={{ y: 80, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            exit={{ y: 80, opacity: 0 }}
+            transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
+            className="app-bottom-nav md:hidden fixed bottom-0 inset-x-0 z-50 flex items-stretch"
+            style={{
+              height: "calc(60px + env(safe-area-inset-bottom, 0px))",
+              paddingBottom: "env(safe-area-inset-bottom, 0px)",
+            }}
+            aria-label="Hauptnavigation"
+          >
+            {NAV_ITEMS.map(({ href, labelKey, Icon }) => {
+              const isActive = pathname === href || (href !== "/dashboard" && pathname?.startsWith(href));
+              return (
+                <Link
+                  key={href}
+                  href={href}
+                  prefetch={true}
+                  onClick={() => haptic(8)}
+                  className="bottom-nav-item flex flex-col items-center justify-center flex-1 gap-[3px]"
+                  style={{
+                    color: isActive ? "var(--color-primary)" : "var(--app-text-soft)",
+                    touchAction: "manipulation",
+                    WebkitTapHighlightColor: "transparent",
+                    userSelect: "none",
+                    /* Minimum 44pt touch target per Apple HIG */
+                    minHeight: 44,
+                  }}
+                >
+                  <div
+                    className="bottom-nav-pill"
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      width: 44,
+                      height: 28,
+                      borderRadius: 14,
+                      background: isActive ? "rgba(200,121,61,0.10)" : "transparent",
+                      transition: "background 0.15s ease, transform 0.1s ease",
+                    }}
+                  >
+                    <Icon />
+                  </div>
+                  <span style={{
+                    fontSize: "10px",
+                    fontWeight: isActive ? 600 : 400,
+                    letterSpacing: "-0.01em",
+                    lineHeight: 1,
+                  }}>
+                    {t(labelKey)}
+                  </span>
+                </Link>
+              );
+            })}
+          </motion.nav>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

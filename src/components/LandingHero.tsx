@@ -427,19 +427,27 @@ export default function LandingHero() {
               transition={{ duration: 0.5, delay: 0.1, ease: [0.16, 1, 0.3, 1] }}
               className="landing-chip"
             >
-              Mobile-first Offerten & Rechnungen
+              CH · DE · AT
             </motion.span>
 
             <motion.h1
               initial={{ opacity: 0, y: 24 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.7, delay: 0.2, ease: [0.16, 1, 0.3, 1] }}
-              className="mt-7 leading-[1.02] tracking-[-0.04em] font-bold"
-              style={{ fontSize: "clamp(2.6rem, 5.5vw, 4.8rem)", color: "#F0EDE8", fontFamily: "var(--font-display)" }}
+              className="mt-7 font-bold"
+              style={{
+                fontSize: "clamp(3rem, 6vw, 5.2rem)",
+                lineHeight: 1.0,
+                letterSpacing: "-0.045em",
+                color: "#F0EDE8",
+                fontFamily: "var(--font-display)",
+              }}
             >
-              Weniger Nacharbeit,{" "}
+              Vom Einsatz{" "}
+              <br />
+              zur Offerte.{" "}
               <span style={{ color: "var(--color-primary)" }}>
-                mehr Klarheit.
+                In Minuten.
               </span>
             </motion.h1>
 
@@ -447,25 +455,28 @@ export default function LandingHero() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.7, delay: 0.35, ease: [0.16, 1, 0.3, 1] }}
-              className="mt-6 text-base sm:text-lg leading-7 sm:leading-8 max-w-md"
-              style={{ color: "var(--color-text-muted)" }}
+              className="mt-6 max-w-sm"
+              style={{
+                fontSize: "1.0625rem",
+                lineHeight: 1.65,
+                color: "var(--color-text-muted)",
+              }}
             >
-              Erstelle Offerten und Rechnungen direkt nach dem Kundentermin.
-              Professionell, schnell und passend für CH, DE und AT.
+              Professionelle Offerten und Rechnungen — direkt nach dem Kundentermin, DACH-konform.
             </motion.p>
 
             <motion.div
               initial={{ opacity: 0, y: 16 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6, delay: 0.5, ease: [0.16, 1, 0.3, 1] }}
-              className="mt-8 flex flex-col gap-3 sm:flex-row"
+              className="mt-9 flex flex-col gap-3 sm:flex-row"
             >
               <Link
                 href="/login"
                 className="cta-primary px-7"
                 onClick={() => trackCtaClick("hero_primary")}
               >
-                Kostenlos starten
+                Jetzt kostenlos starten
                 <svg width="14" height="14" viewBox="0 0 14 14" fill="none" className="ml-1">
                   <path d="M3 7h8m0 0L7.5 3.5M11 7l-3.5 3.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
                 </svg>

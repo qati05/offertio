@@ -8,59 +8,42 @@ interface OffertioLogoProps {
   href?: string;
 }
 
+/**
+ * The Arc O — 315° of a precise circle, clockwise from 12 to 10:30.
+ * Two amber terminals mark origin (12 o'clock) and completion (10:30).
+ * Reads as precision, flow, and the letter O simultaneously.
+ */
 export function OffertioIcon({ size = 32 }: { size?: number }) {
-  const s = size;
   return (
     <svg
-      width={s}
-      height={s}
+      width={size}
+      height={size}
       viewBox="0 0 100 100"
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
       aria-hidden="true"
     >
-      {/* Background square */}
-      <rect width="100" height="100" rx="22" fill="#FAF7F4" />
+      {/* Background — warm obsidian, slightly rounded square */}
+      <rect width="100" height="100" rx="26" fill="#1A1916" />
 
-      {/* Document shadow / depth layer */}
+      {/*
+        Arc: 315° clockwise from 12 o'clock (50, 23) to 10:30 (30.9, 30.9).
+        The 45° gap sits in the upper-left — a deliberate opening, not a flaw.
+        large-arc-flag=1, sweep-flag=1 (clockwise through 3 → 6 → 9 → 10:30)
+      */}
       <path
-        d="M22 18 L66 18 L82 34 L82 84 L22 84 Z"
-        fill="#EDE8E2"
-        transform="translate(2 2)"
-      />
-
-      {/* Document body — white page */}
-      <path
-        d="M20 16 L64 16 L80 32 L80 82 L20 82 Z"
-        fill="#FFFFFF"
-        stroke="#E0D6CC"
-        strokeWidth="1"
-      />
-
-      {/* Folded corner — orange reveal */}
-      <path
-        d="M64 16 L64 32 L80 32 Z"
-        fill="#D94F00"
-      />
-
-      {/* Fold line crease — subtle warm line */}
-      <path
-        d="M64 16 L64 32 L80 32"
-        stroke="#FAF7F4"
-        strokeWidth="0.8"
+        d="M 50 23 A 27 27 0 1 1 30.9 30.9"
+        stroke="#E8E3DC"
+        strokeWidth="8.5"
+        strokeLinecap="round"
         fill="none"
       />
 
-      {/* Document content lines */}
-      {/* First line — orange / headline */}
-      <line x1="30" y1="46" x2="65" y2="46" stroke="#D94F00" strokeWidth="3.5" strokeLinecap="round" />
+      {/* Origin — 12 o'clock, larger amber dot anchors the eye */}
+      <circle cx="50" cy="23" r="7" fill="#C8793D" />
 
-      {/* Detail lines — warm gray */}
-      <line x1="30" y1="57" x2="60" y2="57" stroke="#C4B5A5" strokeWidth="2.2" strokeLinecap="round" />
-      <line x1="30" y1="66" x2="56" y2="66" stroke="#C4B5A5" strokeWidth="2.2" strokeLinecap="round" />
-
-      {/* Total / bottom accent line */}
-      <line x1="30" y1="76" x2="50" y2="76" stroke="#D94F00" strokeWidth="2" strokeLinecap="round" opacity="0.5" />
+      {/* Completion — 10:30, smaller amber dot marks arrival */}
+      <circle cx="30.9" cy="30.9" r="5" fill="#C8793D" />
     </svg>
   );
 }
@@ -77,7 +60,7 @@ export default function OffertioLogo({
       style={{
         display: "inline-flex",
         alignItems: "center",
-        gap: size * 0.28,
+        gap: size * 0.3,
         textDecoration: "none",
         userSelect: "none",
       }}
@@ -88,9 +71,9 @@ export default function OffertioLogo({
         <span
           style={{
             fontFamily: "var(--font-display)",
-            fontSize: size * 0.62,
-            fontWeight: 400,
-            letterSpacing: "-0.02em",
+            fontSize: size * 0.6,
+            fontWeight: 600,
+            letterSpacing: "-0.03em",
             color: "var(--color-text)",
             lineHeight: 1,
           }}
@@ -99,6 +82,7 @@ export default function OffertioLogo({
           <em
             style={{
               fontStyle: "italic",
+              fontWeight: 400,
               color: "var(--color-primary)",
             }}
           >

@@ -4,66 +4,46 @@ export const dynamic = "force-dynamic";
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { createSupabaseBrowser } from "@/lib/supabase-browser";
-import { getDachConfig } from "@/lib/dach";
-import {
-  isPro,
-  remainingFreeDocuments,
-  getCheckoutUrl,
-} from "@/lib/payment";
+import { isPro, remainingFreeDocuments, getCheckoutUrl } from "@/lib/payment";
 import { trackUpgradeClick } from "@/lib/analytics";
-import { computeDocumentStatus, countOpenActions } from "@/lib/dokument-status";
+import { computeDocumentStatus, countOpenActions, getStatus, statusBadgeVariants } from "@/lib/dokument-status";
 import type { Profile, DokumentHistorie } from "@/lib/types";
 
-const STATUS: Record<string, { label: string; color: string; bg: string }> = {
-  entwurf:      { label: "Entwurf",     color: "#6b7280", bg: "rgba(107,114,128,0.06)" },
-  gesendet:     { label: "Gesendet",    color: "#A8622E", bg: "rgba(200,121,61,0.06)"  },
-  bezahlt:      { label: "Bezahlt",     color: "#1A7F42", bg: "rgba(26,127,66,0.06)"   },
-  angenommen:   { label: "Angenommen",  color: "#1A7F42", bg: "rgba(26,127,66,0.06)"   },
-  abgelaufen:   { label: "Abgelaufen",  color: "#92400e", bg: "rgba(146,64,14,0.06)"   },
-  ueberfaellig: { label: "Überfällig",  color: "#b91c1c", bg: "rgba(185,28,28,0.06)"   },
-  offen:        { label: "Offen",       color: "#A8622E", bg: "rgba(200,121,61,0.06)"  },
-};
+const FREE_DOCS = 5;
+const ease = [0.16, 1, 0.3, 1] as const;
 
-function Skeleton({ w, h, className = "" }: { w?: string; h?: string; className?: string }) {
-  return (
-    <div
-      className={`skeleton ${className}`}
-      style={{ width: w, height: h ?? "14px", borderRadius: "7px" }}
-    />
-  );
-}
-
-const fadeIn = {
-  hidden: { opacity: 0, y: 12 },
-  visible: (i: number) => ({
-    opacity: 1,
-    y: 0,
-    transition: { duration: 0.4, delay: i * 0.06, ease: [0.16, 1, 0.3, 1] as const },
-  }),
+// Shared label style — 11px uppercase, max breathing room
+const kicker: React.CSSProperties = {
+  fontSize: 11,
+  fontWeight: 600,
+  letterSpacing: "0.13em",
+  textTransform: "uppercase",
+  color: "var(--app-text-soft)",
+  marginBottom: 8,
 };
 
 export default function DashboardPage() {
   const [profil, setProfil] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
   const [history, setHistory] = useState<DokumentHistorie[]>([]);
-  const [historySource, setHistorySource] = useState<"cloud" | "local">("cloud");
 
-  useEffect(() => {
-    void loadData();
-  }, []);
+  useEffect(() => { void loadData(); }, []);
 
   async function loadData() {
     const supabase = createSupabaseBrowser();
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
+    const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
 
     const [profilRes, docsRes] = await Promise.all([
       supabase.from("profiles").select("*").eq("id", user.id).maybeSingle(),
-      supabase.from("dokumente").select("*").eq("user_id", user.id).order("datum", { ascending: false }).limit(10),
+      supabase
+        .from("dokumente")
+        .select("*")
+        .eq("user_id", user.id)
+        .order("datum", { ascending: false })
+        .limit(8),
     ]);
 
     if (profilRes.data) setProfil(profilRes.data as Profile);
@@ -82,7 +62,6 @@ export default function DashboardPage() {
         setHistorySource("local");
       } catch {
         setHistory([]);
-        setHistorySource("local");
       }
     } else {
       const docs = (docsRes.data || []).map((d: Record<string, unknown>) => ({
@@ -96,7 +75,6 @@ export default function DashboardPage() {
     setLoading(false);
   }
 
-  const currency = getDachConfig(profil?.land).currency;
   const proUser = isPro(profil?.plan);
   const remaining = remainingFreeDocuments(profil?.plan);
   const companyName = profil?.firmenname || profil?.vorname || "Offertio";
@@ -111,221 +89,411 @@ export default function DashboardPage() {
     month: "long",
   });
 
-  return (
-    <div className="min-h-full">
-      <div className="mx-auto max-w-6xl px-5 py-7 sm:px-8 sm:py-9">
+  const openDocs = history.filter((d) =>
+    ["gesendet", "angenommen", "ueberfaellig"].includes(d.status)
+  );
+  const used = FREE_DOCS - Math.max(0, Math.min(remaining, FREE_DOCS));
 
-        {/* Header */}
-        <motion.header
+  return (
+    <div style={{ minHeight: "100%", background: "var(--app-bg)", WebkitFontSmoothing: "antialiased" }}>
+      <div style={{ maxWidth: 640, margin: "0 auto", padding: "48px 24px 104px" }}>
+
+        {/* ── Greeting ────────────────────────────────── */}
+        <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
-          className="mb-7 flex items-start justify-between gap-4"
+          transition={{ duration: 0.5, ease }}
+          style={{ marginBottom: 48 }}
         >
-          <div>
-            <div className="text-sm" style={{ color: "var(--app-text-muted)" }}>
-              {loading ? "Laden..." : `${greeting}, ${companyName}`}
-            </div>
-            <h1 className="app-title-display mt-1">Übersicht</h1>
-            {!loading && (
-              <p className="mt-2 text-sm" style={{ color: "var(--app-text-muted)" }}>
-                {today}
+          <p style={{
+            fontSize: 13, lineHeight: 1.6,
+            color: "var(--app-text-muted)",
+            margin: "0 0 2px",
+            letterSpacing: "0.01em",
+          }}>
+            {loading ? "\u00a0" : `${greeting}${companyName ? `, ${companyName}` : ""}`}
+          </p>
+          <h1 style={{
+            fontSize: 36,
+            fontWeight: 700,
+            letterSpacing: "-0.035em",
+            color: "var(--app-text)",
+            margin: "0 0 6px",
+            lineHeight: 1.08,
+            fontFamily: "var(--font-display)",
+          }}>
+            Dein Cockpit.
+          </h1>
+          <p style={{
+            fontSize: 13, lineHeight: 1.6,
+            color: "var(--app-text-soft)",
+            margin: 0,
+          }}>
+            {loading ? "\u00a0" : today}
+          </p>
+        </motion.div>
+
+        {/* ── Open Amount Metric ───────────────────────── */}
+        {!loading && openDocs.length > 0 && (
+          <motion.div
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4, delay: 0.08, ease }}
+            style={{
+              background: "var(--app-card)",
+              borderRadius: 20,
+              padding: "24px 28px",
+              marginBottom: 16,
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "flex-end",
+              backdropFilter: "blur(20px) saturate(160%)",
+              WebkitBackdropFilter: "blur(20px) saturate(160%)",
+              boxShadow: "0 1px 3px rgba(0,0,0,0.04), 0 8px 32px rgba(0,0,0,0.06), inset 0 1px 0 rgba(255,255,255,0.7)",
+            }}
+          >
+            <div>
+              <div style={kicker}>Offen</div>
+              <div style={{
+                fontSize: 64,
+                fontWeight: 700,
+                letterSpacing: "-0.05em",
+                color: "var(--app-text)",
+                fontFamily: "var(--font-display)",
+                lineHeight: 1,
+              }}>
+                {openDocs.length}
+              </div>
+              <p style={{
+                fontSize: 13, lineHeight: 1.6,
+                color: "var(--app-text-muted)",
+                margin: "6px 0 0",
+              }}>
+                {openDocs.length === 1 ? "Dokument wartet auf Vollendung." : "Dokumente warten auf Vollendung."}
               </p>
+            </div>
+            <div style={{ textAlign: "right", paddingBottom: 4 }}>
+              <div style={kicker}>Gesamt</div>
+              <div style={{
+                fontSize: 32,
+                fontWeight: 700,
+                letterSpacing: "-0.04em",
+                color: "var(--app-text-muted)",
+                fontFamily: "var(--font-display)",
+                lineHeight: 1,
+              }}>
+                {history.length}
+              </div>
+            </div>
+          </motion.div>
+        )}
+
+        {/* ── Action Tiles ─────────────────────────────── */}
+        <motion.div
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4, delay: 0.12, ease }}
+          style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 48 }}
+        >
+          {/* Primary — Offerte */}
+          <Link
+            href="/dokument/neu"
+            className="dash-tile"
+            style={{
+              display: "block",
+              background: "var(--color-primary)",
+              borderRadius: 21,
+              padding: "24px 20px",
+              textDecoration: "none",
+            }}
+          >
+            <div style={{
+              fontSize: 11, fontWeight: 600, letterSpacing: "0.13em",
+              textTransform: "uppercase", color: "rgba(255,255,255,0.6)", marginBottom: 10,
+            }}>
+              Offerte
+            </div>
+            <div style={{
+              fontSize: 20, fontWeight: 700, letterSpacing: "-0.03em",
+              color: "#fff", lineHeight: 1.2, fontFamily: "var(--font-display)",
+            }}>
+              Neue Offerte
+            </div>
+            <div style={{
+              fontSize: 12, color: "rgba(255,255,255,0.55)",
+              marginTop: 8, lineHeight: 1.6,
+            }}>
+              Vor Ort. In Sekunden.
+            </div>
+          </Link>
+
+          {/* Secondary — Rechnung */}
+          <Link
+            href="/dokument/neu?typ=rechnung"
+            className="dash-tile"
+            style={{
+              display: "block",
+              background: "var(--app-card)",
+              border: "1px solid var(--app-border)",
+              borderRadius: 21,
+              padding: "24px 20px",
+              textDecoration: "none",
+            }}
+          >
+            <div style={{
+              fontSize: 11, fontWeight: 600, letterSpacing: "0.13em",
+              textTransform: "uppercase", color: "var(--app-text-soft)", marginBottom: 10,
+            }}>
+              Rechnung
+            </div>
+            <div style={{
+              fontSize: 20, fontWeight: 700, letterSpacing: "-0.03em",
+              color: "var(--app-text)", lineHeight: 1.2, fontFamily: "var(--font-display)",
+            }}>
+              Neue Rechnung
+            </div>
+            <div style={{
+              fontSize: 12, color: "var(--app-text-muted)",
+              marginTop: 8, lineHeight: 1.6,
+            }}>
+              Exakt. DACH-konform.
+            </div>
+          </Link>
+        </motion.div>
+
+        {/* ── Verlauf ──────────────────────────────────── */}
+        <motion.section
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.5, delay: 0.2 }}
+        >
+          <div style={{
+            display: "flex", alignItems: "center",
+            justifyContent: "space-between", marginBottom: 20,
+          }}>
+            <div style={kicker}>Verlauf</div>
+            {!loading && history.length > 0 && (
+              <Link href="/dokumente" style={{
+                fontSize: 13, color: "var(--color-primary)",
+                textDecoration: "none", fontWeight: 500,
+              }}>
+                Alle
+              </Link>
             )}
           </div>
-          <div
-            className="flex h-10 w-10 items-center justify-center rounded-xl text-sm font-bold text-white shrink-0"
-            style={{ background: "var(--color-primary)" }}
-          >
-            {(profil?.vorname?.[0] || profil?.email?.[0] || "O").toUpperCase()}
-          </div>
-        </motion.header>
 
-        <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_300px]">
-          <section className="space-y-5">
-
-            {/* Action tiles */}
-            <div className="grid gap-3 sm:grid-cols-2">
-              <motion.div custom={1} initial="hidden" animate="visible" variants={fadeIn}>
-                <Link href="/dokument/neu" className="app-action-tile app-action-tile-primary">
-                  <div className="text-xs font-medium opacity-80">Neues Dokument</div>
-                  <div className="mt-1.5 text-xl font-bold tracking-[-0.02em]">Neue Offerte</div>
-                  <div className="mt-2 text-sm opacity-75">Direkt nach dem Termin versenden.</div>
-                </Link>
-              </motion.div>
-              <motion.div custom={2} initial="hidden" animate="visible" variants={fadeIn}>
-                <Link href="/dokument/neu?typ=rechnung" className="app-action-tile">
-                  <div className="text-xs font-medium" style={{ color: "var(--app-text-soft)" }}>Neues Dokument</div>
-                  <div className="mt-1.5 text-xl font-bold tracking-[-0.02em]" style={{ color: "var(--app-text)" }}>Neue Rechnung</div>
-                  <div className="mt-2 text-sm" style={{ color: "var(--app-text-muted)" }}>Mit QR-Bill und sauberem PDF.</div>
-                </Link>
-              </motion.div>
+          {loading ? (
+            /* Organic skeleton — breathes, doesn't blink */
+            <div>
+              {[0, 1, 2].map((i) => (
+                <div key={i} style={{
+                  display: "flex", alignItems: "center", gap: 14,
+                  padding: "18px 0",
+                  borderBottom: i < 2 ? "1px solid var(--app-border)" : "none",
+                  opacity: 1 - i * 0.28,
+                }}>
+                  <div
+                    className="skeleton"
+                    style={{ width: 38, height: 38, borderRadius: 11, flexShrink: 0 }}
+                  />
+                  <div style={{ flex: 1 }}>
+                    <div
+                      className="skeleton"
+                      style={{ width: "44%", height: 13, borderRadius: 6, marginBottom: 7 }}
+                    />
+                    <div
+                      className="skeleton"
+                      style={{ width: "30%", height: 11, borderRadius: 5 }}
+                    />
+                  </div>
+                  <div
+                    className="skeleton"
+                    style={{ width: 68, height: 13, borderRadius: 6 }}
+                  />
+                </div>
+              ))}
             </div>
-
-            {/* Recent Activity */}
-            <motion.section custom={3} initial="hidden" animate="visible" variants={fadeIn}>
-              <div className="mb-3 flex items-center justify-between">
-                <h2
-                  className="text-lg font-bold tracking-[-0.02em]"
-                  style={{ color: "var(--app-text)", fontFamily: "var(--font-display)" }}
-                >
-                  Letzte Aktivität
-                </h2>
-                {historySource === "local" ? (
-                  <span className="text-[10px] font-medium uppercase tracking-wider" style={{ color: "var(--app-text-soft)" }}>Lokal</span>
-                ) : history.length > 0 ? (
-                  <Link href="/dokumente" className="text-sm font-medium" style={{ color: "var(--color-primary)" }}>
-                    Alle ansehen
-                  </Link>
-                ) : null}
+          ) : history.length === 0 ? (
+            <div style={{
+              padding: "56px 0 48px", textAlign: "center",
+              borderTop: "1px solid var(--app-border)",
+            }}>
+              <div style={{
+                fontSize: 17, fontWeight: 700, letterSpacing: "-0.02em",
+                color: "var(--app-text)", marginBottom: 8,
+                fontFamily: "var(--font-display)",
+              }}>
+                Dein erstes Werk wartet.
               </div>
-
-              {loading ? (
-                <div className="space-y-2">
-                  {[...Array(3)].map((_, i) => (
-                    <div key={i} className="glass-card flex items-center gap-3 p-4">
-                      <Skeleton w="40px" h="40px" className="rounded-xl" />
-                      <div className="flex-1">
-                        <Skeleton w="140px" h="13px" />
-                        <Skeleton w="100px" h="10px" className="mt-1.5" />
-                      </div>
-                      <Skeleton w="60px" h="13px" />
+              <p style={{
+                fontSize: 14, lineHeight: 1.6,
+                color: "var(--app-text-muted)", margin: "0 0 20px",
+              }}>
+                Erstelle jetzt eine Offerte — direkt nach dem Kundentermin.
+              </p>
+              <Link
+                href="/dokument/neu"
+                className="dash-tile"
+                style={{
+                  display: "inline-block",
+                  background: "var(--color-primary)",
+                  color: "#fff",
+                  borderRadius: 13,
+                  padding: "10px 20px",
+                  fontSize: 14,
+                  fontWeight: 600,
+                  textDecoration: "none",
+                  letterSpacing: "-0.01em",
+                }}
+              >
+                Neue Offerte
+              </Link>
+            </div>
+          ) : (
+            <div>
+              {history.slice(0, 6).map((doc, i) => {
+                const st = getStatus(doc.status);
+                const isRechnung = doc.typ === "rechnung";
+                const isLast = i === Math.min(history.length, 6) - 1;
+                return (
+                  <motion.div
+                    key={doc.id ?? i}
+                    initial={{ opacity: 0, y: 5 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.3, delay: 0.24 + i * 0.05 }}
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 14,
+                      padding: "18px 0",
+                      borderBottom: isLast ? "none" : "1px solid var(--app-border)",
+                    }}
+                  >
+                    {/* Type badge */}
+                    <div style={{
+                      width: 38, height: 38, borderRadius: 11, flexShrink: 0,
+                      display: "flex", alignItems: "center", justifyContent: "center",
+                      fontSize: 10, fontWeight: 700, letterSpacing: "0.05em",
+                      background: isRechnung ? "rgba(200,121,61,0.08)" : "var(--app-card-muted)",
+                      color: isRechnung ? "var(--color-primary)" : "var(--app-text-muted)",
+                    }}>
+                      {isRechnung ? "RG" : "OF"}
                     </div>
-                  ))}
-                </div>
-              ) : history.length === 0 ? (
-                <div className="glass-card flex flex-col items-center justify-center px-5 py-12 text-center">
-                  <div className="text-base font-semibold" style={{ color: "var(--app-text)" }}>Noch keine Aktivität</div>
-                  <p className="mt-1.5 max-w-xs text-sm" style={{ color: "var(--app-text-muted)" }}>
-                    Starte mit deiner ersten Offerte. Danach erscheint hier dein Verlauf.
-                  </p>
-                </div>
-              ) : (
-                <div className="space-y-2">
-                  {history.slice(0, 5).map((doc, i) => {
-                    const status = STATUS[doc.status] ?? STATUS.offen;
-                    const isRechnung = doc.typ === "rechnung";
-                    return (
-                      <motion.div
-                        key={i}
-                        initial={{ opacity: 0, y: 8 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ duration: 0.3, delay: 0.3 + i * 0.06 }}
-                        className="glass-card flex items-center gap-3 p-4"
-                      >
-                        <div
-                          className="doc-type-badge"
+
+                    {/* Customer + number */}
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{
+                        fontSize: 14, fontWeight: 600, lineHeight: 1.4,
+                        color: "var(--app-text)",
+                        whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis",
+                      }}>
+                        {doc.kundenname || "Unbekannter Kunde"}
+                      </div>
+                      <div style={{
+                        fontSize: 12, lineHeight: 1.6,
+                        color: "var(--app-text-muted)", marginTop: 1,
+                      }}>
+                        {doc.nummer}&nbsp;·&nbsp;
+                        {new Date(doc.datum).toLocaleDateString("de-CH")}
+                      </div>
+                    </div>
+
+                    {/* Status — cross-fades when status changes */}
+                    <div style={{ flexShrink: 0, position: "relative", minWidth: 64, textAlign: "right" }}>
+                      <AnimatePresence mode="wait" initial={false}>
+                        <motion.span
+                          key={doc.status}
+                          variants={statusBadgeVariants}
+                          initial="enter"
+                          animate="visible"
+                          exit="exit"
                           style={{
-                            background: isRechnung ? "rgba(200,121,61,0.06)" : "rgba(26,25,22,0.04)",
-                            color: isRechnung ? "var(--color-primary)" : "var(--app-text-muted)",
+                            display: "inline-block",
+                            fontSize: 11, fontWeight: 600,
+                            letterSpacing: "0.06em",
+                            textTransform: "uppercase",
+                            color: st.color,
+                            padding: "3px 8px",
+                            borderRadius: 6,
+                            background: st.bg,
                           }}
                         >
-                          {isRechnung ? "RG" : "OF"}
-                        </div>
-                        <div className="min-w-0 flex-1">
-                          <div className="truncate text-sm font-semibold" style={{ color: "var(--app-text)" }}>
-                            {doc.kundenname || "Unbekannter Kunde"}
-                          </div>
-                          <div className="mt-0.5 truncate text-xs" style={{ color: "var(--app-text-muted)" }}>
-                            {doc.nummer} &middot; {new Date(doc.datum).toLocaleDateString("de-CH")}
-                          </div>
-                        </div>
-                        <div className="text-right shrink-0">
-                          <div className="text-sm font-bold tabular-nums" style={{ color: "var(--app-text)" }}>
-                            {currency} {doc.betrag.toLocaleString("de-CH", { minimumFractionDigits: 2 })}
-                          </div>
-                          <span className="status-badge mt-1 inline-block" style={{ color: status.color, background: status.bg }}>
-                            {status.label}
-                          </span>
-                        </div>
-                      </motion.div>
-                    );
-                  })}
+                          {st.label}
+                        </motion.span>
+                      </AnimatePresence>
+                    </div>
+                  </motion.div>
+                );
+              })}
+            </div>
+          )}
+        </motion.section>
+
+        {/* ── Plan Advisor ─────────────────────────────── */}
+        {!loading && !proUser && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.4, delay: 0.45 }}
+            style={{ marginTop: 48 }}
+          >
+            <div style={{
+              background: "var(--app-card)",
+              border: "1px solid var(--app-border)",
+              borderRadius: 16,
+              padding: "18px 20px",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              gap: 20,
+            }}>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                {/* Progress track */}
+                <div style={{
+                  width: "100%", height: 2,
+                  background: "var(--app-card-muted)",
+                  borderRadius: 1, overflow: "hidden", marginBottom: 10,
+                }}>
+                  <div style={{
+                    height: "100%",
+                    width: `${Math.min((used / FREE_DOCS) * 100, 100)}%`,
+                    background: remaining <= 1 ? "#A8622E" : "var(--color-primary)",
+                    borderRadius: 1,
+                    transition: "width 0.8s var(--ease-out-expo)",
+                  }} />
                 </div>
-              )}
-            </motion.section>
-          </section>
-
-          {/* Sidebar */}
-          <aside className="space-y-4">
-            <motion.div custom={1} initial="hidden" animate="visible" variants={fadeIn} className="glass-card p-5">
-              <div className="app-kicker">Hinweise</div>
-              <div
-                className="mt-2 text-lg font-bold tracking-[-0.02em]"
-                style={{ color: "var(--app-text)", fontFamily: "var(--font-display)" }}
+                <div style={{
+                  fontSize: 13, lineHeight: 1.6,
+                  color: "var(--app-text)", fontWeight: 500,
+                }}>
+                  {remaining === 0
+                    ? "Du hast Großes vor. Zeit für Pro."
+                    : `${remaining} ${remaining === 1 ? "Dokument" : "Dokumente"} verbleiben diesen Monat.`}
+                </div>
+              </div>
+              <a
+                href={getCheckoutUrl("pro_yearly", profil?.email, profil?.id)}
+                className="dash-tile"
+                style={{
+                  display: "inline-block",
+                  background: "var(--color-primary)",
+                  color: "#fff",
+                  borderRadius: 13,
+                  padding: "9px 16px",
+                  fontSize: 13,
+                  fontWeight: 600,
+                  textDecoration: "none",
+                  whiteSpace: "nowrap",
+                  flexShrink: 0,
+                  letterSpacing: "-0.01em",
+                }}
+                onClick={() => trackUpgradeClick("dashboard")}
               >
-                {loading ? "..." : `${reminderCount} offene ${reminderCount === 1 ? "Aktion" : "Aktionen"}`}
-              </div>
-              <p className="mt-2 text-sm leading-5" style={{ color: "var(--app-text-muted)" }}>
-                {loading
-                  ? "Laden..."
-                  : reminderCount > 0
-                    ? "Offene Dokumente können jetzt nachgefasst werden."
-                    : "Keine dringenden Aktionen. Gute Basis für die nächste Offerte."}
-              </p>
-              <Link href="/dokument/neu" className="btn-premium btn-premium-secondary mt-4 w-full text-sm">
-                Weiterarbeiten
-              </Link>
-            </motion.div>
-
-            <motion.div custom={2} initial="hidden" animate="visible" variants={fadeIn} className="glass-card p-5">
-              <div className="app-kicker">Plan</div>
-              <div
-                className="mt-2 text-2xl font-bold tracking-[-0.03em]"
-                style={{ color: "var(--app-text)", fontFamily: "var(--font-display)" }}
-              >
-                {loading ? "..." : proUser ? "Pro" : "Free"}
-              </div>
-              {!loading && (
-                <p className="mt-2 text-sm leading-5" style={{ color: "var(--app-text-muted)" }}>
-                  {proUser
-                    ? "Alle Funktionen aktiv. Unbegrenzte Dokumente."
-                    : `${remaining} von 5 Dokumenten übrig.`}
-                </p>
-              )}
-              {!loading && !proUser ? (
-                <a
-                  href={getCheckoutUrl("pro_yearly", profil?.email, profil?.id)}
-                  className="btn-premium btn-premium-primary mt-4 w-full text-sm"
-                  onClick={() => trackUpgradeClick("dashboard")}
-                >
-                  Upgrade auf Pro
-                </a>
-              ) : (
-                !loading && (
-                  <div
-                    className="mt-4 rounded-xl px-3 py-2.5 text-sm font-semibold text-center"
-                    style={{ background: "var(--color-primary-soft)", color: "var(--color-primary)" }}
-                  >
-                    Pro aktiv
-                  </div>
-                )
-              )}
-            </motion.div>
-
-            <motion.div custom={3} initial="hidden" animate="visible" variants={fadeIn} className="glass-card p-5">
-              <div className="app-kicker">Workspace</div>
-              <div className="mt-3 space-y-1.5">
-                {[
-                  { label: "Firmendaten", href: "/einstellungen/profil" },
-                  { label: "Vorlagen", href: "/einstellungen/vorlagen" },
-                ].map(({ label, href }) => (
-                  <Link
-                    key={href}
-                    href={href}
-                    className="flex items-center justify-between rounded-xl px-3 py-2.5 text-sm font-medium transition-colors hover:bg-[var(--app-card-muted)]"
-                    style={{ color: "var(--app-text)" }}
-                  >
-                    <span>{label}</span>
-                    <svg width="14" height="14" viewBox="0 0 14 14" fill="none" style={{ color: "var(--app-text-soft)" }}>
-                      <path d="M5 3l4 4-4 4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-                    </svg>
-                  </Link>
-                ))}
-              </div>
-            </motion.div>
-          </aside>
-        </div>
+                Pro freischalten
+              </a>
+            </div>
+          </motion.div>
+        )}
       </div>
     </div>
   );

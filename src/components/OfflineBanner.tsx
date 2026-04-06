@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 
 export default function OfflineBanner() {
   const [offline, setOffline] = useState(false);
@@ -20,27 +21,36 @@ export default function OfflineBanner() {
     };
   }, []);
 
-  if (!offline) return null;
-
   return (
-    <div
-      style={{
-        position: "fixed",
-        top: 0,
-        left: 0,
-        right: 0,
-        zIndex: 9999,
-        background: "#C8793D",
-        color: "#fff",
-        padding: "10px 16px",
-        fontSize: 13,
-        textAlign: "center",
-        fontWeight: 500,
-        lineHeight: 1.4,
-      }}
-    >
-      Du bist offline — PDF-Download verfügbar, E-Mail-Versand nicht möglich
-    </div>
+    <AnimatePresence>
+      {offline && (
+        <motion.div
+          initial={{ y: -48, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          exit={{ y: -48, opacity: 0 }}
+          transition={{ duration: 0.32, ease: [0.16, 1, 0.3, 1] }}
+          style={{
+            position: "fixed",
+            top: 0,
+            left: 0,
+            right: 0,
+            zIndex: 9999,
+            background: "rgba(10, 10, 10, 0.88)",
+            backdropFilter: "blur(20px) saturate(180%)",
+            WebkitBackdropFilter: "blur(20px) saturate(180%)",
+            color: "#F0EDE8",
+            padding: "11px 20px",
+            fontSize: 13,
+            textAlign: "center",
+            fontWeight: 500,
+            lineHeight: 1.5,
+            letterSpacing: "-0.01em",
+          }}
+        >
+          Du arbeitest offline. Wir speichern alles für dich, sobald du wieder zurück bist.
+        </motion.div>
+      )}
+    </AnimatePresence>
   );
 }
 

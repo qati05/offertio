@@ -87,8 +87,26 @@ describe("security.ts", () => {
   });
 
   describe("stripControlChars", () => {
-    it("removes newlines and control chars", () => {
-      expect(stripControlChars("Hello\r\nWorld\t")).toBe("Hello World");
+    it("takes only the first line segment (CRLF injection prevention)", () => {
+      // Everything after the first \r\n boundary is dropped — this is the security guarantee.
+      // "World" is on a separate line and would form an injected header in email contexts.
+      expect(stripControlChars("Hello\r\nWorld\t")).toBe("Hello");
+    });
+
+    it("removes remaining control chars from first line", () => {
+      expect(stripControlChars("Hello\tWorld")).toBe("HelloWorld");
+    });
+
+    it("trims surrounding whitespace", () => {
+      expect(stripControlChars("  Hello  ")).toBe("Hello");
+    });
+
+    it("prevents CRLF header injection by dropping the injection payload", () => {
+      const injected = "Legit Subject\r\nBcc: hacker@evil.com";
+      const result = stripControlChars(injected);
+      expect(result).toBe("Legit Subject");
+      expect(result).not.toContain("Bcc:");
+      expect(result).not.toContain("\r\n");
     });
   });
 

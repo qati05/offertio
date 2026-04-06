@@ -11,13 +11,13 @@ import { groupDocumentsByCustomer } from "@/lib/customer-folders";
 import { computeDocumentStatus } from "@/lib/dokument-status";
 import type { DokumentHistorie, Profile } from "@/lib/types";
 
-const STATUS_META: Record<string, { label: string; color: string; bg: string }> = {
-  entwurf:     { label: "Entwurf",     color: "#6b7280", bg: "rgba(107,114,128,0.08)" },
-  gesendet:    { label: "Gesendet",    color: "#A8622E", bg: "rgba(200,121,61,0.08)"  },
-  bezahlt:     { label: "Bezahlt",     color: "#15803d", bg: "rgba(21,128,61,0.08)"   },
-  angenommen:  { label: "Angenommen",  color: "#15803d", bg: "rgba(21,128,61,0.08)"   },
-  abgelaufen:  { label: "Abgelaufen",  color: "#92400e", bg: "rgba(146,64,14,0.08)"   },
-  ueberfaellig:{ label: "Überfällig",  color: "#b91c1c", bg: "rgba(185,28,28,0.08)"   },
+const STATUS: Record<string, { label: string; color: string; bg: string }> = {
+  entwurf:      { label: "In Arbeit",  color: "#6b7280", bg: "rgba(107,114,128,0.07)" },
+  gesendet:     { label: "Ausstehend", color: "#A8622E", bg: "rgba(200,121,61,0.07)" },
+  bezahlt:      { label: "Erledigt",   color: "#15803d", bg: "rgba(21,128,61,0.07)" },
+  angenommen:   { label: "Bestätigt",  color: "#15803d", bg: "rgba(21,128,61,0.07)" },
+  abgelaufen:   { label: "Abgelaufen", color: "#92400e", bg: "rgba(146,64,14,0.07)" },
+  ueberfaellig: { label: "Überfällig", color: "#92400e", bg: "rgba(146,64,14,0.07)" },
 };
 
 /** Status options available per document type */
@@ -262,7 +262,7 @@ export default function DokumentePage() {
         <header className="mb-8 flex items-start justify-between gap-4">
           <div>
             <div className="app-kicker">Dokumente</div>
-            <h1 className="app-title-display mt-2">Verlauf</h1>
+            <h1 className="app-title-display mt-2">Deine Werke</h1>
             <p className="mt-3 max-w-2xl text-sm leading-6" style={{ color: "var(--app-text-muted)" }}>
               Alle Offerten und Rechnungen an einem Ort.{" "}
               {source === "local"
@@ -319,6 +319,9 @@ export default function DokumentePage() {
               <p className="mt-2 max-w-md text-sm leading-6" style={{ color: "var(--app-text-muted)" }}>
                 Sobald du deine erste Offerte oder Rechnung erstellst, erscheint sie hier automatisch im Verlauf.
               </p>
+              <Link href="/dokument/neu" className="btn-premium btn-premium-primary">
+                Erste Offerte erstellen
+              </Link>
             </div>
           ) : (
             <div className="space-y-3">

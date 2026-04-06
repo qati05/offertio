@@ -27,8 +27,8 @@
   --color-ink: #F0EDE8;
   --color-highlight: rgba(200, 121, 61, 0.14);
 
-  /* ── App (Workspace) Surfaces ────────────────────── */
-  --app-bg: #F5F4F0;
+  /* ── App (Workspace) Surfaces — pure black on pure white ── */
+  --app-bg: #FFFFFF;
   --app-card: #FFFFFF;
   --app-card-muted: #F0EFEB;
   --app-card-strong: #E8E7E3;
@@ -39,13 +39,13 @@
   --app-text-soft: #706C68;     /* tertiary / placeholder — 4.74:1 on #F5F4F0, WCAG AA */
 
   /* ── Sidebar ─────────────────────────────────────── */
-  --sidebar-bg: #F0EFEB;
-  --sidebar-border: rgba(26, 25, 22, 0.06);
-  --sidebar-text: #4A4740;
-  --sidebar-text-hover: #1A1916;
-  --sidebar-text-active: #1A1916;
-  --sidebar-item-hover: rgba(26, 25, 22, 0.04);
-  --sidebar-item-active: rgba(200, 121, 61, 0.08);
+  --sidebar-bg: #FAFAFA;
+  --sidebar-border: rgba(0, 0, 0, 0.08);
+  --sidebar-text: #0A0A0A;
+  --sidebar-text-hover: #000000;
+  --sidebar-text-active: #000000;
+  --sidebar-item-hover: rgba(0, 0, 0, 0.05);
+  --sidebar-item-active: transparent;
 
   /* ── Shadows ─────────────────────────────────────── */
   --shadow-xs: 0 1px 2px rgba(26, 20, 10, 0.05);
@@ -74,6 +74,29 @@
   /* ── Easing ──────────────────────────────────────── */
   --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
   --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+
+  /* ── Brand Language ──────────────────────────────── */
+  /* Named for what they ARE, not what color they are  */
+  --obsidian: #0D0C0A;          /* deepest dark surface  */
+  --mercury: #E5E3DF;           /* luminous neutral      */
+  --amber: var(--color-primary);/* our "Volt" — bold warmth in a blue SaaS world */
+
+  /* ── Golden Ratio Spacing (Fibonacci) ───────────── */
+  /* 8 → 13 → 21 → 34 → 55 → 89                      */
+  --space-1: 8px;
+  --space-2: 13px;
+  --space-3: 21px;
+  --space-4: 34px;
+  --space-5: 55px;
+  --space-6: 89px;
+
+  /* ── Refined Radii (Fibonacci-aligned) ──────────── */
+  --radius-pill: 9999px;
+  --radius-2xl: 34px;
+  --radius-xl: 21px;
+  --radius-lg: 16px;
+  --radius-md: 13px;
+  --radius-sm: 8px;
 }
 
 /* ─────────────────────────────────────────────────────
@@ -90,13 +113,13 @@
   --app-text-muted: #918A80;    /* secondary label dark */
   --app-text-soft: #6B6860;     /* tertiary / placeholder dark */
 
-  --sidebar-bg: #1A1916;
-  --sidebar-border: rgba(255, 255, 255, 0.06);
-  --sidebar-text: #918A80;
-  --sidebar-text-hover: #F0EDE8;
-  --sidebar-text-active: #F0EDE8;
-  --sidebar-item-hover: rgba(255, 255, 255, 0.04);
-  --sidebar-item-active: rgba(200, 121, 61, 0.12);
+  --sidebar-bg: #0D0C0A;
+  --sidebar-border: rgba(255, 255, 255, 0.07);
+  --sidebar-text: #5A5550;
+  --sidebar-text-hover: #F5F2EE;
+  --sidebar-text-active: #F5F2EE;
+  --sidebar-item-hover: rgba(255, 255, 255, 0.05);
+  --sidebar-item-active: transparent;
 
   --shadow-xs: 0 1px 2px rgba(10, 8, 5, 0.22);
   --shadow-soft: 0 1px 3px rgba(10, 8, 5, 0.18), 0 8px 32px rgba(10, 8, 5, 0.22);
@@ -124,7 +147,22 @@ body {
 
 a { color: inherit; text-decoration: none; }
 
+/* Sidebar links need explicit non-layered color to beat `a { color: inherit }` */
+a.sidebar-item { color: #0A0A0A; }
+a.sidebar-item:hover { color: #000000; }
+a.sidebar-item.active { color: #000000; }
+
 button, input, textarea, select { font: inherit; }
+
+/* ── Touch-first foundation ─────────────────────────
+   Eliminates 300ms tap delay and removes tap flash  */
+button, a, input, select, textarea, [role="button"], label {
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Prevent horizontal overflow on all mobile viewports */
+html { overflow-x: hidden; max-width: 100vw; }
 
 ::selection {
   background: rgba(200, 121, 61, 0.25);
@@ -157,6 +195,24 @@ button, input, textarea, select { font: inherit; }
 @keyframes shimmer {
   from { background-position: -200% 0; }
   to   { background-position: 200% 0; }
+}
+
+@keyframes glow-pulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(200, 121, 61, 0); }
+  40%       { box-shadow: 0 0 0 18px rgba(200, 121, 61, 0.14); }
+  70%       { box-shadow: 0 0 0 32px rgba(200, 121, 61, 0.06); }
+}
+
+@keyframes badge-pop {
+  0%   { transform: scale(0) rotate(-45deg); opacity: 0; }
+  60%  { transform: scale(1.25) rotate(8deg); }
+  80%  { transform: scale(0.92) rotate(-4deg); }
+  100% { transform: scale(1) rotate(0deg); opacity: 1; }
+}
+
+@keyframes breath {
+  0%, 100% { opacity: 0.45; }
+  50%       { opacity: 0.80; }
 }
 
 @keyframes cursor-blink {
@@ -394,7 +450,7 @@ button, input, textarea, select { font: inherit; }
     box-shadow: 0 6px 24px rgba(168,98,46,0.30);
   }
   .btn-premium-secondary {
-    background: white;
+    background: var(--app-card);
     color: var(--app-text);
     border: 1px solid var(--app-border-strong);
     box-shadow: var(--shadow-xs);
@@ -418,15 +474,17 @@ button, input, textarea, select { font: inherit; }
     display: flex;
     align-items: center;
     gap: 10px;
-    padding: 9px 12px;
-    border-radius: 10px;
-    font-size: 13.5px;
+    padding: 10px 14px;
+    border-radius: 8px;
+    font-size: 13px;
     font-weight: 500;
     color: var(--sidebar-text);
-    transition: background 0.15s, color 0.15s;
+    transition: color 0.1s, background 0.1s;
     cursor: pointer;
     text-decoration: none;
-    letter-spacing: -0.01em;
+    letter-spacing: -0.025em;
+    position: relative;
+    min-height: 40px;
   }
   .sidebar-item:hover {
     background: var(--sidebar-item-hover);
@@ -436,6 +494,17 @@ button, input, textarea, select { font: inherit; }
     background: var(--sidebar-item-active);
     color: var(--sidebar-text-active);
     font-weight: 600;
+  }
+  .sidebar-item.active::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 2px;
+    height: 18px;
+    border-radius: 2px;
+    background: var(--color-primary);
   }
 
   .app-shell-panel {
@@ -447,7 +516,7 @@ button, input, textarea, select { font: inherit; }
     transition: box-shadow 0.2s, border-color 0.2s;
   }
   .app-shell-panel:hover {
-    box-shadow: var(--shadow-card);
+    border-color: rgba(0, 0, 0, 0.11);
   }
 
   .app-kicker {
@@ -495,18 +564,47 @@ button, input, textarea, select { font: inherit; }
   }
 
   .app-bottom-nav {
-    background: rgba(255,255,255,0.90);
-    backdrop-filter: blur(24px);
-    -webkit-backdrop-filter: blur(24px);
-    border-top: 1px solid var(--app-border);
-    box-shadow: 0 -4px 16px rgba(0,0,0,0.03);
+    background: rgba(255, 255, 255, 0.94);
+    backdrop-filter: blur(28px) saturate(180%);
+    -webkit-backdrop-filter: blur(28px) saturate(180%);
+    border-top: 0.5px solid rgba(0, 0, 0, 0.09);
+    /* no box-shadow — borders only */
   }
   [data-theme="dark"] .app-bottom-nav {
-    background: rgba(20,19,16,0.90);
-    box-shadow: 0 -4px 16px rgba(0,0,0,0.15);
+    background: rgba(13, 12, 10, 0.94);
+    border-top-color: rgba(255, 255, 255, 0.08);
+  }
+
+  /* Bottom nav item — thumb precision active squish */
+  .bottom-nav-item:active .bottom-nav-pill {
+    transform: scale(0.86);
+    background: rgba(200, 121, 61, 0.12) !important;
+  }
+  .bottom-nav-item:active {
+    opacity: 0.75;
+    transition: opacity 0.08s ease;
+  }
+
+  /* Tactile press — all interactive elements in the app workspace */
+  .dash-tile:active,
+  .btn-premium:active,
+  .app-action-tile:active {
+    transform: scale(0.96);
+    opacity: 0.85;
+    transition: transform 0.08s ease, opacity 0.08s ease;
   }
   [data-theme="dark"] .app-shell-panel {
-    background: rgba(30,29,26,0.82);
+    background: var(--app-card);
+    border-color: rgba(255, 255, 255, 0.07);
+  }
+  [data-theme="dark"] .input-field,
+  [data-theme="dark"] .select-wrap select,
+  [data-theme="dark"] .pos-input,
+  [data-theme="dark"] .mwst-select,
+  [data-theme="dark"] .chip,
+  [data-theme="dark"] .pos-del,
+  [data-theme="dark"] .add-pos-btn {
+    background: var(--app-card-strong);
   }
 
   /* Status badge */
@@ -561,7 +659,7 @@ button, input, textarea, select { font: inherit; }
       rgba(26, 20, 10, 0.04) 75%
     );
     background-size: 200% 100%;
-    animation: shimmer 1.5s ease-in-out infinite;
+    animation: shimmer 1.6s ease-in-out infinite;
     border-radius: 8px;
   }
   [data-theme="dark"] .skeleton {
@@ -596,6 +694,9 @@ button, input, textarea, select { font: inherit; }
     background: rgba(245, 244, 240, 0.90);
     backdrop-filter: blur(20px);
     border-bottom: 1px solid var(--app-border);
+  }
+  [data-theme="dark"] .top-nav {
+    background: rgba(20, 19, 16, 0.90);
   }
 
   .nav-back {
@@ -665,7 +766,7 @@ button, input, textarea, select { font: inherit; }
     width: 100%;
     border: 1px solid var(--app-border);
     border-radius: 12px;
-    background: var(--app-card);
+    background: var(--app-card-muted);
     color: var(--app-text);
     padding: 12px 14px;
     font-size: 14px;
@@ -701,7 +802,7 @@ button, input, textarea, select { font: inherit; }
   .chip {
     border: 1px solid var(--app-border);
     border-radius: 999px;
-    background: rgba(255,255,255,0.86);
+    background: var(--app-card-muted);
     color: var(--app-text-muted);
     padding: 8px 14px;
     font-size: 12px;
@@ -749,7 +850,6 @@ button, input, textarea, select { font: inherit; }
 
   .pos-input {
     margin: 0;
-    background: rgba(255,255,255,0.95);
     text-align: right;
   }
 
@@ -757,7 +857,7 @@ button, input, textarea, select { font: inherit; }
   .add-pos-btn {
     border: 1px solid var(--app-border);
     border-radius: 12px;
-    background: rgba(255,255,255,0.82);
+    background: var(--app-card-muted);
     color: var(--app-text);
     padding: 10px 14px;
     font-size: 13px;

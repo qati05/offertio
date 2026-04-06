@@ -8,24 +8,24 @@ const featureGroups = [
     icon: (
       <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M8 2a6 6 0 100 12A6 6 0 008 2zM5.5 8l2 2 3-3" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/></svg>
     ),
-    title: "Festhalten, was sonst verloren geht.",
-    desc: "Kundendaten, Leistung und Kontext bleiben zusammen. Nicht in drei Apps, fünf Chats und einem Kopf voller offener Punkte.",
+    title: "Alles an einem Ort.",
+    desc: "Kundendaten, Leistung und Kontext — beisammen. Nicht in drei Apps und einem Kopf voller offener Punkte.",
   },
   {
     eyebrow: "Auftritt",
     icon: (
       <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><rect x="2" y="2" width="12" height="12" rx="2.5" stroke="currentColor" strokeWidth="1.4"/><path d="M5 8h6M5 5.5h4M5 10.5h3" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/></svg>
     ),
-    title: "Ruhig und professionell wirken.",
-    desc: "Eigenes Branding, klare PDF-Ausgabe und ein Dokument, das nach Betrieb aussieht, nicht nach Notlösung.",
+    title: "Professionell. Immer.",
+    desc: "Eigenes Branding, saubere PDF-Ausgabe. Ein Dokument, das nach Betrieb aussieht — nicht nach Notlösung.",
   },
   {
     eyebrow: "Alltag",
     icon: (
       <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 8l4 4 6-6" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/></svg>
     ),
-    title: "Zeit zurückholen, nicht Features sammeln.",
-    desc: "Direkter Versand, saubere Übergabe und weniger Nachziehen am Abend. Genau dort, wo kleine Teams es spüren.",
+    title: "Zeit zurückgewinnen.",
+    desc: "Direkter Versand, weniger Nachziehen. Spürbar jeden Abend.",
   },
 ];
 
@@ -49,7 +49,7 @@ export default function LandingFeatures() {
               <span style={{ color: "var(--color-primary)" }}>Weniger Reibung.</span>
             </h2>
             <p className="section-copy mt-5 max-w-sm">
-              Was sich im echten Alltag verändert, zählt mehr als eine lange Feature-Liste.
+              Was im Alltag zählt — nicht was auf dem Datenblatt steht.
             </p>
 
             {/* Trust signal */}
@@ -103,12 +103,18 @@ export default function LandingFeatures() {
 
                   <div>
                     <h3
-                      className="text-lg font-bold leading-snug"
-                      style={{ color: "var(--color-text)", fontFamily: "var(--font-display)" }}
+                      className="font-bold"
+                      style={{
+                        fontSize: "clamp(1.15rem, 2.4vw, 1.3rem)",
+                        lineHeight: 1.25,
+                        letterSpacing: "-0.025em",
+                        color: "var(--color-text)",
+                        fontFamily: "var(--font-display)",
+                      }}
                     >
                       {group.title}
                     </h3>
-                    <p className="mt-2.5 text-sm leading-6" style={{ color: "var(--color-text-muted)" }}>
+                    <p className="mt-2.5 text-sm" style={{ lineHeight: 1.65, color: "var(--color-text-muted)" }}>
                       {group.desc}
                     </p>
                   </div>

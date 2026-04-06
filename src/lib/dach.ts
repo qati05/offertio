@@ -147,11 +147,92 @@ export function getAllLands(): { value: Land; label: string }[] {
   ];
 }
 
+// ── Required Fields Matrix ────────────────────────────────────────────────────
+
+export interface RegionRequiredField {
+  /** Dot-notation path into the document data, e.g. "leistungsdatum" or "profil.steuernummer" */
+  key: string;
+  /** Human-readable label for the field */
+  label: string;
+  /** Short help text shown beneath the field */
+  hint: string;
+  /** Legal citation */
+  lawReference: string;
+  /** Whether this requirement is conditional (e.g. AT uid only when ≥ 10 000 EUR) */
+  conditional?: string;
+}
+
+/**
+ * Returns the legally required fields for the given region and document type.
+ * Used by the UI to render required-field markers and by tests to assert compliance.
+ */
+export function getRequiredFields(
+  land: Land | string,
+  dokumentTyp: "offerte" | "rechnung" = "rechnung",
+): RegionRequiredField[] {
+  if (dokumentTyp !== "rechnung") return [];
+
+  switch (land) {
+    case "CH":
+      return [
+        {
+          key: "profil.iban",
+          label: "IBAN",
+          hint: "CH-IBAN für QR-Bill Zahlungsschein",
+          lawReference: "Swiss QR-Bill Standard",
+        },
+      ];
+
+    case "DE":
+      return [
+        {
+          key: "leistungsdatum",
+          label: "Leistungsdatum",
+          hint: "Datum, an dem die Leistung erbracht wurde",
+          lawReference: "§14 Abs. 4 Nr. 6 UStG",
+        },
+        {
+          key: "profil.steuernummer",
+          label: "Steuernummer",
+          hint: "Format: 13/123/12345 — oder alternativ USt-IdNr.",
+          lawReference: "§14 Abs. 4 Nr. 2 UStG",
+        },
+      ];
+
+    case "AT":
+      return [
+        {
+          key: "leistungsdatum",
+          label: "Leistungsdatum",
+          hint: "Datum oder Zeitraum der Leistungserbringung",
+          lawReference: "§11 Abs. 1 Z 6 UStG",
+        },
+        {
+          key: "profil.uid_mwst",
+          label: "UID-Nummer",
+          hint: "Erforderlich ab einem Rechnungsbetrag von EUR 10.000",
+          lawReference: "§11 Abs. 1 Z 8 UStG",
+          conditional: "betrag >= 10000",
+        },
+        {
+          key: "kundeUidMwst",
+          label: "UID des Empfängers",
+          hint: "Pflicht ab EUR 10.000 Brutto",
+          lawReference: "§11 Abs. 1 Z 8 UStG",
+          conditional: "betrag >= 10000",
+        },
+      ];
+
+    default:
+      return [];
+  }
+}
+
 /** Returns the primary tax field config shown on onboarding step 0 for the given land. */
 export function getOnboardingTaxField(land: Land | string): { key: "uid_mwst" | "steuernummer"; label: string; placeholder: string } | null {
   switch (land) {
     case "CH": return { key: "uid_mwst",     label: "MWST-Nr.",     placeholder: "CHE-123.456.789" };
-    case "DE": return { key: "steuernummer", label: "Steuernummer", placeholder: "123/456/78901"  };
+    case "DE": return { key: "steuernummer", label: "Steuernummer", placeholder: "13/123/12345"   };
     case "AT": return { key: "uid_mwst",     label: "UID-Nummer",   placeholder: "ATU12345678"    };
     default:   return null;
   }

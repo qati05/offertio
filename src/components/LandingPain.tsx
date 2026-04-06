@@ -6,20 +6,20 @@ const painMoments = [
   {
     time: "17:42",
     label: "Nach dem Einsatz",
-    title: "Du steigst ins Auto und denkst noch an die Offerte.",
-    copy: "Der Einsatz ist fertig, aber das Papierzeug beginnt erst. Genau dieser zweite Arbeitstag frisst die Energie kleiner Betriebe.",
+    title: "Das Werkzeug ist weg. Der Papierkram beginnt jetzt.",
+    copy: "Der Einsatz ist fertig — das Papierzeug beginnt erst. Dieser zweite Arbeitstag frisst die Energie kleiner Betriebe.",
   },
   {
     time: "20:11",
     label: "Am Abend",
-    title: "Die Infos sind da, nur nicht an einem Ort.",
-    copy: "Fotos im Handy, Preise im Kopf, Notizen im Chat, Kundendaten in der Mail. Die Arbeit ist gemacht, die Ordnung fehlt.",
+    title: "Alles ist da. Nur nicht am selben Ort.",
+    copy: "Fotos im Handy, Preise im Kopf, Notizen irgendwo. Die Arbeit ist getan — die Ordnung fehlt.",
   },
   {
     time: "Nächster Tag",
     label: "Am Morgen",
-    title: "Der Kunde wartet, bevor das Dokument steht.",
-    copy: "Je länger ein Angebot herumliegt, desto kleiner wird die Wirkung. Tempo ist im Alltag oft mehr wert als Perfektion.",
+    title: "Der Kunde wartet. Das Dokument noch nicht.",
+    copy: "Je länger ein Angebot herumliegt, desto kleiner die Wirkung. Tempo schlägt Perfektion.",
   },
 ];
 
@@ -43,8 +43,7 @@ export default function LandingPain() {
               <span style={{ color: "var(--color-primary)" }}>Die Nacharbeit nicht.</span>
             </h2>
             <p className="section-copy mt-5 max-w-sm">
-              Kleine Betriebe verlieren selten wegen schlechter Arbeit. Sie verlieren Zeit
-              zwischen Einsatz, Offerte und Nachfassen.
+              Kleine Betriebe verlieren selten wegen schlechter Arbeit — sondern wegen der Zeit danach.
             </p>
           </motion.div>
 
@@ -86,10 +85,19 @@ export default function LandingPain() {
                     </div>
                   </div>
 
-                  <h3 className="mt-4 text-lg font-bold leading-snug sm:text-xl" style={{ color: "var(--color-text)", fontFamily: "var(--font-display)" }}>
+                  <h3
+                    className="mt-4 font-bold"
+                    style={{
+                      fontSize: "clamp(1.1rem, 2.2vw, 1.25rem)",
+                      lineHeight: 1.3,
+                      letterSpacing: "-0.02em",
+                      color: "var(--color-text)",
+                      fontFamily: "var(--font-display)",
+                    }}
+                  >
                     {item.title}
                   </h3>
-                  <p className="mt-2.5 text-sm leading-7" style={{ color: "var(--color-text-muted)" }}>
+                  <p className="mt-2.5 text-sm" style={{ lineHeight: 1.65, color: "var(--color-text-muted)" }}>
                     {item.copy}
                   </p>
                 </div>
@@ -106,7 +114,7 @@ export default function LandingPain() {
               style={{ background: "rgba(200,121,61,0.04)", border: "1px solid rgba(200,121,61,0.10)" }}
             >
               <p className="text-sm font-semibold" style={{ color: "var(--color-primary)" }}>
-                Es gibt einen besseren Weg.
+                Offertio ändert das.
               </p>
             </motion.div>
           </div>

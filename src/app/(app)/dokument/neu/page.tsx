@@ -13,6 +13,7 @@ import { isPro, incrementMonthlyDocCount } from "@/lib/payment";
 import UpgradeScreen from "@/components/UpgradeScreen";
 import { trackDocumentCreated } from "@/lib/analytics";
 import { getMissingProfileFieldsForDocument } from "@/lib/profile";
+import { validateForRegion } from "@/lib/validation";
 import type { Profile, Vorlage, Position, KundenInfo, RabattInfo, DokumentTyp, CustomerRecord } from "@/lib/types";
 
 export default function DokumentNeuPage() {
@@ -77,6 +78,8 @@ export default function DokumentNeuPage() {
   const emailInputRef = useRef<HTMLInputElement | null>(null);
   const leistungsdatumInputRef = useRef<HTMLInputElement | null>(null);
   const profileRequirementsRef = useRef<HTMLDivElement | null>(null);
+  /** Tracks whether user has interacted with leistungsdatum (enables live error) */
+  const [touchedLeistungsdatum, setTouchedLeistungsdatum] = useState(false);
 
   function addDays(dateStr: string, days: number): string {
     const d = new Date(dateStr);
@@ -444,9 +447,44 @@ export default function DokumentNeuPage() {
     // H7: Leistungsdatum required for DE/AT invoices (§14 UStG / §11 öUStG)
     if (dokumentTyp === "rechnung" && dachConfig.leistungsdatumRequired && !leistungsdatum) {
       setFieldErrors((current) => ({ ...current, leistungsdatum: true }));
+      setTouchedLeistungsdatum(true);
       showToast("Leistungsdatum ist für Rechnungen in DE/AT gesetzlich erforderlich.");
       focusField("leistungsdatum");
       return;
+    }
+
+    // Region compliance gate — catches AT ≥10k UID rule and DE Steuernummer requirement
+    if (dokumentTyp === "rechnung" && profil) {
+      const regionCheck = validateForRegion(
+        {
+          dokumentTyp,
+          datum,
+          leistungsdatum: leistungsdatum || null,
+          kundeEmail: kunde.email || null,
+          kundeUidMwst: kunde.uid_mwst || null,
+          profil: {
+            iban: profil.iban,
+            uid_mwst: profil.uid_mwst,
+            steuernummer: profil.steuernummer,
+            land: profil.land,
+          },
+          betrag: total,
+        },
+        profil.land,
+      );
+      if (!regionCheck.valid) {
+        // Surface the most critical error
+        const firstError = Object.values(regionCheck.errors)[0];
+        showToast(firstError ?? "Rechtliche Pflichtangaben fehlen.");
+        if (regionCheck.errors.leistungsdatum) {
+          setFieldErrors((c) => ({ ...c, leistungsdatum: true }));
+          setTouchedLeistungsdatum(true);
+          focusField("leistungsdatum");
+        } else {
+          profileRequirementsRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+        }
+        return;
+      }
     }
 
     if (missingProfileFields.length > 0) {
@@ -1147,40 +1185,63 @@ export default function DokumentNeuPage() {
 
       {/* Leistungsdatum — mandatory for DE (§14 Abs. 4 Nr. 6 UStG) and AT (§11 UStG AT) Rechnungen */}
       {dokumentTyp === "rechnung" && dachConfig.leistungsdatumRequired && (
-        <div
-          style={{
-            display: "flex",
-            justifyContent: "flex-end",
-            alignItems: "center",
-            gap: 6,
-            marginBottom: 16,
-            marginTop: -8,
-            fontSize: 11,
-            color: "var(--color-text-muted)",
-          }}
-        >
-          <span>Leistungsdatum:</span>
-          <input
-            type="date"
-            value={leistungsdatum}
-            onChange={(e) => {
-              setLeistungsdatum(e.target.value);
-              if (fieldErrors.leistungsdatum) {
-                setFieldErrors((current) => ({ ...current, leistungsdatum: false }));
-              }
-            }}
-            ref={leistungsdatumInputRef}
+        <div style={{ marginBottom: 16, marginTop: -8 }}>
+          <div
             style={{
-              background: "transparent",
-              border: fieldErrors.leistungsdatum ? "1px solid #b42318" : "none",
-              outline: "none",
-              fontFamily: "var(--font-sans)",
+              display: "flex",
+              justifyContent: "flex-end",
+              alignItems: "center",
+              gap: 6,
               fontSize: 11,
               color: "var(--color-text-muted)",
-              padding: "2px 0",
             }}
-            title={profil?.land === "DE" ? "Leistungsdatum (§14 Abs. 4 Nr. 6 UStG)" : "Leistungsdatum (§11 UStG AT)"}
-          />
+          >
+            {/* Required-field marker — obsidian dot */}
+            <span style={{ color: "var(--app-text)", fontSize: 9, lineHeight: 1 }} aria-hidden="true">●</span>
+            <span>Leistungsdatum:</span>
+            <input
+              type="date"
+              value={leistungsdatum}
+              onChange={(e) => {
+                setLeistungsdatum(e.target.value);
+                if (fieldErrors.leistungsdatum) {
+                  setFieldErrors((current) => ({ ...current, leistungsdatum: false }));
+                }
+              }}
+              onBlur={() => {
+                if (!leistungsdatum) setTouchedLeistungsdatum(true);
+              }}
+              ref={leistungsdatumInputRef}
+              style={{
+                background: "transparent",
+                border: (fieldErrors.leistungsdatum || (touchedLeistungsdatum && !leistungsdatum))
+                  ? "1px solid #b42318"
+                  : "none",
+                borderRadius: 4,
+                outline: "none",
+                fontFamily: "var(--font-sans)",
+                fontSize: 11,
+                color: "var(--color-text-muted)",
+                padding: "2px 4px",
+                transition: "border-color 0.18s ease",
+              }}
+              title={profil?.land === "DE" ? "Leistungsdatum (§14 Abs. 4 Nr. 6 UStG)" : "Leistungsdatum (§11 UStG AT)"}
+            />
+          </div>
+          {/* Live error message */}
+          {(fieldErrors.leistungsdatum || (touchedLeistungsdatum && !leistungsdatum)) && (
+            <div style={{
+              textAlign: "right",
+              fontSize: 10,
+              color: "#b42318",
+              marginTop: 3,
+              lineHeight: 1.4,
+            }}>
+              {profil?.land === "DE"
+                ? "Pflicht nach §14 Abs. 4 Nr. 6 UStG"
+                : "Pflicht nach §11 Abs. 1 Z 6 UStG"}
+            </div>
+          )}
         </div>
       )}
 
@@ -1264,6 +1325,32 @@ export default function DokumentNeuPage() {
             onChange={(e) => updateKunde("uid_mwst", e.target.value)}
             style={{ marginBottom: 0 }}
           />
+        )}
+        {/* AT: Empfänger-UID becomes mandatory when total ≥ 10 000 EUR */}
+        {profil?.land === "AT" && dokumentTyp === "rechnung" && (
+          <div style={{ position: "relative" }}>
+            <input
+              className="input-field"
+              placeholder={
+                total >= 10_000
+                  ? "UID-Nummer des Empfängers (Pflicht ab EUR 10.000)"
+                  : "UID-Nummer des Empfängers (optional)"
+              }
+              value={kunde.uid_mwst || ""}
+              onChange={(e) => updateKunde("uid_mwst", e.target.value)}
+              style={{
+                marginBottom: 0,
+                borderColor: total >= 10_000 && !kunde.uid_mwst?.trim()
+                  ? "rgba(185,28,28,0.45)"
+                  : undefined,
+              }}
+            />
+            {total >= 10_000 && !kunde.uid_mwst?.trim() && (
+              <div style={{ fontSize: 10, color: "#b42318", marginTop: 4, lineHeight: 1.4 }}>
+                ● Ab EUR 10.000 Pflicht nach §11 Abs. 1 Z 8 UStG
+              </div>
+            )}
+          </div>
         )}
       </div>
 
@@ -1572,6 +1659,32 @@ export default function DokumentNeuPage() {
           </>
         )}
       </div>
+
+      {/* AT ≥ 10 000 EUR compliance nudge — §11 Abs. 1 Z 8 UStG */}
+      {profil?.land === "AT" && dokumentTyp === "rechnung" && total >= 10_000 && (
+        <div
+          style={{
+            marginBottom: 16,
+            padding: "12px 16px",
+            borderRadius: 12,
+            border: "1px solid rgba(185,28,28,0.20)",
+            background: "rgba(185,28,28,0.04)",
+            fontSize: 12,
+            lineHeight: 1.6,
+            color: "var(--app-text)",
+          }}
+        >
+          <strong style={{ color: "#b42318" }}>Pflichtangaben ab EUR 10.000</strong> (§11 Abs. 1 Z 8 UStG)
+          <ul style={{ margin: "6px 0 0 16px", padding: 0, color: "var(--app-text-muted)" }}>
+            {!profil.uid_mwst?.trim() && (
+              <li>Deine UID-Nummer fehlt im Profil</li>
+            )}
+            {!kunde.uid_mwst?.trim() && (
+              <li>UID-Nummer des Empfängers fehlt</li>
+            )}
+          </ul>
+        </div>
+      )}
 
       {/* Send Options */}
       <div className="send-opts" style={{ marginTop: 16 }}>

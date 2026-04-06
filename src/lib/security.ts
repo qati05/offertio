@@ -24,8 +24,12 @@ export function sanitize(input: string): string {
 
 /**
  * Validate email format.
+ * Explicitly rejects control characters (null bytes, newlines, etc.)
+ * before applying the structural regex.
  */
 export function isValidEmail(email: string): boolean {
+  // eslint-disable-next-line no-control-regex
+  if (/[\x00-\x1F\x7F]/.test(email)) return false;
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 }
 
@@ -52,12 +56,21 @@ export function isValidUUID(value: unknown): value is string {
 }
 
 /**
- * Strip newlines and control characters from a string.
- * Use before embedding user input into headers/subjects/filenames.
+ * Strip control characters and prevent CRLF/LF header injection.
+ *
+ * Takes only the content before the first line boundary — CRLF injection
+ * requires a literal newline to start a new header. Any injected headers
+ * (e.g. "Subject: foo\r\nBcc: hacker@evil.com") are eliminated because only
+ * "Subject: foo" survives. Remaining control chars are then removed.
+ *
+ * Use before embedding user input into email headers, subjects, or filenames.
  */
 export function stripControlChars(input: string): string {
+  // Take only the first line segment — drops everything after \r\n, \r, or \n
+  const firstLine = input.split(/\r\n|\r|\n/)[0] ?? "";
+  // Remove remaining C0/C1 control characters (null bytes, etc.)
   // eslint-disable-next-line no-control-regex
-  return input.replace(/[\r\n\x00-\x1F\x7F-\x9F]/g, " ").replace(/\s+/g, " ").trim();
+  return firstLine.replace(/[\x00-\x1F\x7F-\x9F]/g, "").trim();
 }
 
 export function isValidBase64(value: unknown): value is string {
