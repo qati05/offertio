@@ -49,9 +49,8 @@ export default function DokumentNeuPage() {
   const [selectedVorlage, setSelectedVorlage] = useState<string | null>(null);
 
   // Send options
-  const [sendEmail, setSendEmail] = useState(true);
   const [downloadPdf, setDownloadPdf] = useState(false);
-  const [sharePdf, setSharePdf] = useState(false);
+  const [sharePdf, setSharePdf] = useState(true);
   const [eRechnungLoading, setERechnungLoading] = useState(false);
 
   // UI state
@@ -101,15 +100,13 @@ export default function DokumentNeuPage() {
   const typLabel = dokumentTyp === "offerte" ? "Offerte" : "Rechnung";
   const dateEndLabel = dokumentTyp === "offerte" ? "Gültig bis" : "Zahlbar bis";
   const sendBtnLabel =
-    sendEmail && downloadPdf
-      ? `${typLabel} senden & speichern`
-      : sendEmail
-        ? `${typLabel} senden`
-        : downloadPdf
-          ? `${typLabel} herunterladen`
-          : sharePdf
-            ? `${typLabel} teilen`
-            : `${typLabel} weitergeben`;
+    downloadPdf && sharePdf
+      ? `${typLabel} speichern & teilen`
+      : downloadPdf
+        ? `${typLabel} herunterladen`
+        : sharePdf
+          ? `${typLabel} teilen`
+          : `${typLabel} weitergeben`;
   const missingProfileFields = getMissingProfileFieldsForDocument(profil, dokumentTyp, profil?.land);
 
   useEffect(() => {
@@ -516,7 +513,7 @@ export default function DokumentNeuPage() {
       return;
     }
 
-    if (!sendEmail && !downloadPdf && !sharePdf) return;
+    if (!downloadPdf && !sharePdf) return;
 
     setSending(true);
 
@@ -563,68 +560,27 @@ export default function DokumentNeuPage() {
       });
 
       let downloadedResult = false;
-      let delivery: "email" | "download" | "share" = "download";
+      let delivery: "download" | "share" = "share";
       let cloudSaved = true;
       let savedCustomerId: string | null = null;
 
       if (downloadPdf) {
         downloadBlob(blob, `${nummer}.pdf`);
         downloadedResult = true;
+        delivery = "download";
       }
 
       if (sharePdf) {
         const shared = await trySharePdf(blob, `${nummer}.pdf`);
         if (!shared) {
-          // Fall back to download if Web Share API not available
-          downloadBlob(blob, `${nummer}.pdf`);
-          downloadedResult = true;
-        }
-        delivery = "share";
-      }
-
-      if (sendEmail && kunde.email) {
-        try {
-          const res = await fetch("/api/send-offerte", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              pdfBase64: base64,
-              kundeEmail: kunde.email,
-              kundeName: kunde.name || kunde.firma,
-              firmenname: profil?.firmenname || "Offertio",
-              nummer,
-              dokumentTyp,
-            }),
-          });
-
-          const data = await res.json();
-
-          if (!res.ok) {
-            showToast(data.error || "E-Mail konnte nicht gesendet werden.");
-            setSending(false);
-            return;
+          // Web Share API not available — fall back to download
+          if (!downloadedResult) {
+            downloadBlob(blob, `${nummer}.pdf`);
+            downloadedResult = true;
           }
-
-          if (data.method === "client-share") {
-            const shared = await trySharePdf(blob, `${nummer}.pdf`);
-            if (shared) {
-              delivery = "share";
-            } else {
-              if (!downloadedResult) {
-                downloadBlob(blob, `${nummer}.pdf`);
-                downloadedResult = true;
-              }
-              showToast("E-Mail-Versand ist noch nicht aktiviert. PDF wurde stattdessen heruntergeladen.");
-              delivery = "download";
-            }
-          } else {
-            delivery = "email";
-          }
-        } catch (e) {
-          console.error("Email send error:", e);
-          showToast("E-Mail Versand fehlgeschlagen.");
-          setSending(false);
-          return;
+          delivery = "download";
+        } else {
+          delivery = "share";
         }
       }
 
@@ -643,7 +599,7 @@ export default function DokumentNeuPage() {
             kunde,
             betrag: total,
             datum,
-            status: delivery === "email" ? "gesendet" : "entwurf",
+            status: "entwurf",
             sourceDocumentId,
             sourceDocumentNummer: sourceDocumentNumber,
             sourceDocumentTyp: sourceDocumentId ? "offerte" : null,
@@ -684,8 +640,7 @@ export default function DokumentNeuPage() {
 
       commitNummer(dokumentTyp);
       incrementMonthlyDocCount();
-      const method = delivery === "email" ? (downloadedResult ? "both" : "email") : "download";
-      trackDocumentCreated(dokumentTyp, method);
+      trackDocumentCreated(dokumentTyp, delivery);
       localStorage.removeItem("dokument-draft");
 
       // Save to document history
@@ -705,7 +660,7 @@ export default function DokumentNeuPage() {
           kunde_ort: kunde.ort || null,
           betrag: total,
           datum,
-          status: delivery === "email" ? "gesendet" : "entwurf",
+          status: "entwurf",
           source_document_id: sourceDocumentId,
           source_document_nummer: savedSourceDocumentNumber,
           source_document_typ: sourceDocumentId ? "offerte" : null,
@@ -738,7 +693,6 @@ export default function DokumentNeuPage() {
         JSON.stringify({
           typ: dokumentTyp,
           nummer,
-          email: delivery === "email" ? kunde.email : null,
           downloaded: downloadedResult,
           delivery,
           cloudSaved,
@@ -1774,25 +1728,6 @@ export default function DokumentNeuPage() {
       <div className="send-opts" style={{ marginTop: 16 }}>
         <button
           type="button"
-          className={`send-opt ${sendEmail ? "active" : ""} ${!isOnline ? "disabled" : ""}`}
-          onClick={() => isOnline && setSendEmail(!sendEmail)}
-          style={!isOnline ? { opacity: 0.5, pointerEvents: "none" } : {}}
-          disabled={!isOnline}
-          aria-pressed={sendEmail && isOnline}
-        >
-          <div className="send-icon">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
-          </div>
-          <div>
-            <div className="send-title">Per E-Mail senden</div>
-            <div className="send-sub">
-              {!isOnline ? "Offline — nicht verfügbar" : kunde.email || "Keine E-Mail angegeben"}
-            </div>
-          </div>
-          <div className="send-check">{sendEmail && isOnline ? "✓" : ""}</div>
-        </button>
-        <button
-          type="button"
           className={`send-opt ${downloadPdf ? "active" : ""}`}
           onClick={() => setDownloadPdf(!downloadPdf)}
           aria-pressed={downloadPdf}
@@ -1883,7 +1818,7 @@ export default function DokumentNeuPage() {
           className="btn-primary"
           style={{ flex: 2 }}
           onClick={handleSend}
-          disabled={sending || (!sendEmail && !downloadPdf && !sharePdf) || (sendEmail && !isOnline && !downloadPdf && !sharePdf) || serverAllowed === false}
+          disabled={sending || (!downloadPdf && !sharePdf) || serverAllowed === false}
         >
           {sending ? "Wird gesendet…" : sendBtnLabel}
         </button>

@@ -63,15 +63,14 @@ export default function DatenschutzPage() {
           </p>
           <ul style={{ paddingLeft: 20, marginTop: 8 }}>
             <li><strong>Supabase Inc.</strong> — Datenbank, Authentifizierung und Dateispeicherung (EU-Hosting)</li>
-            <li><strong>Resend Inc.</strong> — Transaktionaler E-Mail-Versand (beim Senden von Offerten/Rechnungen)</li>
           </ul>
 
-          <h2 style={{ fontSize: 18, marginTop: 32, marginBottom: 12 }}>6. E-Mail-Versand</h2>
+          <h2 style={{ fontSize: 18, marginTop: 32, marginBottom: 12 }}>6. Dokument-Weitergabe</h2>
           <p>
-            Wenn Sie eine Offerte oder Rechnung per E-Mail senden, wird das generierte PDF über
-            den Dienst Resend (resend.com) an die angegebene Empfänger-E-Mail-Adresse übermittelt.
-            Als Absendername erscheint Ihr Firmenname. Antworten auf diese E-Mails werden direkt
-            an Ihre registrierte E-Mail-Adresse weitergeleitet.
+            Offerten und Rechnungen werden als PDF generiert und lokal auf Ihrem Gerät gespeichert
+            oder über die native Teilen-Funktion Ihres Geräts weitergegeben (z.B. per WhatsApp,
+            E-Mail aus Ihrem eigenen E-Mail-Programm, etc.). Offertio sendet keine Dokumente
+            über eigene Server an Dritte — der Versand erfolgt ausschliesslich durch Sie.
           </p>
 
           <h2 style={{ fontSize: 18, marginTop: 32, marginBottom: 12 }}>7. Cookies & Tracking</h2>
