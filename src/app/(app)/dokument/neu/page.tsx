@@ -51,7 +51,12 @@ export default function DokumentNeuPage() {
   // Send options
   const [sendEmail, setSendEmail] = useState(true);
   const [downloadPdf, setDownloadPdf] = useState(false);
+  const [sharePdf, setSharePdf] = useState(false);
   const [eRechnungLoading, setERechnungLoading] = useState(false);
+
+  // UI state
+  const [freePlanRemaining, setFreePlanRemaining] = useState<number | null>(null);
+  const [draftRestored, setDraftRestored] = useState(false);
 
   // Rabatt
   const [rabatt, setRabatt] = useState<RabattInfo>({
@@ -101,7 +106,9 @@ export default function DokumentNeuPage() {
         ? `${typLabel} senden`
         : downloadPdf
           ? `${typLabel} herunterladen`
-          : `${typLabel} weitergeben`;
+          : sharePdf
+            ? `${typLabel} teilen`
+            : `${typLabel} weitergeben`;
   const missingProfileFields = getMissingProfileFieldsForDocument(profil, dokumentTyp, profil?.land);
 
   useEffect(() => {
@@ -115,21 +122,23 @@ export default function DokumentNeuPage() {
       const draft = localStorage.getItem("dokument-draft");
       if (draft) {
         const d = JSON.parse(draft);
+        let hadContent = false;
         if (d.dokumentTyp) {
           setDokumentTyp(d.dokumentTyp);
           setNummer(peekNextNummer(d.dokumentTyp));
         }
-        if (d.kunde) setKunde(d.kunde);
-        if (d.positionen?.length) setPositionen(d.positionen);
+        if (d.kunde) { setKunde(d.kunde); hadContent = !!(d.kunde.name || d.kunde.firma || d.kunde.email); }
+        if (d.positionen?.length) { setPositionen(d.positionen); hadContent = true; }
         if (d.mwstSatz !== undefined) setMwstSatz(d.mwstSatz);
-        if (d.notiz) setNotiz(d.notiz);
-        if (d.objekt) setObjekt(d.objekt);
+        if (d.notiz) { setNotiz(d.notiz); hadContent = true; }
+        if (d.objekt) { setObjekt(d.objekt); hadContent = true; }
         if (d.rabatt) setRabatt(d.rabatt);
         if (d.preisMode) setPreisMode(d.preisMode);
         if (d.leistungsdatum) setLeistungsdatum(d.leistungsdatum);
         if (d.sourceDocumentId) setSourceDocumentId(d.sourceDocumentId);
-        if (d.sourceDocumentNumber) setSourceDocumentNumber(d.sourceDocumentNumber);
+        if (d.sourceDocumentNumber) { setSourceDocumentNumber(d.sourceDocumentNumber); hadContent = true; }
         if (d.cloudDraftId) setCloudDraftId(d.cloudDraftId);
+        if (hadContent) setDraftRestored(true);
       }
     } catch { /* ignore corrupt draft */ }
 
@@ -177,6 +186,9 @@ export default function DokumentNeuPage() {
     if (limitRes.ok) {
       const limitData = await limitRes.json();
       setServerAllowed(limitData.allowed !== false);
+      if (limitData.remaining !== undefined && !isPro(limitData.plan)) {
+        setFreePlanRemaining(limitData.remaining);
+      }
     } else {
       // On error, fall back to allowing creation (fail open for UX, server re-checks on send)
       setServerAllowed(true);
@@ -493,7 +505,7 @@ export default function DokumentNeuPage() {
       return;
     }
 
-    if (!sendEmail && !downloadPdf) return;
+    if (!sendEmail && !downloadPdf && !sharePdf) return;
 
     setSending(true);
 
@@ -547,6 +559,16 @@ export default function DokumentNeuPage() {
       if (downloadPdf) {
         downloadBlob(blob, `${nummer}.pdf`);
         downloadedResult = true;
+      }
+
+      if (sharePdf) {
+        const shared = await trySharePdf(blob, `${nummer}.pdf`);
+        if (!shared) {
+          // Fall back to download if Web Share API not available
+          downloadBlob(blob, `${nummer}.pdf`);
+          downloadedResult = true;
+        }
+        delivery = "share";
       }
 
       if (sendEmail && kunde.email) {
@@ -931,6 +953,41 @@ export default function DokumentNeuPage() {
 
       <div>
         <div>
+
+      {/* Draft recovery banner */}
+      {draftRestored && (
+        <div style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          gap: 8,
+          marginBottom: 14,
+          padding: "10px 14px",
+          borderRadius: 10,
+          background: "rgba(200,121,61,0.08)",
+          border: "1px solid rgba(200,121,61,0.2)",
+          fontSize: 13,
+          color: "var(--app-text)",
+        }}>
+          <span>Dein letzter Entwurf wurde wiederhergestellt.</span>
+          <button
+            type="button"
+            onClick={() => { localStorage.removeItem("dokument-draft"); setDraftRestored(false); }}
+            style={{
+              flexShrink: 0,
+              background: "none",
+              border: "none",
+              cursor: "pointer",
+              fontSize: 13,
+              color: "var(--color-primary)",
+              fontWeight: 600,
+              padding: "2px 4px",
+            }}
+          >
+            Verwerfen
+          </button>
+        </div>
+      )}
 
       {sourceDocumentNumber && (
         <div
@@ -1734,7 +1791,48 @@ export default function DokumentNeuPage() {
           </div>
           <div className="send-check">{downloadPdf ? "✓" : ""}</div>
         </button>
+        <button
+          type="button"
+          className={`send-opt ${sharePdf ? "active" : ""}`}
+          onClick={() => setSharePdf(!sharePdf)}
+          aria-pressed={sharePdf}
+        >
+          <div className="send-icon">📲</div>
+          <div>
+            <div className="send-title">Teilen / WhatsApp</div>
+            <div className="send-sub">Via Handy direkt weitergeben</div>
+          </div>
+          <div className="send-check">{sharePdf ? "✓" : ""}</div>
+        </button>
       </div>
+
+      {/* Free plan document counter */}
+      {freePlanRemaining !== null && freePlanRemaining <= 5 && (
+        <div style={{
+          marginTop: 10,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          gap: 6,
+          fontSize: 12,
+          color: freePlanRemaining <= 1 ? "#b42318" : "var(--app-text-muted)",
+        }}>
+          <span style={{
+            display: "inline-block",
+            padding: "2px 8px",
+            borderRadius: 99,
+            background: freePlanRemaining <= 1 ? "rgba(180,35,24,0.08)" : "rgba(0,0,0,0.05)",
+            fontWeight: 600,
+          }}>
+            {freePlanRemaining === 0
+              ? "Monatslimit erreicht — "
+              : `Noch ${freePlanRemaining} von 5 kostenlosen Dokumenten — `}
+            <a href="/einstellungen/abonnement" style={{ color: "var(--color-primary)", textDecoration: "none" }}>
+              Pro freischalten
+            </a>
+          </span>
+        </div>
+      )}
 
       {profil?.land === "DE" && dokumentTyp === "rechnung" && (
         <button
@@ -1768,7 +1866,7 @@ export default function DokumentNeuPage() {
           className="btn-primary"
           style={{ flex: 2 }}
           onClick={handleSend}
-          disabled={sending || (!sendEmail && !downloadPdf) || (sendEmail && !isOnline && !downloadPdf) || serverAllowed === false}
+          disabled={sending || (!sendEmail && !downloadPdf && !sharePdf) || (sendEmail && !isOnline && !downloadPdf && !sharePdf) || serverAllowed === false}
         >
           {sending ? "Wird gesendet…" : sendBtnLabel}
         </button>
