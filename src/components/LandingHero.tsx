@@ -462,7 +462,7 @@ export default function LandingHero() {
                 color: "var(--color-text-muted)",
               }}
             >
-              Professionelle Offerten und Rechnungen — direkt nach dem Kundentermin, DACH-konform.
+              Professionelle Offerten und Rechnungen. Direkt nach dem Termin — ohne Büroabend danach.
             </motion.p>
 
             <motion.div

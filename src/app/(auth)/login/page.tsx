@@ -4,10 +4,11 @@ export const dynamic = "force-dynamic";
 
 import { useEffect, useState, type FormEvent } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import OffertioLogo from "@/components/OffertioLogo";
 import { createSupabaseBrowser } from "@/lib/supabase-browser";
 import { trackEmailCapture, trackLoginPageView } from "@/lib/analytics";
+import { getCheckoutUrl } from "@/lib/payment";
 
 type EmailMode = "magic" | "password" | "signup";
 
@@ -26,6 +27,8 @@ const MODE_COPY: Record<Exclude<EmailMode, "magic">, { title: string; body: stri
 
 export default function LoginPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const wantsPro = searchParams.get("plan") === "pro";
   const showGoogleAuth = process.env.NEXT_PUBLIC_GOOGLE_AUTH_ENABLED === "true";
   const [emailMode, setEmailMode] = useState<EmailMode>("signup");
   const [email, setEmail] = useState("");
@@ -41,6 +44,19 @@ export default function LoginPage() {
     void bootstrap();
   }, []);
 
+  function redirectAfterAuth(onboardingComplete: boolean, email?: string, userId?: string) {
+    if (!onboardingComplete) {
+      router.replace(wantsPro ? "/onboarding?plan=pro" : "/onboarding");
+      return;
+    }
+    if (wantsPro) {
+      const checkoutUrl = getCheckoutUrl("pro_yearly", email, userId);
+      router.replace(checkoutUrl !== "#upgrade" ? checkoutUrl : "/einstellungen/abonnement");
+      return;
+    }
+    router.replace("/dashboard");
+  }
+
   async function bootstrap() {
     const supabase = createSupabaseBrowser();
     const {
@@ -54,7 +70,7 @@ export default function LoginPage() {
         .eq("id", user.id)
         .maybeSingle();
 
-      router.replace(profile?.onboarding_complete ? "/dashboard" : "/onboarding");
+      redirectAfterAuth(!!profile?.onboarding_complete, user.email, user.id);
     }
   }
 
@@ -139,12 +155,12 @@ export default function LoginPage() {
           .maybeSingle();
 
         router.refresh();
-        router.push(profile?.onboarding_complete ? "/dashboard" : "/onboarding");
+        redirectAfterAuth(!!profile?.onboarding_complete, user.email, user.id);
         return;
       }
 
       router.refresh();
-      router.push("/dashboard");
+      router.replace("/dashboard");
       return;
     }
 
@@ -176,7 +192,7 @@ export default function LoginPage() {
 
     if (data.session) {
       router.refresh();
-      router.push("/onboarding");
+      router.replace(wantsPro ? "/onboarding?plan=pro" : "/onboarding");
       return;
     }
 
@@ -221,7 +237,18 @@ export default function LoginPage() {
         <section className="auth-card animate-flow">
           <div className="text-center">
             <OffertioLogo size={36} href={undefined} />
-            <div className="auth-region-badge">CH · DE · AT</div>
+            {wantsPro ? (
+              <div
+                className="mx-auto mt-4 inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-xs font-semibold"
+                style={{ background: "rgba(200,121,61,0.10)", color: "var(--color-primary)", border: "1px solid rgba(200,121,61,0.2)" }}
+              >
+                <span>Pro freischalten</span>
+                <span style={{ opacity: 0.5 }}>→</span>
+                <span>nach dem Login direkt weiter</span>
+              </div>
+            ) : (
+              <div className="auth-region-badge">CH · DE · AT</div>
+            )}
             <h1 className="auth-title">{mode.title}</h1>
             <p className="auth-body">{mode.body}</p>
           </div>

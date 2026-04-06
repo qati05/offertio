@@ -57,6 +57,7 @@ export default function DokumentNeuPage() {
   // UI state
   const [freePlanRemaining, setFreePlanRemaining] = useState<number | null>(null);
   const [draftRestored, setDraftRestored] = useState(false);
+  const [draftRestoredAt, setDraftRestoredAt] = useState<string | null>(null);
 
   // Rabatt
   const [rabatt, setRabatt] = useState<RabattInfo>({
@@ -138,7 +139,17 @@ export default function DokumentNeuPage() {
         if (d.sourceDocumentId) setSourceDocumentId(d.sourceDocumentId);
         if (d.sourceDocumentNumber) { setSourceDocumentNumber(d.sourceDocumentNumber); hadContent = true; }
         if (d.cloudDraftId) setCloudDraftId(d.cloudDraftId);
-        if (hadContent) setDraftRestored(true);
+        if (hadContent) {
+          setDraftRestored(true);
+          if (d._savedAt) {
+            const saved = new Date(d._savedAt);
+            const now = new Date();
+            const diffMin = Math.round((now.getTime() - saved.getTime()) / 60000);
+            if (diffMin < 60) setDraftRestoredAt(`vor ${diffMin} Minute${diffMin === 1 ? "" : "n"}`);
+            else if (diffMin < 1440) setDraftRestoredAt(`vor ${Math.round(diffMin / 60)} Stunde${Math.round(diffMin / 60) === 1 ? "" : "n"}`);
+            else setDraftRestoredAt(saved.toLocaleDateString("de-CH", { day: "numeric", month: "short" }));
+          }
+        }
       }
     } catch { /* ignore corrupt draft */ }
 
@@ -778,7 +789,7 @@ export default function DokumentNeuPage() {
 
     // Always persist to localStorage first (instant, offline-safe).
     try {
-      localStorage.setItem("dokument-draft", JSON.stringify(draftPayload));
+      localStorage.setItem("dokument-draft", JSON.stringify({ ...draftPayload, _savedAt: new Date().toISOString() }));
     } catch { /* ignore quota errors */ }
 
     // If there's already a cloud draft, just update its status (it's still "entwurf").
@@ -969,7 +980,7 @@ export default function DokumentNeuPage() {
           fontSize: 13,
           color: "var(--app-text)",
         }}>
-          <span>Dein letzter Entwurf wurde wiederhergestellt.</span>
+          <span>Entwurf wiederhergestellt{draftRestoredAt ? ` · gespeichert ${draftRestoredAt}` : ""}.</span>
           <button
             type="button"
             onClick={() => { localStorage.removeItem("dokument-draft"); setDraftRestored(false); }}

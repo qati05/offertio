@@ -55,14 +55,6 @@
   --shadow-brand: 0 4px 16px rgba(168, 98, 46, 0.20), 0 1px 4px rgba(168, 98, 46, 0.12);
   --shadow-inner-card: inset 0 1px 0 rgba(255,255,255,0.50);
 
-  /* ── Radii ───────────────────────────────────────── */
-  --radius-pill: 9999px;
-  --radius-2xl: 20px;
-  --radius-xl: 16px;
-  --radius-lg: 12px;
-  --radius-md: 12px;
-  --radius-sm: 8px;
-
   /* ── Typography ──────────────────────────────────── */
   --font-display: var(--font-bricolage), "Bricolage Grotesque", sans-serif;
   --font-sans: var(--font-dm-sans), "DM Sans", sans-serif;
