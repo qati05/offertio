@@ -7,7 +7,7 @@
   StyleSheet,
 } from "@react-pdf/renderer";
 import type { Profile, Position, KundenInfo, RabattInfo, DokumentTyp } from "@/lib/types";
-import { getDachConfig } from "@/lib/dach";
+import { getDachConfig, getKleinunternehmerHinweis } from "@/lib/dach";
 import PDFModern from "./pdf/PDFModern";
 import PDFMinimal from "./pdf/PDFMinimal";
 import PDFProfessionell from "./pdf/PDFProfessionell";
@@ -354,10 +354,23 @@ export default function OffertePDF(props: OffertePDFProps) {
     : null;
   // For DE/AT Rechnungen, Leistungsdatum is mandatory (§14 Abs. 4 Nr. 6 UStG / §11 UStG AT).
   // If not supplied, we fall back to the document date with a note.
-  const showLeistungsdatum = dokumentTyp === "rechnung" && leistungsdatumRequired;
+  // Show Leistungsdatum if mandatory (DE/AT) OR if optionally provided for CH
+  const showLeistungsdatum =
+    dokumentTyp === "rechnung" &&
+    (leistungsdatumRequired || (profil.land === "CH" && !!leistungsdatum?.trim()));
+
+  // Kleinunternehmer / VAT-exempt: show legal notice instead of MWST lines
+  const isKleinunternehmer = !!profil.kleinunternehmer;
+  const kleinunternehmerHinweis = isKleinunternehmer
+    ? getKleinunternehmerHinweis(profil.land)
+    : null;
+  // For DE/AT: fallback to invoice date with note if not provided (mandatory field, validated before PDF gen)
+  // For CH: only shown when explicitly filled — no fallback needed
   const leistungsdatumDisplay = leistungsdatumFormatiert
     ? leistungsdatumFormatiert
-    : `${datumFormatiert} (= Rechnungsdatum)`;
+    : leistungsdatumRequired
+      ? `${datumFormatiert} (= Rechnungsdatum)`
+      : datumFormatiert;
 
   const creditorName =
     profil.firmenname || `${profil.vorname} ${profil.nachname}`.trim();
@@ -493,12 +506,18 @@ export default function OffertePDF(props: OffertePDFProps) {
                   </Text>
                 </View>
               )}
-              {mwstSatz > 0 && (
+              {isKleinunternehmer ? (
+                <View style={[s.summaryRow, { marginTop: 4 }]}>
+                  <Text style={[s.summaryLabel, { color: "#777", fontSize: 8, flex: 1 }]}>
+                    {kleinunternehmerHinweis}
+                  </Text>
+                </View>
+              ) : mwstSatz > 0 ? (
                 <View style={s.summaryRow}>
                   <Text style={s.summaryLabel}>{mwstTermLabel} ({mwstSatz}%)</Text>
                   <Text style={s.summaryValue}>{currency} {formatAmount(mwstBetrag)}</Text>
                 </View>
-              )}
+              ) : null}
             </>
           ) : (
             <>
@@ -514,12 +533,18 @@ export default function OffertePDF(props: OffertePDFProps) {
                   </Text>
                 </View>
               )}
-              {mwstSatz > 0 && (
+              {isKleinunternehmer ? (
+                <View style={[s.summaryRow, { marginTop: 4 }]}>
+                  <Text style={[s.summaryLabel, { color: "#777", fontSize: 8, flex: 1 }]}>
+                    {kleinunternehmerHinweis}
+                  </Text>
+                </View>
+              ) : mwstSatz > 0 ? (
                 <View style={s.summaryRow}>
                   <Text style={[s.summaryLabel, { color: "#999" }]}>davon {mwstTermLabel} ({mwstSatz}%)</Text>
                   <Text style={[s.summaryValue, { color: "#999" }]}>{currency} {formatAmount(mwstBetrag)}</Text>
                 </View>
-              )}
+              ) : null}
             </>
           )}
           <View style={s.totalRow}>

@@ -1183,8 +1183,8 @@ export default function DokumentNeuPage() {
         />
       </div>
 
-      {/* Leistungsdatum — mandatory for DE (§14 Abs. 4 Nr. 6 UStG) and AT (§11 UStG AT) Rechnungen */}
-      {dokumentTyp === "rechnung" && dachConfig.leistungsdatumRequired && (
+      {/* Leistungsdatum — mandatory for DE/AT, optional for CH (Art. 26 Abs. 2 lit. c MWSTG) */}
+      {dokumentTyp === "rechnung" && (dachConfig.leistungsdatumRequired || profil?.land === "CH") && (
         <div style={{ marginBottom: 16, marginTop: -8 }}>
           <div
             style={{
@@ -1196,9 +1196,13 @@ export default function DokumentNeuPage() {
               color: "var(--color-text-muted)",
             }}
           >
-            {/* Required-field marker — obsidian dot */}
-            <span style={{ color: "var(--app-text)", fontSize: 9, lineHeight: 1 }} aria-hidden="true">●</span>
-            <span>Leistungsdatum:</span>
+            {/* Required-field marker — only for DE/AT */}
+            {dachConfig.leistungsdatumRequired && (
+              <span style={{ color: "var(--app-text)", fontSize: 9, lineHeight: 1 }} aria-hidden="true">●</span>
+            )}
+            <span>
+              Leistungsdatum{!dachConfig.leistungsdatumRequired && <span style={{ fontStyle: "italic" }}> (optional)</span>}:
+            </span>
             <input
               type="date"
               value={leistungsdatum}
@@ -1209,7 +1213,7 @@ export default function DokumentNeuPage() {
                 }
               }}
               onBlur={() => {
-                if (!leistungsdatum) setTouchedLeistungsdatum(true);
+                if (!leistungsdatum && dachConfig.leistungsdatumRequired) setTouchedLeistungsdatum(true);
               }}
               ref={leistungsdatumInputRef}
               style={{
@@ -1225,11 +1229,17 @@ export default function DokumentNeuPage() {
                 padding: "2px 4px",
                 transition: "border-color 0.18s ease",
               }}
-              title={profil?.land === "DE" ? "Leistungsdatum (§14 Abs. 4 Nr. 6 UStG)" : "Leistungsdatum (§11 UStG AT)"}
+              title={
+                profil?.land === "DE"
+                  ? "Leistungsdatum (§14 Abs. 4 Nr. 6 UStG)"
+                  : profil?.land === "AT"
+                    ? "Leistungsdatum (§11 Abs. 1 Z 6 öUStG)"
+                    : "Leistungsdatum (Art. 26 Abs. 2 lit. c MWSTG) — falls abweichend vom Rechnungsdatum"
+              }
             />
           </div>
-          {/* Live error message */}
-          {(fieldErrors.leistungsdatum || (touchedLeistungsdatum && !leistungsdatum)) && (
+          {/* Live error — only for mandatory countries */}
+          {dachConfig.leistungsdatumRequired && (fieldErrors.leistungsdatum || (touchedLeistungsdatum && !leistungsdatum)) && (
             <div style={{
               textAlign: "right",
               fontSize: 10,
@@ -1238,8 +1248,14 @@ export default function DokumentNeuPage() {
               lineHeight: 1.4,
             }}>
               {profil?.land === "DE"
-                ? "Pflicht nach §14 Abs. 4 Nr. 6 UStG"
-                : "Pflicht nach §11 Abs. 1 Z 6 UStG"}
+                ? "Wann haben Sie die Leistung erbracht? (Pflicht nach §14 Abs. 4 Nr. 6 UStG)"
+                : "Wann haben Sie die Leistung erbracht? (Pflicht nach §11 Abs. 1 Z 6 öUStG)"}
+            </div>
+          )}
+          {/* Info hint for CH — only when field is filled and differs from invoice date */}
+          {profil?.land === "CH" && !dachConfig.leistungsdatumRequired && !leistungsdatum && (
+            <div style={{ textAlign: "right", fontSize: 10, color: "var(--color-text-muted)", marginTop: 2 }}>
+              Falls Leistungsdatum = Rechnungsdatum, kann leer gelassen werden.
             </div>
           )}
         </div>

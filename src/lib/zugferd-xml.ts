@@ -39,6 +39,21 @@ export function buildZugferdXml(data: OfferteData, leistungsdatum?: string): str
   const deliveryDate = leistungsdatum ?? datum;
   const buyerName = (kunde.firma?.trim() || kunde.name) ?? "";
 
+  // ── Payment due date (BT-9) ──────────────────────────────────────────────
+  // Derived from invoice date + payment terms days (profil.zahlungsfrist, default 30)
+  const zahlungsfristTage = profil.zahlungsfrist ?? 30;
+  const dueDateObj = new Date(datum);
+  dueDateObj.setDate(dueDateObj.getDate() + zahlungsfristTage);
+  const dueDate = dueDateObj.toISOString().split("T")[0];
+
+  // ── Country codes ────────────────────────────────────────────────────────
+  // Seller country always matches the profile land (DE for ZUGFeRD invoices)
+  const sellerCountryID = profil.land ?? "DE";
+  // Buyer country: KundenInfo does not carry a country field — default to seller country
+  // as the vast majority of DACH B2B transactions are domestic. Add a buyerLand field
+  // to KundenInfo in a future migration if cross-border support is needed.
+  const buyerCountryID = sellerCountryID;
+
   // ── XML document ─────────────────────────────────────────────────────────
   const root = create({ version: "1.0", encoding: "UTF-8" }).ele(
     "rsm:CrossIndustryInvoice",
@@ -115,7 +130,7 @@ export function buildZugferdXml(data: OfferteData, leistungsdatum?: string): str
   sellerAddr.ele("ram:PostcodeCode").txt(profil.plz);
   sellerAddr.ele("ram:LineOne").txt(profil.adresse);
   sellerAddr.ele("ram:CityName").txt(profil.ort);
-  sellerAddr.ele("ram:CountryID").txt("DE");
+  sellerAddr.ele("ram:CountryID").txt(sellerCountryID);
 
   // Seller Steuernummer (BT-32, schemeID FC)
   if (profil.steuernummer) {
@@ -143,7 +158,7 @@ export function buildZugferdXml(data: OfferteData, leistungsdatum?: string): str
   buyerAddr.ele("ram:PostcodeCode").txt(kunde.plz);
   buyerAddr.ele("ram:LineOne").txt(kunde.adresse);
   buyerAddr.ele("ram:CityName").txt(kunde.ort);
-  buyerAddr.ele("ram:CountryID").txt("DE");
+  buyerAddr.ele("ram:CountryID").txt(buyerCountryID);
 
   // Buyer VAT ID (BT-48) — optional
   if (kunde.uid_mwst) {
@@ -163,7 +178,9 @@ export function buildZugferdXml(data: OfferteData, leistungsdatum?: string): str
 
   // ── ApplicableHeaderTradeSettlement ─────────────────────────────────────
   const settlement = tx.ele("ram:ApplicableHeaderTradeSettlement");
-  settlement.ele("ram:InvoiceCurrencyCode").txt("EUR");
+  // ZUGFeRD is DE-only; DE uses EUR. Use profil currency as canonical source.
+  const currencyCode = "EUR"; // DE always EUR; future: derive from getDachConfig(profil.land).currency
+  settlement.ele("ram:InvoiceCurrencyCode").txt(currencyCode);
 
   // Payment means: SEPA credit transfer (BT-81, BT-84, BT-86)
   if (profil.iban) {
@@ -189,17 +206,21 @@ export function buildZugferdXml(data: OfferteData, leistungsdatum?: string): str
   tradeTax.ele("ram:CategoryCode").txt(mwstSatz === 0 ? "Z" : "S");
   tradeTax.ele("ram:RateApplicablePercent").txt(String(mwstSatz));
 
-  // Payment terms (informational, required in BASIC profile)
-  settlement
-    .ele("ram:SpecifiedTradePaymentTerms")
+  // Payment terms — BT-9 (due date) + human-readable description
+  const paymentTerms = settlement.ele("ram:SpecifiedTradePaymentTerms");
+  paymentTerms
     .ele("ram:Description")
-    .txt("Zahlbar innerhalb der vereinbarten Zahlungsfrist.");
+    .txt(`Zahlbar innerhalb von ${zahlungsfristTage} Tagen.`);
+  paymentTerms
+    .ele("ram:DueDateDateTime")
+    .ele("udt:DateTimeString", { format: "102" })
+    .txt(toCiiDate(dueDate));
 
   // Monetary summation (BG-22)
   const summation = settlement.ele("ram:SpecifiedTradeSettlementHeaderMonetarySummation");
   summation.ele("ram:LineTotalAmount").txt(money(lineTotal));
   summation.ele("ram:TaxBasisTotalAmount").txt(money(taxBasis));
-  summation.ele("ram:TaxTotalAmount", { currencyID: "EUR" }).txt(money(taxAmount));
+  summation.ele("ram:TaxTotalAmount", { currencyID: currencyCode }).txt(money(taxAmount));
   summation.ele("ram:GrandTotalAmount").txt(money(grandTotal));
   summation.ele("ram:DuePayableAmount").txt(money(grandTotal));
 

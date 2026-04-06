@@ -58,7 +58,7 @@ export async function POST(request: NextRequest) {
       return json({ error: "Payload zu gross." }, 413);
     }
 
-    const { pdfBase64, kundeEmail, kundeName, firmenname, nummer, dokumentTyp } = body;
+    const { pdfBase64, kundeEmail, kundeName, firmenname, nummer, dokumentTyp, userEmail: bodyUserEmail } = body;
 
     if (!pdfBase64 || !kundeEmail || !nummer) {
       return json({ error: "Fehlende Daten fuer den E-Mail-Versand." }, 400);
@@ -99,10 +99,21 @@ export async function POST(request: NextRequest) {
     const fromEmail = process.env.RESEND_FROM_EMAIL || "offerte@offertio.ch";
     const safeTyp = dokumentTyp === "rechnung" ? "Rechnung" : "Offerte";
 
+    // Reply-to: use authenticated user's email so replies go directly to the business owner
+    // Priority: Supabase auth email (verified) > body-supplied email > none
+    const replyToEmail = user.email || (
+      typeof bodyUserEmail === "string" && isValidEmail(normalizeEmail(bodyUserEmail))
+        ? normalizeEmail(bodyUserEmail)
+        : null
+    );
+
     const resend = new Resend(apiKey);
     await resend.emails.send({
-      from: `${safeFirmenname} via Offertio <${fromEmail}>`,
+      // From shows only the business name — professional, no "via Offertio" branding
+      from: `${safeFirmenname} <${fromEmail}>`,
       to: normalizedEmail,
+      // Replies go to the business owner, not to Offertio
+      ...(replyToEmail ? { reply_to: replyToEmail } : {}),
       subject: `${safeTyp} ${safeNummer} von ${safeFirmenname}`,
       text: `Guten Tag ${safeKundeName},\n\nIm Anhang finden Sie unsere ${safeTyp.toLowerCase()} ${safeNummer}.\n\nBei Fragen stehen wir Ihnen gerne zur Verfuegung.\n\nFreundliche Gruesse\n${safeFirmenname}`,
       attachments: [

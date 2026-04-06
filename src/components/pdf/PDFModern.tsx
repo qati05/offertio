@@ -7,7 +7,7 @@ import {
   StyleSheet,
 } from "@react-pdf/renderer";
 import type { Profile, Position, KundenInfo, RabattInfo, DokumentTyp } from "@/lib/types";
-import { getDachConfig } from "@/lib/dach";
+import { getDachConfig, getKleinunternehmerHinweis } from "@/lib/dach";
 
 function fmt(n: number) {
   return n.toLocaleString("de-CH", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -149,6 +149,8 @@ export default function PDFModern({
   const dachConfig = getDachConfig(profil.land);
   const { mwstTermLabel, pdfUidLabel, pdfMwstNrLabel, leistungsdatumRequired, hasQrBill: landHasQrBill } = dachConfig;
   const hasQR = landHasQrBill && !!qrCodeDataUrl;
+  const isKleinunternehmer = !!profil.kleinunternehmer;
+  const kleinunternehmerHinweis = isKleinunternehmer ? getKleinunternehmerHinweis(profil.land) : null;
   const typLabel = dokumentTyp === "rechnung" ? "Rechnung" : "Offerte";
   const dateEndLabel = dokumentTyp === "rechnung" ? "Zahlbar bis" : "Gültig bis";
   const displayUid = profil.land === "DE" ? (profil.steuernummer || "") : (profil.uid_mwst || "");
@@ -231,12 +233,16 @@ export default function PDFModern({
                     <Text style={[m.sValue, { color: "#22c55e" }]}>−{currency} {fmt(rabattBetrag)}</Text>
                   </View>
                 )}
-                {mwstSatz > 0 && (
+                {isKleinunternehmer ? (
+                  <View style={[m.summaryRow, { marginTop: 4 }]}>
+                    <Text style={[m.sLabel, { color: "#777", fontSize: 8, flex: 1 }]}>{kleinunternehmerHinweis}</Text>
+                  </View>
+                ) : mwstSatz > 0 ? (
                   <View style={m.summaryRow}>
                     <Text style={m.sLabel}>{mwstTermLabel} ({mwstSatz}%)</Text>
                     <Text style={m.sValue}>{currency} {fmt(mwstBetrag)}</Text>
                   </View>
-                )}
+                ) : null}
               </>
             ) : (
               <>
@@ -250,12 +256,16 @@ export default function PDFModern({
                     <Text style={[m.sValue, { color: "#22c55e" }]}>−{currency} {fmt(rabattBetrag)}</Text>
                   </View>
                 )}
-                {mwstSatz > 0 && (
+                {isKleinunternehmer ? (
+                  <View style={[m.summaryRow, { marginTop: 4 }]}>
+                    <Text style={[m.sLabel, { color: "#777", fontSize: 8, flex: 1 }]}>{kleinunternehmerHinweis}</Text>
+                  </View>
+                ) : mwstSatz > 0 ? (
                   <View style={m.summaryRow}>
                     <Text style={[m.sLabel, { color: "#999" }]}>davon {mwstTermLabel} ({mwstSatz}%)</Text>
                     <Text style={[m.sValue, { color: "#999" }]}>{currency} {fmt(mwstBetrag)}</Text>
                   </View>
-                )}
+                ) : null}
               </>
             )}
             <View style={m.totalBox}>

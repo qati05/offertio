@@ -108,7 +108,9 @@ export const GermanInvoiceSchema = BaseDocumentSchema.superRefine((data, ctx) =>
 // ── AustrianInvoiceSchema ──────────────────────────────────────────────────────
 //
 // AT §11 Abs. 1 Z 6 UStG:   Leistungsdatum mandatory.
+// AT §11 Abs. 1 Z 3 UStG:   UID of issuer mandatory on full invoices (betrag > EUR 400).
 // AT §11 Abs. 1 Z 8 UStG:   UID of issuer AND recipient mandatory if betrag ≥ 10 000 EUR.
+// AT §11 Abs. 6 UStG:        Kleinbetragsrechnung ≤ EUR 400 — simplified rules apply.
 export const AustrianInvoiceSchema = BaseDocumentSchema.superRefine((data, ctx) => {
   if (data.dokumentTyp === "rechnung") {
     // Leistungsdatum — mandatory
@@ -120,16 +122,18 @@ export const AustrianInvoiceSchema = BaseDocumentSchema.superRefine((data, ctx) 
           "Leistungsdatum ist für österreichische Rechnungen gesetzlich erforderlich (§11 Abs. 1 Z 6 UStG)",
       });
     }
-    // ≥ 10 000 EUR threshold (§11 Abs. 1 Z 8 UStG)
-    if ((data.betrag ?? 0) >= 10_000) {
-      if (!data.profil.uid_mwst?.trim()) {
-        ctx.addIssue({
-          code: z.ZodIssueCode.custom,
-          path: ["profil", "uid_mwst"],
-          message:
-            "Ihre UID-Nummer ist für Rechnungen über EUR 10.000 gesetzlich erforderlich (§11 Abs. 1 Z 8 UStG)",
-        });
-      }
+    const betrag = data.betrag ?? 0;
+    // > EUR 400: full invoice — issuer UID mandatory (§11 Abs. 1 Z 3 UStG)
+    if (betrag > 400 && !data.profil.uid_mwst?.trim()) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["profil", "uid_mwst"],
+        message:
+          "Ihre UID-Nummer ist für österreichische Vollrechnungen über EUR 400 gesetzlich erforderlich (§11 Abs. 1 Z 3 UStG)",
+      });
+    }
+    // ≥ 10 000 EUR threshold: recipient UID also mandatory (§11 Abs. 1 Z 8 UStG)
+    if (betrag >= 10_000) {
       if (!data.kundeUidMwst?.trim()) {
         ctx.addIssue({
           code: z.ZodIssueCode.custom,

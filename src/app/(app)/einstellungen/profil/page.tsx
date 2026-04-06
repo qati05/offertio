@@ -36,6 +36,7 @@ export default function ProfilPage() {
   const [toast, setToast] = useState("");
   const [pdfTemplate, setPdfTemplate] = useState<"classic" | "modern" | "minimal" | "professionell">("classic");
   const [logoUrl, setLogoUrl] = useState("");
+  const [kleinunternehmer, setKleinunternehmer] = useState(false);
   const [form, setForm] = useState({
     firmenname: "",
     vorname: "",
@@ -104,6 +105,7 @@ export default function ProfilPage() {
       if (data.pdf_template && ["classic", "modern", "minimal", "professionell"].includes(data.pdf_template)) {
         setPdfTemplate(data.pdf_template as typeof pdfTemplate);
       }
+      setKleinunternehmer(!!data.kleinunternehmer);
     }
 
     setLoading(false);
@@ -225,6 +227,7 @@ export default function ProfilPage() {
       email: user.email || "",
       ...form,
       zahlungsfrist: parseInt(form.zahlungsfrist, 10) || 30,
+      kleinunternehmer,
     };
 
     const { error } = await supabase.from("profiles").upsert(profileData, { onConflict: "id" });
@@ -559,6 +562,29 @@ export default function ProfilPage() {
               style={{ maxWidth: 120 }}
             />
           </div>
+
+          {/* Kleinunternehmer / VAT-exempt toggle */}
+          <div className="form-group" style={{ marginTop: 8 }}>
+            <label style={{ display: "flex", alignItems: "flex-start", gap: 10, cursor: "pointer" }}>
+              <input
+                type="checkbox"
+                checked={kleinunternehmer}
+                onChange={(e) => setKleinunternehmer(e.target.checked)}
+                style={{ marginTop: 3, width: 16, height: 16, flexShrink: 0 }}
+              />
+              <span>
+                <span className="form-label" style={{ display: "block", marginBottom: 2 }}>
+                  Kleinunternehmer / Von der MWST befreit
+                </span>
+                <span style={{ fontSize: 12, color: "var(--color-text-muted)", lineHeight: 1.5 }}>
+                  {form.land === "CH" && "Art. 10 MWSTG — Jahresumsatz unter CHF 100\'000"}
+                  {form.land === "DE" && "§19 UStG — Keine Umsatzsteuer auf Rechnungen"}
+                  {form.land === "AT" && "§6 Abs. 1 Z 27 öUStG — Jahresumsatz unter EUR 35\'000"}
+                  {" "}— Rechnungen zeigen den gesetzlich vorgeschriebenen Hinweistext statt MWST.
+                </span>
+              </span>
+            </label>
+          </div>
         </div>
 
         <div className="app-card" style={{ maxWidth: 640, marginBottom: 20 }}>
@@ -610,14 +636,34 @@ export default function ProfilPage() {
       {!isOnboarding && (
         <div className="app-card" style={{ maxWidth: 640, marginTop: 40, borderColor: "#fecaca" }}>
           <div className="app-card-title" style={{ color: "#dc2626" }}>Gefahrenzone</div>
-          <p style={{ fontSize: 12, color: "var(--color-text-muted)", marginBottom: 12 }}>
+          <p style={{ fontSize: 12, color: "var(--color-text-muted)", marginBottom: 8 }}>
             Dein Konto und alle Daten werden unwiderruflich gelöscht.
           </p>
+          <div style={{
+            background: "#fef3c7",
+            border: "1px solid #fcd34d",
+            borderRadius: 8,
+            padding: "10px 14px",
+            marginBottom: 16,
+            fontSize: 12,
+            lineHeight: 1.6,
+            color: "#92400e",
+          }}>
+            <strong>Gesetzliche Aufbewahrungspflicht:</strong> Du bist verpflichtet, deine Rechnungen
+            aufzubewahren — in der Schweiz 10 Jahre (Art. 958f OR), in Deutschland 10 Jahre (§147 AO),
+            in Österreich 7 Jahre (§132 BAO). Lade alle Dokumente herunter, bevor du dein Konto löschst.
+            Die Löschung ist unwiderruflich.
+          </div>
           <button
             type="button"
             onClick={async () => {
-              if (!confirm("Bist du sicher? Alle Daten werden unwiderruflich gelöscht.")) return;
-              if (!confirm("Wirklich löschen? Diese Aktion kann nicht rückgängig gemacht werden.")) return;
+              const confirmed = confirm(
+                "Konto wirklich löschen?\n\n" +
+                "⚠️ Gesetzliche Aufbewahrungspflicht: Stelle sicher, dass du alle Rechnungen heruntergeladen hast " +
+                "(CH: 10 Jahre, DE: 10 Jahre, AT: 7 Jahre).\n\n" +
+                "Diese Aktion kann nicht rückgängig gemacht werden."
+              );
+              if (!confirmed) return;
 
               try {
                 const res = await fetch("/api/account/delete", {
@@ -652,7 +698,7 @@ export default function ProfilPage() {
               cursor: "pointer",
             }}
           >
-            Konto loeschen
+            Konto löschen
           </button>
         </div>
       )}
