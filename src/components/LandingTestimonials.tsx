@@ -2,33 +2,21 @@
 
 import { motion } from "framer-motion";
 
-const testimonials = [
+const sectors = [
   {
-    quote: "Ich erstell die Offerte noch beim Kunden — bevor ich ins Auto steige. Früher hab ich das abends gemacht und dann meistens zu spät abgeschickt.",
-    name: "Thomas B.",
-    role: "Inhaber",
-    company: "Sanitär Baumann",
-    location: "Zürich, CH",
-    initial: "T",
-    accent: "rgba(200,121,61,0.12)",
+    label: "Handwerk",
+    title: "Für Betriebe, die beim Kunden arbeiten.",
+    text: "Sanitär, Elektro, Maler oder Serviceeinsätze: Offertio ist für den Moment gebaut, in dem nach dem Termin schnell etwas Sauberes raus muss — direkt vom Handy.",
   },
   {
-    quote: "Rechnung raus, QR-Code dran, fertig. Kein Excel mehr, kein Nachhaken beim Steuerberater wegen ZUGFeRD. Das läuft einfach sauber.",
-    name: "Markus H.",
-    role: "Geschäftsführer",
-    company: "Elektro Huber GmbH",
-    location: "München, DE",
-    initial: "M",
-    accent: "rgba(200,121,61,0.08)",
+    label: "Reinigung & Services",
+    title: "Für Teams, die nicht im CRM wohnen wollen.",
+    text: "Kein schweres System, kein Einführungsprojekt. Nur ein klarer Ablauf für Offerten und Rechnungen, der in Minuten funktioniert — ohne IT.",
   },
   {
-    quote: "Meine Kunden fragen mich immer, wie ich die Rechnung so schnell rausschick. Das macht einfach einen anderen Eindruck als eine Word-Datei.",
-    name: "Sandra K.",
-    role: "Selbstständig",
-    company: "Gebäudereinigung Kals",
-    location: "Wien, AT",
-    initial: "S",
-    accent: "rgba(200,121,61,0.06)",
+    label: "DACH-ready",
+    title: "CH, DE und AT — mit der richtigen Logik.",
+    text: "QR-Rechnung, SEPA, ZUGFeRD und Steuerlogik passen sich automatisch an. Keine manuelle Anpassung, keine Fehler beim nächsten Kanton oder Bundesland.",
   },
 ];
 
@@ -45,17 +33,17 @@ export default function LandingTestimonials() {
             transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
             className="lg:sticky lg:top-28 lg:self-start"
           >
-            <div className="section-kicker">Stimmen</div>
+            <div className="section-kicker">Zielgruppen</div>
             <h2 className="section-title mt-5">
-              Was Betriebe{" "}
-              <span style={{ color: "var(--color-primary)" }}>wirklich sagen.</span>
+              Gemacht für Betriebe,{" "}
+              <span style={{ color: "var(--color-primary)" }}>nicht für Software-Abteilungen.</span>
             </h2>
             <p className="section-copy mt-5 max-w-sm">
-              Keine Software-Abteilung. Kein IT-Kurs. Nur Handwerker, Dienstleister und Teams, die ihren Papierkram endlich im Griff haben.
+              Ein Werkzeug, das auf Anhieb funktioniert — für Handwerker, Dienstleister und kleine Teams im DACH-Raum.
             </p>
 
             <div className="mt-7 flex flex-wrap gap-2">
-              {["CH · DE · AT", "Kein Onboarding nötig", "Direkt produktiv"].map((note) => (
+              {["Kein CRM-Overhead", "Direkt nutzbar", "Professionell ohne Aufwand"].map((note) => (
                 <span
                   key={note}
                   className="rounded-md px-2.5 py-1.5 text-[11px] font-medium"
@@ -72,9 +60,9 @@ export default function LandingTestimonials() {
           </motion.div>
 
           <div className="space-y-3">
-            {testimonials.map((t, i) => (
+            {sectors.map((item, i) => (
               <motion.article
-                key={t.name}
+                key={item.title}
                 initial={{ opacity: 0, y: 20 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true, margin: "-60px" }}
@@ -85,45 +73,21 @@ export default function LandingTestimonials() {
                   border: "1px solid rgba(255,255,255,0.06)",
                 }}
               >
-                {/* Quote mark */}
                 <div
-                  className="mb-4 text-3xl leading-none font-serif select-none"
-                  style={{ color: "var(--color-primary)", opacity: 0.5 }}
-                  aria-hidden="true"
+                  className="text-[10px] font-semibold uppercase tracking-[0.14em]"
+                  style={{ color: "var(--color-primary)" }}
                 >
-                  &ldquo;
+                  {item.label}
                 </div>
-
-                <p
-                  className="text-base leading-7"
-                  style={{ color: "var(--color-text)", fontStyle: "italic" }}
+                <h3
+                  className="mt-3 text-lg font-bold leading-snug"
+                  style={{ color: "var(--color-text)", fontFamily: "var(--font-display)" }}
                 >
-                  {t.quote}
+                  {item.title}
+                </h3>
+                <p className="mt-2.5 text-sm leading-6" style={{ color: "var(--color-text-muted)" }}>
+                  {item.text}
                 </p>
-
-                {/* Attribution */}
-                <div className="mt-5 flex items-center gap-3">
-                  <div
-                    className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-sm font-bold text-white"
-                    style={{ background: `var(--color-primary)`, opacity: 0.85 }}
-                  >
-                    {t.initial}
-                  </div>
-                  <div>
-                    <div
-                      className="text-sm font-semibold leading-snug"
-                      style={{ color: "var(--color-text)" }}
-                    >
-                      {t.name} · {t.role}, {t.company}
-                    </div>
-                    <div
-                      className="mt-0.5 text-xs"
-                      style={{ color: "var(--color-text-soft)" }}
-                    >
-                      {t.location}
-                    </div>
-                  </div>
-                </div>
               </motion.article>
             ))}
           </div>

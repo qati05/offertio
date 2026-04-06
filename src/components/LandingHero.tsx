@@ -493,25 +493,16 @@ export default function LandingHero() {
               transition={{ duration: 0.6, delay: 0.65 }}
               className="mt-8 flex items-center gap-3"
             >
-              {/* Stacked avatar initials */}
-              <div className="flex -space-x-2">
-                {["T", "M", "S", "R"].map((initial, i) => (
-                  <div
-                    key={i}
-                    className="flex h-7 w-7 items-center justify-center rounded-full text-[10px] font-bold text-white ring-2"
-                    style={{
-                      background: `rgba(200,121,61,${0.5 + i * 0.12})`,
-                      ringColor: "transparent",
-                      boxShadow: "0 0 0 2px rgba(15,13,11,0.8)",
-                    }}
-                  >
-                    {initial}
-                  </div>
-                ))}
-              </div>
-              <div className="text-sm" style={{ color: "var(--color-text-soft)" }}>
-                <span className="font-semibold" style={{ color: "var(--color-text)" }}>500+</span>
-                {" "}Betriebe im DACH-Raum dabei
+              <div
+                className="flex h-7 items-center gap-1.5 rounded-full px-3 text-xs font-medium"
+                style={{
+                  background: "rgba(26,127,66,0.10)",
+                  border: "1px solid rgba(26,127,66,0.16)",
+                  color: "#1A7F42",
+                }}
+              >
+                <span className="h-1.5 w-1.5 rounded-full bg-[#1A7F42] animate-pulse inline-block" />
+                Kostenlos starten — keine Kreditkarte
               </div>
             </motion.div>
 
