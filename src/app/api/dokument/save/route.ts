@@ -7,6 +7,8 @@ import { logger } from "@/lib/logger";
 import type { KundenInfo } from "@/lib/types";
 
 const MAX_PDF_BYTES = 7 * 1024 * 1024;
+// base64 overhead ≈ 4/3 — a 7 MB PDF becomes ~9.5 MB base64 plus JSON wrapper.
+const MAX_REQUEST_BYTES = 12 * 1024 * 1024;
 
 function json(body: unknown, status = 200) {
   return NextResponse.json(body, {
@@ -27,6 +29,12 @@ export async function POST(request: NextRequest) {
 
   if (!user) {
     return json({ error: "Nicht angemeldet." }, 401);
+  }
+
+  // Content-Length guard — reject oversized requests before parsing JSON.
+  const contentLength = parseInt(request.headers.get("content-length") ?? "0", 10);
+  if (contentLength > MAX_REQUEST_BYTES) {
+    return json({ error: "Anfrage zu gross." }, 413);
   }
 
   try {

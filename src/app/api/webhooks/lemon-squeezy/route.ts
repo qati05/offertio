@@ -95,9 +95,19 @@ export async function POST(request: NextRequest) {
 
     const supabase = getSupabaseAdmin();
 
+    // Strict whitelist of columns the webhook is allowed to write.
+    // Prevents accidental mass-assignment if this function is ever extended.
+    type AllowedProfileUpdate = {
+      plan?: string;
+      ls_subscription_id?: string | null;
+      ls_customer_id?: string | null;
+      plan_expires_at?: string | null;
+      plan_cancelled_at?: string | null;
+    };
+
     /** Update a profile row identified by UUID. Throws on DB error so
      *  Lemon Squeezy receives a non-2xx and retries the webhook delivery. */
-    async function updateProfile(updates: Record<string, unknown>) {
+    async function updateProfile(updates: AllowedProfileUpdate) {
       const { error } = await supabase.from("profiles").update(updates).eq("id", userId);
       if (error) {
         logger.error("webhook:profile-update", error);

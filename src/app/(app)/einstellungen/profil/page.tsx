@@ -10,7 +10,7 @@ import { getAllLands, getDachConfig } from "@/lib/dach";
 import { getRequiredTaxField } from "@/lib/profile";
 import { useT, LOCALE_LABELS } from "@/lib/i18n";
 import type { Locale } from "@/lib/i18n";
-import type { Profile, Land } from "@/lib/types";
+import type { Land } from "@/lib/types";
 
 const BERUFE = [
   "Maler / Gipser",
@@ -133,14 +133,7 @@ export default function ProfilPage() {
     const file = event.target.files?.[0];
     if (!file) return;
 
-    const allowedLogoTypes = new Set(["image/png", "image/jpeg", "image/jpg", "image/webp"]);
-
-    if (!allowedLogoTypes.has(file.type)) {
-      setToast("Bitte nur PNG, JPG oder WEBP für das Logo verwenden.");
-      setTimeout(() => setToast(""), 4000);
-      return;
-    }
-
+    // Client-side pre-check for UX only — server validates via magic bytes.
     if (file.size > 2 * 1024 * 1024) {
       setToast("Logo darf max. 2 MB gross sein.");
       setTimeout(() => setToast(""), 4000);
@@ -149,38 +142,33 @@ export default function ProfilPage() {
 
     setUploading(true);
 
-    const supabase = createSupabaseBrowser();
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-    if (!user) {
-      setUploading(false);
-      window.location.href = "/login";
-      return;
-    }
+    // Upload through our server-side route which validates file content
+    // via magic bytes and prevents MIME-type spoofing.
+    const formData = new FormData();
+    formData.append("file", file);
 
-    const ext = file.name.split(".").pop() || "png";
-    const path = `${user.id}/logo.${ext}`;
+    try {
+      const res = await fetch("/api/profile/upload-logo", {
+        method: "POST",
+        body: formData,
+      });
 
-    const { error: uploadError } = await supabase.storage
-      .from("logos")
-      .upload(path, file, { upsert: true });
+      const data = await res.json() as { url?: string; error?: string };
 
-    if (uploadError) {
+      if (!res.ok || !data.url) {
+        setToast(data.error ?? "Fehler beim Hochladen. Bitte versuche es erneut.");
+        setUploading(false);
+        setTimeout(() => setToast(""), 4000);
+        return;
+      }
+
+      setLogoUrl(data.url);
+      setToast("Logo hochgeladen!");
+    } catch {
       setToast("Fehler beim Hochladen. Bitte versuche es erneut.");
-      setUploading(false);
-      setTimeout(() => setToast(""), 4000);
-      return;
     }
 
-    const { data: urlData } = supabase.storage.from("logos").getPublicUrl(path);
-    const publicUrl = urlData.publicUrl;
-
-    await supabase.from("profiles").update({ logo_url: publicUrl }).eq("id", user.id);
-
-    setLogoUrl(publicUrl);
     setUploading(false);
-    setToast("Logo hochgeladen!");
     setTimeout(() => setToast(""), 4000);
   }
 
@@ -222,10 +210,27 @@ export default function ProfilPage() {
       return;
     }
 
-    const profileData: Partial<Profile> = {
+    // Explicit whitelist — never spread user-controlled objects into DB updates.
+    // This prevents accidental mass-assignment of privileged fields (plan, etc.)
+    // even if the form state were somehow injected with extra keys.
+    const profileData = {
       id: user.id,
       email: user.email || "",
-      ...form,
+      firmenname: form.firmenname,
+      vorname: form.vorname,
+      nachname: form.nachname,
+      adresse: form.adresse,
+      plz: form.plz,
+      ort: form.ort,
+      telefon: form.telefon,
+      iban: form.iban,
+      bic: form.bic,
+      uid_mwst: form.uid_mwst,
+      steuernummer: form.steuernummer,
+      fn_nr: form.fn_nr,
+      land: form.land,
+      sprache: form.sprache,
+      beruf: form.beruf,
       zahlungsfrist: parseInt(form.zahlungsfrist, 10) || 30,
       kleinunternehmer,
     };
