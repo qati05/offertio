@@ -9,6 +9,9 @@ function buildCsp(nonce: string): string {
     "form-action 'self'",
     "object-src 'none'",
     "frame-ancestors 'none'",
+    // 'unsafe-eval' is required by @react-pdf/renderer for client-side font
+    // subsetting via eval(). Removing it breaks PDF generation in the browser.
+    // Tracked as a known limitation — replace when the library offers a strict-CSP mode.
     `script-src 'self' 'nonce-${nonce}' 'unsafe-eval' https://va.vercel-scripts.com`,
     "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
     "font-src 'self' https://fonts.gstatic.com",

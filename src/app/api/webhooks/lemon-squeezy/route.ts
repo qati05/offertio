@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import crypto from "crypto";
 import { getSupabaseAdmin } from "@/lib/supabase-admin";
-import { isValidUUID } from "@/lib/security";
+import { isValidUUID, getClientIp } from "@/lib/security";
+import { rateLimitAsync } from "@/lib/rate-limit";
 import { logger } from "@/lib/logger";
 
 // Lemon Squeezy webhooks are well under 64 KB; reject anything larger.
@@ -29,6 +30,13 @@ function json(body: unknown, status = 200) {
  * plan_expires_at, plan_cancelled_at).
  */
 export async function POST(request: NextRequest) {
+  // Rate limit: max 30 webhook deliveries per minute per source IP.
+  const ip = getClientIp(request.headers);
+  const { ok: rlOk } = await rateLimitAsync(`webhook:lemon:${ip}`, 30, 60_000);
+  if (!rlOk) {
+    return json({ error: "Too many requests" }, 429);
+  }
+
   const secret = process.env.LEMON_SQUEEZY_WEBHOOK_SECRET;
   if (!secret) {
     return json({ error: "Webhook not configured" }, 500);
@@ -71,28 +79,26 @@ export async function POST(request: NextRequest) {
     const eventName = payload.meta?.event_name as string | undefined;
     const attrs = payload.data?.attributes ?? {};
 
-    const email =
-      typeof attrs.user_email === "string"
-        ? attrs.user_email.trim().toLowerCase()
-        : null;
     const userId = payload.meta?.custom_data?.user_id;
 
     if (!HANDLED_EVENTS.has(String(eventName))) {
       return json({ ok: true, ignored: true, event: eventName });
     }
 
-    if (!email && !userId) {
-      return json({ ok: true, message: "No identifier in payload" });
+    // Security: Only trust a verified UUID from custom_data.user_id.
+    // Never fall back to email — an attacker could craft a webhook with any
+    // user's email address and escalate their plan for free.
+    if (!isValidUUID(userId)) {
+      logger.error("webhook:missing-user-id", { eventName, userId });
+      return json({ ok: true, message: "No valid user_id in custom_data" });
     }
 
     const supabase = getSupabaseAdmin();
 
-    /** Update a profile row identified by UUID or email. Throws on DB error so
+    /** Update a profile row identified by UUID. Throws on DB error so
      *  Lemon Squeezy receives a non-2xx and retries the webhook delivery. */
     async function updateProfile(updates: Record<string, unknown>) {
-      const { error } = isValidUUID(userId)
-        ? await supabase.from("profiles").update(updates).eq("id", userId)
-        : await supabase.from("profiles").update(updates).eq("email", email!);
+      const { error } = await supabase.from("profiles").update(updates).eq("id", userId);
       if (error) {
         logger.error("webhook:profile-update", error);
         throw error;
