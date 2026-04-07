@@ -127,4 +127,6 @@ export interface OfferteData {
   mwstSatz: number;
   notiz: string;
   profil: Profile;
+  /** Discount — must be included so ZUGFeRD XML totals match the PDF */
+  rabatt?: RabattInfo;
 }

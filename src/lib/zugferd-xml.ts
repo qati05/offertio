@@ -28,10 +28,19 @@ function money(value: number): string {
  *                       Falls back to data.datum if omitted.
  */
 export function buildZugferdXml(data: OfferteData, leistungsdatum?: string): string {
-  const { profil, kunde, positionen, mwstSatz, nummer, datum } = data;
+  const { profil, kunde, positionen, mwstSatz, nummer, datum, rabatt } = data;
 
   // ── Monetary totals ──────────────────────────────────────────────────────
-  const lineTotal = positionen.reduce((sum, p) => sum + p.menge * p.preis, 0);
+  const grossLineTotal = positionen.reduce((sum, p) => sum + p.menge * p.preis, 0);
+
+  // Apply discount so the XML totals match the PDF exactly.
+  const rabattBetrag = rabatt?.aktiv
+    ? rabatt.modus === "chf"
+      ? rabatt.wert
+      : grossLineTotal * (rabatt.wert / 100)
+    : 0;
+
+  const lineTotal = grossLineTotal - rabattBetrag;
   const taxBasis = lineTotal;
   const taxAmount = taxBasis * (mwstSatz / 100);
   const grandTotal = taxBasis + taxAmount;
@@ -109,7 +118,10 @@ export function buildZugferdXml(data: OfferteData, leistungsdatum?: string): str
     const lineSettlement = line.ele("ram:SpecifiedLineTradeSettlement");
     const lineTax = lineSettlement.ele("ram:ApplicableTradeTax");
     lineTax.ele("ram:TypeCode").txt("VAT");
-    lineTax.ele("ram:CategoryCode").txt(mwstSatz === 0 ? "Z" : "S");
+    // "E" = exempt (§19 UStG Kleinunternehmer, no right of input deduction for buyer)
+    // "Z" = zero-rated (taxable but at 0%, e.g. exports)
+    // "S" = standard-rated
+    lineTax.ele("ram:CategoryCode").txt(profil.kleinunternehmer ? "E" : mwstSatz === 0 ? "Z" : "S");
     lineTax.ele("ram:RateApplicablePercent").txt(String(mwstSatz));
 
     lineSettlement
@@ -203,7 +215,7 @@ export function buildZugferdXml(data: OfferteData, leistungsdatum?: string): str
   tradeTax.ele("ram:CalculatedAmount").txt(money(taxAmount));
   tradeTax.ele("ram:TypeCode").txt("VAT");
   tradeTax.ele("ram:BasisAmount").txt(money(taxBasis));
-  tradeTax.ele("ram:CategoryCode").txt(mwstSatz === 0 ? "Z" : "S");
+  tradeTax.ele("ram:CategoryCode").txt(profil.kleinunternehmer ? "E" : mwstSatz === 0 ? "Z" : "S");
   tradeTax.ele("ram:RateApplicablePercent").txt(String(mwstSatz));
 
   // Payment terms — BT-9 (due date) + human-readable description

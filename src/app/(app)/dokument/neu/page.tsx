@@ -142,7 +142,8 @@ export default function DokumentNeuPage() {
             const saved = new Date(d._savedAt);
             const now = new Date();
             const diffMin = Math.round((now.getTime() - saved.getTime()) / 60000);
-            if (diffMin < 60) setDraftRestoredAt(`vor ${diffMin} Minute${diffMin === 1 ? "" : "n"}`);
+            if (diffMin < 1) setDraftRestoredAt("gerade eben");
+            else if (diffMin < 60) setDraftRestoredAt(`vor ${diffMin} Minute${diffMin === 1 ? "" : "n"}`);
             else if (diffMin < 1440) setDraftRestoredAt(`vor ${Math.round(diffMin / 60)} Stunde${Math.round(diffMin / 60) === 1 ? "" : "n"}`);
             else setDraftRestoredAt(saved.toLocaleDateString("de-CH", { day: "numeric", month: "short" }));
           }
@@ -423,6 +424,8 @@ export default function DokumentNeuPage() {
     if (!profil) return;
 
     const supabase = createSupabaseBrowser();
+    // Whitelist: never write privileged server-only columns (plan, ls_*, plan_expires_at).
+    // Those are set exclusively by the webhook handler.
     const { error } = await supabase.from("profiles").upsert(
       {
         id: profil.id,
@@ -444,7 +447,6 @@ export default function DokumentNeuPage() {
         sprache: profil.sprache,
         beruf: profil.beruf,
         zahlungsfrist: profil.zahlungsfrist,
-        plan: profil.plan,
         onboarding_complete: profil.onboarding_complete ?? true,
       },
       { onConflict: "id" },
@@ -456,14 +458,6 @@ export default function DokumentNeuPage() {
   }
 
   async function handleSend() {
-    // Validate email before doing any work
-    if (sendEmail && !kunde.email) {
-      setFieldErrors((current) => ({ ...current, kundeEmail: true }));
-      showToast("Bitte E-Mail-Adresse des Kunden eingeben.");
-      focusField("kundeEmail");
-      return;
-    }
-
     // H7: Leistungsdatum required for DE/AT invoices (§14 UStG / §11 öUStG)
     if (dokumentTyp === "rechnung" && dachConfig.leistungsdatumRequired && !leistungsdatum) {
       setFieldErrors((current) => ({ ...current, leistungsdatum: true }));
@@ -707,9 +701,6 @@ export default function DokumentNeuPage() {
         downloaded: downloadedResult ? "1" : "0",
         delivery,
       });
-      if (delivery === "email" && kunde.email) {
-        successParams.set("email", kunde.email);
-      }
       if (!cloudSaved) {
         successParams.set("cloudSaved", "0");
       }
@@ -834,7 +825,7 @@ export default function DokumentNeuPage() {
         reader.onerror = () => reject(new Error("PDF konnte nicht gelesen werden."));
         reader.readAsDataURL(blob);
       });
-      const invoiceData = { nummer, datum, kunde, positionen, mwstSatz, notiz, profil };
+      const invoiceData = { nummer, datum, kunde, positionen, mwstSatz, notiz, profil, rabatt };
       const res = await fetch("/api/e-rechnung/generate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
