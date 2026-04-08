@@ -111,18 +111,16 @@ describe("dach.ts", () => {
       expect(uid!.required).toBe(false);
     });
 
-    it("DE steuernummer is required", () => {
+    it("DE tax IDs form an OR group", () => {
       const fields = getDachConfig("DE").companyIdFields;
       const st = fields.find((f) => f.key === "steuernummer");
-      expect(st).toBeDefined();
-      expect(st!.required).toBe(true);
-    });
-
-    it("DE uid_mwst is optional", () => {
-      const fields = getDachConfig("DE").companyIdFields;
       const uid = fields.find((f) => f.key === "uid_mwst");
+      expect(st).toBeDefined();
       expect(uid).toBeDefined();
+      expect(st!.required).toBe(false);
       expect(uid!.required).toBe(false);
+      expect(st!.taxIdOrGroup).toBe(true);
+      expect(uid!.taxIdOrGroup).toBe(true);
     });
 
     it("AT uid_mwst is optional", () => {

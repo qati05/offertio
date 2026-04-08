@@ -36,7 +36,7 @@ describe("profile requirements for documents", () => {
     expect(missing.map((field) => field.label)).toEqual(["Firmenname", "Adresse", "PLZ"]);
   });
 
-  it("requires iban and tax fields for invoices in germany", () => {
+  it("requires iban and one German tax ID for invoices in germany", () => {
     const missing = getMissingProfileFieldsForDocument(
       { ...baseProfile, land: "DE", iban: "", steuernummer: "", uid_mwst: "" },
       "rechnung",
@@ -44,7 +44,7 @@ describe("profile requirements for documents", () => {
     );
 
     expect(missing.map((field) => field.label)).toEqual(
-      expect.arrayContaining(["IBAN", "Steuernummer"]),
+      expect.arrayContaining(["IBAN", "Steuernummer oder USt-IdNr."]),
     );
   });
 

@@ -60,6 +60,6 @@ describe("profile completeness", () => {
         "rechnung",
         "DE",
       ).map((field) => field.label),
-    ).toContain("Steuernummer");
+    ).toContain("Steuernummer oder USt-IdNr.");
   });
 });

@@ -219,13 +219,13 @@ describe("Flow C: DE Rechnung handleSend validation", () => {
     expect(getDachConfig("DE").zugferdCompatible).toBe(true);
   });
 
-  it("blocks when Steuernummer is missing for DE Rechnung", () => {
+  it("blocks when both German tax IDs are missing for DE Rechnung", () => {
     const missing = getMissingProfileFieldsForDocument(
-      { ...deProfile, steuernummer: "" },
+      { ...deProfile, steuernummer: "", uid_mwst: "" },
       "rechnung",
       "DE",
     );
-    expect(missing.map((f) => f.label)).toContain("Steuernummer");
+    expect(missing.map((f) => f.label)).toContain("Steuernummer oder USt-IdNr.");
   });
 
   it("DE uid_mwst is optional — does NOT block sending", () => {
@@ -440,8 +440,8 @@ describe("handleErechnung validation guards", () => {
     expect(wouldBlock).toBe(false);
   });
 
-  it("blocks E-Rechnung when missingProfileFields is non-empty", () => {
-    const incompleteProfile = { ...deProfile, steuernummer: "" };
+  it("blocks E-Rechnung when both German tax IDs are missing", () => {
+    const incompleteProfile = { ...deProfile, steuernummer: "", uid_mwst: "" };
     const missing = getMissingProfileFieldsForDocument(incompleteProfile, "rechnung", "DE");
     expect(missing.length).toBeGreaterThan(0);
   });

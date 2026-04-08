@@ -180,13 +180,15 @@ describe("companyIdFields — onboarding field configuration", () => {
     expect(cfg.companyIdFields[0].required).toBe(false);
   });
 
-  it("DE has two fields: Steuernummer (required) and USt-IdNr (optional)", () => {
+  it("DE has two tax ID fields in an OR group", () => {
     const cfg = getDachConfig("DE");
     expect(cfg.companyIdFields).toHaveLength(2);
     const steuernummerField = cfg.companyIdFields.find((f) => f.key === "steuernummer");
     const ustIdField = cfg.companyIdFields.find((f) => f.key === "uid_mwst");
-    expect(steuernummerField?.required).toBe(true);
+    expect(steuernummerField?.required).toBe(false);
     expect(ustIdField?.required).toBe(false);
+    expect(steuernummerField?.taxIdOrGroup).toBe(true);
+    expect(ustIdField?.taxIdOrGroup).toBe(true);
   });
 
   it("AT has two fields: UID-Nummer and Firmenbuchnummer (both optional)", () => {

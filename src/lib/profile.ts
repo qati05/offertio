@@ -80,6 +80,26 @@ export function getRequiredTaxField(land: Land | string): { key: string; label: 
   return null;
 }
 
+type TaxProfileInput = Pick<Profile, "land" | "uid_mwst" | "steuernummer" | "fn_nr">;
+
+export function hasRequiredTaxId(
+  profile: Partial<TaxProfileInput> | null | undefined,
+  land?: Land | string,
+): boolean {
+  if (!profile) return false;
+
+  const dachConfig = getDachConfig(land ?? profile.land);
+  const orGroupFields = dachConfig.companyIdFields.filter((f) => f.taxIdOrGroup);
+  if (orGroupFields.length > 0) {
+    return orGroupFields.some((f) => !!(profile[f.key as keyof TaxProfileInput] as string | undefined)?.trim());
+  }
+
+  const requiredFields = dachConfig.companyIdFields.filter((f) => f.required);
+  if (requiredFields.length === 0) return true;
+
+  return requiredFields.every((f) => !!(profile[f.key as keyof TaxProfileInput] as string | undefined)?.trim());
+}
+
 export function getMissingProfileFieldsForDocument(
   profile: Partial<Profile> | null | undefined,
   dokumentTyp: DokumentTyp,

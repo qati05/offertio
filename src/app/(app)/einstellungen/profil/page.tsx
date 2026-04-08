@@ -7,7 +7,7 @@ import { useSearchParams, useRouter } from "next/navigation";
 import { createSupabaseBrowser } from "@/lib/supabase-browser";
 import { DEFAULT_VORLAGEN } from "@/lib/vorlagen-defaults";
 import { getAllLands, getDachConfig } from "@/lib/dach";
-import { getRequiredTaxField } from "@/lib/profile";
+import { getRequiredTaxField, hasRequiredTaxId } from "@/lib/profile";
 import { useT, LOCALE_LABELS } from "@/lib/i18n";
 import type { Locale } from "@/lib/i18n";
 import type { Land } from "@/lib/types";
@@ -194,7 +194,7 @@ export default function ProfilPage() {
     setSaving(true);
 
     const requiredTax = getRequiredTaxField(form.land);
-    if (requiredTax && !(form[requiredTax.key as keyof typeof form] as string)?.trim()) {
+    if (requiredTax && !hasRequiredTaxId(form, form.land)) {
       setToast(`${requiredTax.label} ist für ${getDachConfig(form.land).name} erforderlich.`);
       setSaving(false);
       return;
