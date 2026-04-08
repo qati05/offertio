@@ -142,7 +142,7 @@ export default function OnboardingPage() {
 
     trackOnboardingComplete(form.land, form.beruf);
     setSaving(false);
-    router.push("/dashboard");
+    router.push("/dokument/neu");
   }
 
   function canProceed(): boolean {

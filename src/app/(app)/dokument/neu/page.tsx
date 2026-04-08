@@ -49,9 +49,14 @@ export default function DokumentNeuPage() {
   const [selectedVorlage, setSelectedVorlage] = useState<string | null>(null);
 
   // Send options
-  const [sendEmail, setSendEmail] = useState(true);
   const [downloadPdf, setDownloadPdf] = useState(false);
+  const [sharePdf, setSharePdf] = useState(true);
   const [eRechnungLoading, setERechnungLoading] = useState(false);
+
+  // UI state
+  const [freePlanRemaining, setFreePlanRemaining] = useState<number | null>(null);
+  const [draftRestored, setDraftRestored] = useState(false);
+  const [draftRestoredAt, setDraftRestoredAt] = useState<string | null>(null);
 
   // Rabatt
   const [rabatt, setRabatt] = useState<RabattInfo>({
@@ -95,12 +100,12 @@ export default function DokumentNeuPage() {
   const typLabel = dokumentTyp === "offerte" ? "Offerte" : "Rechnung";
   const dateEndLabel = dokumentTyp === "offerte" ? "Gültig bis" : "Zahlbar bis";
   const sendBtnLabel =
-    sendEmail && downloadPdf
-      ? `${typLabel} senden & speichern`
-      : sendEmail
-        ? `${typLabel} senden`
-        : downloadPdf
-          ? `${typLabel} herunterladen`
+    downloadPdf && sharePdf
+      ? `${typLabel} speichern & teilen`
+      : downloadPdf
+        ? `${typLabel} herunterladen`
+        : sharePdf
+          ? `${typLabel} teilen`
           : `${typLabel} weitergeben`;
   const missingProfileFields = getMissingProfileFieldsForDocument(profil, dokumentTyp, profil?.land);
 
@@ -115,21 +120,34 @@ export default function DokumentNeuPage() {
       const draft = localStorage.getItem("dokument-draft");
       if (draft) {
         const d = JSON.parse(draft);
+        let hadContent = false;
         if (d.dokumentTyp) {
           setDokumentTyp(d.dokumentTyp);
           setNummer(peekNextNummer(d.dokumentTyp));
         }
-        if (d.kunde) setKunde(d.kunde);
-        if (d.positionen?.length) setPositionen(d.positionen);
+        if (d.kunde) { setKunde(d.kunde); hadContent = !!(d.kunde.name || d.kunde.firma || d.kunde.email); }
+        if (d.positionen?.length) { setPositionen(d.positionen); hadContent = true; }
         if (d.mwstSatz !== undefined) setMwstSatz(d.mwstSatz);
-        if (d.notiz) setNotiz(d.notiz);
-        if (d.objekt) setObjekt(d.objekt);
+        if (d.notiz) { setNotiz(d.notiz); hadContent = true; }
+        if (d.objekt) { setObjekt(d.objekt); hadContent = true; }
         if (d.rabatt) setRabatt(d.rabatt);
         if (d.preisMode) setPreisMode(d.preisMode);
         if (d.leistungsdatum) setLeistungsdatum(d.leistungsdatum);
         if (d.sourceDocumentId) setSourceDocumentId(d.sourceDocumentId);
-        if (d.sourceDocumentNumber) setSourceDocumentNumber(d.sourceDocumentNumber);
+        if (d.sourceDocumentNumber) { setSourceDocumentNumber(d.sourceDocumentNumber); hadContent = true; }
         if (d.cloudDraftId) setCloudDraftId(d.cloudDraftId);
+        if (hadContent) {
+          setDraftRestored(true);
+          if (d._savedAt) {
+            const saved = new Date(d._savedAt);
+            const now = new Date();
+            const diffMin = Math.round((now.getTime() - saved.getTime()) / 60000);
+            if (diffMin < 1) setDraftRestoredAt("gerade eben");
+            else if (diffMin < 60) setDraftRestoredAt(`vor ${diffMin} Minute${diffMin === 1 ? "" : "n"}`);
+            else if (diffMin < 1440) setDraftRestoredAt(`vor ${Math.round(diffMin / 60)} Stunde${Math.round(diffMin / 60) === 1 ? "" : "n"}`);
+            else setDraftRestoredAt(saved.toLocaleDateString("de-CH", { day: "numeric", month: "short" }));
+          }
+        }
       }
     } catch { /* ignore corrupt draft */ }
 
@@ -177,6 +195,9 @@ export default function DokumentNeuPage() {
     if (limitRes.ok) {
       const limitData = await limitRes.json();
       setServerAllowed(limitData.allowed !== false);
+      if (limitData.remaining !== undefined && !isPro(limitData.plan)) {
+        setFreePlanRemaining(limitData.remaining);
+      }
     } else {
       // On error, fall back to allowing creation (fail open for UX, server re-checks on send)
       setServerAllowed(true);
@@ -403,6 +424,8 @@ export default function DokumentNeuPage() {
     if (!profil) return;
 
     const supabase = createSupabaseBrowser();
+    // Whitelist: never write privileged server-only columns (plan, ls_*, plan_expires_at).
+    // Those are set exclusively by the webhook handler.
     const { error } = await supabase.from("profiles").upsert(
       {
         id: profil.id,
@@ -424,7 +447,6 @@ export default function DokumentNeuPage() {
         sprache: profil.sprache,
         beruf: profil.beruf,
         zahlungsfrist: profil.zahlungsfrist,
-        plan: profil.plan,
         onboarding_complete: profil.onboarding_complete ?? true,
       },
       { onConflict: "id" },
@@ -436,14 +458,6 @@ export default function DokumentNeuPage() {
   }
 
   async function handleSend() {
-    // Validate email before doing any work
-    if (sendEmail && !kunde.email) {
-      setFieldErrors((current) => ({ ...current, kundeEmail: true }));
-      showToast("Bitte E-Mail-Adresse des Kunden eingeben.");
-      focusField("kundeEmail");
-      return;
-    }
-
     // H7: Leistungsdatum required for DE/AT invoices (§14 UStG / §11 öUStG)
     if (dokumentTyp === "rechnung" && dachConfig.leistungsdatumRequired && !leistungsdatum) {
       setFieldErrors((current) => ({ ...current, leistungsdatum: true }));
@@ -493,7 +507,7 @@ export default function DokumentNeuPage() {
       return;
     }
 
-    if (!sendEmail && !downloadPdf) return;
+    if (!downloadPdf && !sharePdf) return;
 
     setSending(true);
 
@@ -540,58 +554,27 @@ export default function DokumentNeuPage() {
       });
 
       let downloadedResult = false;
-      let delivery: "email" | "download" | "share" = "download";
+      let delivery: "download" | "share" = "share";
       let cloudSaved = true;
       let savedCustomerId: string | null = null;
 
       if (downloadPdf) {
         downloadBlob(blob, `${nummer}.pdf`);
         downloadedResult = true;
+        delivery = "download";
       }
 
-      if (sendEmail && kunde.email) {
-        try {
-          const res = await fetch("/api/send-offerte", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              pdfBase64: base64,
-              kundeEmail: kunde.email,
-              kundeName: kunde.name || kunde.firma,
-              firmenname: profil?.firmenname || "Offertio",
-              nummer,
-              dokumentTyp,
-            }),
-          });
-
-          const data = await res.json();
-
-          if (!res.ok) {
-            showToast(data.error || "E-Mail konnte nicht gesendet werden.");
-            setSending(false);
-            return;
+      if (sharePdf) {
+        const shared = await trySharePdf(blob, `${nummer}.pdf`);
+        if (!shared) {
+          // Web Share API not available — fall back to download
+          if (!downloadedResult) {
+            downloadBlob(blob, `${nummer}.pdf`);
+            downloadedResult = true;
           }
-
-          if (data.method === "client-share") {
-            const shared = await trySharePdf(blob, `${nummer}.pdf`);
-            if (shared) {
-              delivery = "share";
-            } else {
-              if (!downloadedResult) {
-                downloadBlob(blob, `${nummer}.pdf`);
-                downloadedResult = true;
-              }
-              showToast("E-Mail-Versand ist noch nicht aktiviert. PDF wurde stattdessen heruntergeladen.");
-              delivery = "download";
-            }
-          } else {
-            delivery = "email";
-          }
-        } catch (e) {
-          console.error("Email send error:", e);
-          showToast("E-Mail Versand fehlgeschlagen.");
-          setSending(false);
-          return;
+          delivery = "download";
+        } else {
+          delivery = "share";
         }
       }
 
@@ -610,7 +593,7 @@ export default function DokumentNeuPage() {
             kunde,
             betrag: total,
             datum,
-            status: delivery === "email" ? "gesendet" : "entwurf",
+            status: "entwurf",
             sourceDocumentId,
             sourceDocumentNummer: sourceDocumentNumber,
             sourceDocumentTyp: sourceDocumentId ? "offerte" : null,
@@ -651,8 +634,7 @@ export default function DokumentNeuPage() {
 
       commitNummer(dokumentTyp);
       incrementMonthlyDocCount();
-      const method = delivery === "email" ? (downloadedResult ? "both" : "email") : "download";
-      trackDocumentCreated(dokumentTyp, method);
+      trackDocumentCreated(dokumentTyp, delivery);
       localStorage.removeItem("dokument-draft");
 
       // Save to document history
@@ -672,7 +654,7 @@ export default function DokumentNeuPage() {
           kunde_ort: kunde.ort || null,
           betrag: total,
           datum,
-          status: delivery === "email" ? "gesendet" : "entwurf",
+          status: "entwurf",
           source_document_id: sourceDocumentId,
           source_document_nummer: savedSourceDocumentNumber,
           source_document_typ: sourceDocumentId ? "offerte" : null,
@@ -705,7 +687,6 @@ export default function DokumentNeuPage() {
         JSON.stringify({
           typ: dokumentTyp,
           nummer,
-          email: delivery === "email" ? kunde.email : null,
           downloaded: downloadedResult,
           delivery,
           cloudSaved,
@@ -720,9 +701,6 @@ export default function DokumentNeuPage() {
         downloaded: downloadedResult ? "1" : "0",
         delivery,
       });
-      if (delivery === "email" && kunde.email) {
-        successParams.set("email", kunde.email);
-      }
       if (!cloudSaved) {
         successParams.set("cloudSaved", "0");
       }
@@ -756,7 +734,7 @@ export default function DokumentNeuPage() {
 
     // Always persist to localStorage first (instant, offline-safe).
     try {
-      localStorage.setItem("dokument-draft", JSON.stringify(draftPayload));
+      localStorage.setItem("dokument-draft", JSON.stringify({ ...draftPayload, _savedAt: new Date().toISOString() }));
     } catch { /* ignore quota errors */ }
 
     // If there's already a cloud draft, just update its status (it's still "entwurf").
@@ -847,7 +825,7 @@ export default function DokumentNeuPage() {
         reader.onerror = () => reject(new Error("PDF konnte nicht gelesen werden."));
         reader.readAsDataURL(blob);
       });
-      const invoiceData = { nummer, datum, kunde, positionen, mwstSatz, notiz, profil };
+      const invoiceData = { nummer, datum, kunde, positionen, mwstSatz, notiz, profil, rabatt };
       const res = await fetch("/api/e-rechnung/generate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -931,6 +909,41 @@ export default function DokumentNeuPage() {
 
       <div>
         <div>
+
+      {/* Draft recovery banner */}
+      {draftRestored && (
+        <div style={{
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          gap: 8,
+          marginBottom: 14,
+          padding: "10px 14px",
+          borderRadius: 10,
+          background: "rgba(200,121,61,0.08)",
+          border: "1px solid rgba(200,121,61,0.2)",
+          fontSize: 13,
+          color: "var(--app-text)",
+        }}>
+          <span>Entwurf wiederhergestellt{draftRestoredAt ? ` · gespeichert ${draftRestoredAt}` : ""}.</span>
+          <button
+            type="button"
+            onClick={() => { localStorage.removeItem("dokument-draft"); setDraftRestored(false); }}
+            style={{
+              flexShrink: 0,
+              background: "none",
+              border: "none",
+              cursor: "pointer",
+              fontSize: 13,
+              color: "var(--color-primary)",
+              fontWeight: 600,
+              padding: "2px 4px",
+            }}
+          >
+            Verwerfen
+          </button>
+        </div>
+      )}
 
       {sourceDocumentNumber && (
         <div
@@ -1183,8 +1196,8 @@ export default function DokumentNeuPage() {
         />
       </div>
 
-      {/* Leistungsdatum — mandatory for DE (§14 Abs. 4 Nr. 6 UStG) and AT (§11 UStG AT) Rechnungen */}
-      {dokumentTyp === "rechnung" && dachConfig.leistungsdatumRequired && (
+      {/* Leistungsdatum — mandatory for DE/AT, optional for CH (Art. 26 Abs. 2 lit. c MWSTG) */}
+      {dokumentTyp === "rechnung" && (dachConfig.leistungsdatumRequired || profil?.land === "CH") && (
         <div style={{ marginBottom: 16, marginTop: -8 }}>
           <div
             style={{
@@ -1196,9 +1209,13 @@ export default function DokumentNeuPage() {
               color: "var(--color-text-muted)",
             }}
           >
-            {/* Required-field marker — obsidian dot */}
-            <span style={{ color: "var(--app-text)", fontSize: 9, lineHeight: 1 }} aria-hidden="true">●</span>
-            <span>Leistungsdatum:</span>
+            {/* Required-field marker — only for DE/AT */}
+            {dachConfig.leistungsdatumRequired && (
+              <span style={{ color: "var(--app-text)", fontSize: 9, lineHeight: 1 }} aria-hidden="true">●</span>
+            )}
+            <span>
+              Leistungsdatum{!dachConfig.leistungsdatumRequired && <span style={{ fontStyle: "italic" }}> (optional)</span>}:
+            </span>
             <input
               type="date"
               value={leistungsdatum}
@@ -1209,7 +1226,7 @@ export default function DokumentNeuPage() {
                 }
               }}
               onBlur={() => {
-                if (!leistungsdatum) setTouchedLeistungsdatum(true);
+                if (!leistungsdatum && dachConfig.leistungsdatumRequired) setTouchedLeistungsdatum(true);
               }}
               ref={leistungsdatumInputRef}
               style={{
@@ -1225,11 +1242,17 @@ export default function DokumentNeuPage() {
                 padding: "2px 4px",
                 transition: "border-color 0.18s ease",
               }}
-              title={profil?.land === "DE" ? "Leistungsdatum (§14 Abs. 4 Nr. 6 UStG)" : "Leistungsdatum (§11 UStG AT)"}
+              title={
+                profil?.land === "DE"
+                  ? "Leistungsdatum (§14 Abs. 4 Nr. 6 UStG)"
+                  : profil?.land === "AT"
+                    ? "Leistungsdatum (§11 Abs. 1 Z 6 öUStG)"
+                    : "Leistungsdatum (Art. 26 Abs. 2 lit. c MWSTG) — falls abweichend vom Rechnungsdatum"
+              }
             />
           </div>
-          {/* Live error message */}
-          {(fieldErrors.leistungsdatum || (touchedLeistungsdatum && !leistungsdatum)) && (
+          {/* Live error — only for mandatory countries */}
+          {dachConfig.leistungsdatumRequired && (fieldErrors.leistungsdatum || (touchedLeistungsdatum && !leistungsdatum)) && (
             <div style={{
               textAlign: "right",
               fontSize: 10,
@@ -1238,8 +1261,14 @@ export default function DokumentNeuPage() {
               lineHeight: 1.4,
             }}>
               {profil?.land === "DE"
-                ? "Pflicht nach §14 Abs. 4 Nr. 6 UStG"
-                : "Pflicht nach §11 Abs. 1 Z 6 UStG"}
+                ? "Wann haben Sie die Leistung erbracht? (Pflicht nach §14 Abs. 4 Nr. 6 UStG)"
+                : "Wann haben Sie die Leistung erbracht? (Pflicht nach §11 Abs. 1 Z 6 öUStG)"}
+            </div>
+          )}
+          {/* Info hint for CH — only when field is filled and differs from invoice date */}
+          {profil?.land === "CH" && !dachConfig.leistungsdatumRequired && !leistungsdatum && (
+            <div style={{ textAlign: "right", fontSize: 10, color: "var(--color-text-muted)", marginTop: 2 }}>
+              Falls Leistungsdatum = Rechnungsdatum, kann leer gelassen werden.
             </div>
           )}
         </div>
@@ -1690,35 +1719,63 @@ export default function DokumentNeuPage() {
       <div className="send-opts" style={{ marginTop: 16 }}>
         <button
           type="button"
-          className={`send-opt ${sendEmail ? "active" : ""} ${!isOnline ? "disabled" : ""}`}
-          onClick={() => isOnline && setSendEmail(!sendEmail)}
-          style={!isOnline ? { opacity: 0.5, pointerEvents: "none" } : {}}
-          disabled={!isOnline}
-          aria-pressed={sendEmail && isOnline}
-        >
-          <div className="send-icon">📧</div>
-          <div>
-            <div className="send-title">Per E-Mail senden</div>
-            <div className="send-sub">
-              {!isOnline ? "Offline — nicht verfügbar" : kunde.email || "Keine E-Mail angegeben"}
-            </div>
-          </div>
-          <div className="send-check">{sendEmail && isOnline ? "✓" : ""}</div>
-        </button>
-        <button
-          type="button"
           className={`send-opt ${downloadPdf ? "active" : ""}`}
           onClick={() => setDownloadPdf(!downloadPdf)}
           aria-pressed={downloadPdf}
         >
-          <div className="send-icon">💾</div>
+          <div className="send-icon">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          </div>
           <div>
             <div className="send-title">PDF herunterladen</div>
             <div className="send-sub">Auf Gerät speichern</div>
           </div>
           <div className="send-check">{downloadPdf ? "✓" : ""}</div>
         </button>
+        <button
+          type="button"
+          className={`send-opt ${sharePdf ? "active" : ""}`}
+          onClick={() => setSharePdf(!sharePdf)}
+          aria-pressed={sharePdf}
+        >
+          <div className="send-icon">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+          </div>
+          <div>
+            <div className="send-title">Teilen / WhatsApp</div>
+            <div className="send-sub">Via Handy direkt weitergeben</div>
+          </div>
+          <div className="send-check">{sharePdf ? "✓" : ""}</div>
+        </button>
       </div>
+
+      {/* Free plan document counter */}
+      {freePlanRemaining !== null && freePlanRemaining <= 5 && (
+        <div style={{
+          marginTop: 10,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          gap: 6,
+          fontSize: 12,
+          color: freePlanRemaining <= 1 ? "#b42318" : "var(--app-text-muted)",
+        }}>
+          <span style={{
+            display: "inline-block",
+            padding: "2px 8px",
+            borderRadius: 99,
+            background: freePlanRemaining <= 1 ? "rgba(180,35,24,0.08)" : "rgba(0,0,0,0.05)",
+            fontWeight: 600,
+          }}>
+            {freePlanRemaining === 0
+              ? "Monatslimit erreicht — "
+              : `Noch ${freePlanRemaining} von 5 kostenlosen Dokumenten — `}
+            <a href="/einstellungen/abonnement" style={{ color: "var(--color-primary)", textDecoration: "none" }}>
+              Pro freischalten
+            </a>
+          </span>
+        </div>
+      )}
 
       {profil?.land === "DE" && dokumentTyp === "rechnung" && (
         <button
@@ -1752,7 +1809,7 @@ export default function DokumentNeuPage() {
           className="btn-primary"
           style={{ flex: 2 }}
           onClick={handleSend}
-          disabled={sending || (!sendEmail && !downloadPdf) || (sendEmail && !isOnline && !downloadPdf) || serverAllowed === false}
+          disabled={sending || (!downloadPdf && !sharePdf) || serverAllowed === false}
         >
           {sending ? "Wird gesendet…" : sendBtnLabel}
         </button>

@@ -6,17 +6,17 @@ const sectors = [
   {
     label: "Handwerk",
     title: "Für Betriebe, die beim Kunden arbeiten.",
-    text: "Sanitär, Elektro, Maler oder Serviceeinsätze: Offertio ist für den Moment gebaut, in dem nach dem Termin schnell etwas Sauberes raus muss.",
+    text: "Sanitär, Elektro, Maler oder Serviceeinsätze: Offertio ist für den Moment gebaut, in dem nach dem Termin schnell etwas Sauberes raus muss — direkt vom Handy.",
   },
   {
     label: "Reinigung & Services",
     title: "Für Teams, die nicht im CRM wohnen wollen.",
-    text: "Kein schweres System, kein Ballast. Nur ein klarer Workflow für Offerten und Rechnungen, der in Minuten funktioniert.",
+    text: "Kein schweres System, kein Einführungsprojekt. Nur ein klarer Ablauf für Offerten und Rechnungen, der in Minuten funktioniert — ohne IT.",
   },
   {
     label: "DACH-ready",
-    title: "Für CH, DE und AT mit der richtigen Logik.",
-    text: "QR-Rechnung, SEPA, ZUGFeRD und Steuerlogik passen sich an, ohne dass der Alltag komplizierter wird.",
+    title: "CH, DE und AT — mit der richtigen Logik.",
+    text: "QR-Rechnung, SEPA, ZUGFeRD und Steuerlogik passen sich automatisch an. Keine manuelle Anpassung, keine Fehler beim nächsten Kanton oder Bundesland.",
   },
 ];
 
@@ -39,15 +39,19 @@ export default function LandingTestimonials() {
               <span style={{ color: "var(--color-primary)" }}>nicht für Software-Abteilungen.</span>
             </h2>
             <p className="section-copy mt-5 max-w-sm">
-              Ein gutes Arbeitsinstrument: schnell, professionell und günstiger als Systeme, die nur mitgeschleppt werden.
+              Ein Werkzeug, das auf Anhieb funktioniert — für Handwerker, Dienstleister und kleine Teams im DACH-Raum.
             </p>
 
             <div className="mt-7 flex flex-wrap gap-2">
-              {["Kein CRM-Dinosaurier", "Direkt nutzbar", "Professionell ohne Aufwand"].map((note) => (
+              {["Kein CRM-Overhead", "Direkt nutzbar", "Professionell ohne Aufwand"].map((note) => (
                 <span
                   key={note}
                   className="rounded-md px-2.5 py-1.5 text-[11px] font-medium"
-                  style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.06)", color: "var(--color-text-soft)" }}
+                  style={{
+                    background: "rgba(255,255,255,0.04)",
+                    border: "1px solid rgba(255,255,255,0.06)",
+                    color: "var(--color-text-soft)",
+                  }}
                 >
                   {note}
                 </span>

@@ -12,6 +12,11 @@ export interface DachCompanyIdField {
   placeholder: string;
   /** Whether the field is required for legal compliance */
   required: boolean;
+  /**
+   * If true, this field belongs to an OR-group: at least ONE field in the group
+   * must be present (§14 Abs. 4 Nr. 2 UStG — Steuernummer OR USt-IdNr.).
+   */
+  taxIdOrGroup?: boolean;
 }
 
 export interface DachConfig {
@@ -98,8 +103,9 @@ const DACH: Record<Land, DachConfig> = {
     pdfMwstNrLabel: "USt-IdNr.",
     plzDigits: 5,
     companyIdFields: [
-      { key: "steuernummer", label: "Steuernummer", placeholder: "13/123/12345", required: true  },
-      { key: "uid_mwst",     label: "USt-IdNr.",    placeholder: "DE123456789",  required: false },
+      // §14 Abs. 4 Nr. 2 UStG: Steuernummer OR USt-IdNr. — at least one required
+      { key: "steuernummer", label: "Steuernummer", placeholder: "13/123/12345", required: false, taxIdOrGroup: true },
+      { key: "uid_mwst",     label: "USt-IdNr.",    placeholder: "DE123456789",  required: false, taxIdOrGroup: true },
     ],
   },
   AT: {
@@ -225,6 +231,25 @@ export function getRequiredFields(
 
     default:
       return [];
+  }
+}
+
+// ── Kleinunternehmer exemption notices ───────────────────────────────────────
+
+/**
+ * Returns the legally required exemption notice text for Kleinunternehmer / VAT-exempt
+ * businesses, per country. Must be printed on the invoice instead of MWST lines.
+ */
+export function getKleinunternehmerHinweis(land: Land | string): string {
+  switch (land) {
+    case "CH":
+      return "Von der MWST befreit gemäss Art. 10 MWSTG (Jahresumsatz unter CHF 100'000).";
+    case "DE":
+      return "Gemäß §19 UStG wird keine Umsatzsteuer berechnet.";
+    case "AT":
+      return "Gemäß §6 Abs. 1 Z 27 öUStG wird keine Umsatzsteuer berechnet.";
+    default:
+      return "Keine Mehrwertsteuer berechnet.";
   }
 }
 

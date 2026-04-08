@@ -55,14 +55,6 @@
   --shadow-brand: 0 4px 16px rgba(168, 98, 46, 0.20), 0 1px 4px rgba(168, 98, 46, 0.12);
   --shadow-inner-card: inset 0 1px 0 rgba(255,255,255,0.50);
 
-  /* ── Radii ───────────────────────────────────────── */
-  --radius-pill: 9999px;
-  --radius-2xl: 20px;
-  --radius-xl: 16px;
-  --radius-lg: 12px;
-  --radius-md: 12px;
-  --radius-sm: 8px;
-
   /* ── Typography ──────────────────────────────────── */
   --font-display: var(--font-bricolage), "Bricolage Grotesque", sans-serif;
   --font-sans: var(--font-dm-sans), "DM Sans", sans-serif;
@@ -584,6 +576,56 @@ html { overflow-x: hidden; max-width: 100vw; }
     opacity: 0.75;
     transition: opacity 0.08s ease;
   }
+
+  /* ── Dashboard Action Tiles ─────────────────────── */
+  .dash-tile {
+    display: block;
+    border-radius: var(--radius-xl);
+    padding: var(--space-3) 20px;
+    text-decoration: none;
+    transition: transform 0.18s var(--ease-out-expo), box-shadow 0.18s var(--ease-out-expo);
+  }
+  .dash-tile:hover {
+    transform: translateY(-1px);
+  }
+  .dash-tile-primary {
+    background: var(--color-primary);
+    box-shadow: var(--shadow-brand);
+  }
+  .dash-tile-primary:hover {
+    background: #D4874A;
+    box-shadow: 0 6px 24px rgba(168,98,46,0.30);
+  }
+  .dash-tile-secondary {
+    background: var(--app-card);
+    border: 1px solid var(--app-border);
+    box-shadow: var(--shadow-xs);
+  }
+  .dash-tile-kicker {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.13em;
+    text-transform: uppercase;
+    margin-bottom: 10px;
+  }
+  .dash-tile-primary .dash-tile-kicker { color: rgba(255,255,255,0.6); }
+  .dash-tile-secondary .dash-tile-kicker { color: var(--app-text-soft); }
+  .dash-tile-title {
+    font-size: 20px;
+    font-weight: 700;
+    letter-spacing: -0.03em;
+    line-height: 1.2;
+    font-family: var(--font-display);
+  }
+  .dash-tile-primary .dash-tile-title { color: #fff; }
+  .dash-tile-secondary .dash-tile-title { color: var(--app-text); }
+  .dash-tile-sub {
+    font-size: 12px;
+    margin-top: 8px;
+    line-height: 1.6;
+  }
+  .dash-tile-primary .dash-tile-sub { color: rgba(255,255,255,0.55); }
+  .dash-tile-secondary .dash-tile-sub { color: var(--app-text-muted); }
 
   /* Tactile press — all interactive elements in the app workspace */
   .dash-tile:active,

@@ -462,7 +462,7 @@ export default function LandingHero() {
                 color: "var(--color-text-muted)",
               }}
             >
-              Professionelle Offerten und Rechnungen — direkt nach dem Kundentermin, DACH-konform.
+              Professionelle Offerten und Rechnungen. Direkt nach dem Termin — ohne Büroabend danach.
             </motion.p>
 
             <motion.div
@@ -486,11 +486,31 @@ export default function LandingHero() {
               </a>
             </motion.div>
 
+            {/* Social proof */}
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              transition={{ duration: 0.6, delay: 0.7 }}
-              className="mt-10 flex flex-wrap gap-x-5 gap-y-2"
+              transition={{ duration: 0.6, delay: 0.65 }}
+              className="mt-8 flex items-center gap-3"
+            >
+              <div
+                className="flex h-7 items-center gap-1.5 rounded-full px-3 text-xs font-medium"
+                style={{
+                  background: "rgba(26,127,66,0.10)",
+                  border: "1px solid rgba(26,127,66,0.16)",
+                  color: "#1A7F42",
+                }}
+              >
+                <span className="h-1.5 w-1.5 rounded-full bg-[#1A7F42] animate-pulse inline-block" />
+                Kostenlos starten — keine Kreditkarte
+              </div>
+            </motion.div>
+
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.6, delay: 0.8 }}
+              className="mt-5 flex flex-wrap gap-x-5 gap-y-2"
             >
               {proofPoints.map((point) => (
                 <div

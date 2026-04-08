@@ -2,11 +2,13 @@ import { NextRequest, NextResponse } from "next/server";
 import { createSupabaseServer } from "@/lib/supabase-server";
 import { getSupabaseAdmin } from "@/lib/supabase-admin";
 import { getCustomerDisplayName, makePrimaryCustomerLookupKey } from "@/lib/customers";
-import { isAllowedOrigin, isValidBase64 } from "@/lib/security";
+import { isAllowedOrigin, isValidBase64, isSafeDocumentIdentifier } from "@/lib/security";
 import { logger } from "@/lib/logger";
 import type { KundenInfo } from "@/lib/types";
 
 const MAX_PDF_BYTES = 7 * 1024 * 1024;
+// base64 overhead ≈ 4/3 — a 7 MB PDF becomes ~9.5 MB base64 plus JSON wrapper.
+const MAX_REQUEST_BYTES = 12 * 1024 * 1024;
 
 function json(body: unknown, status = 200) {
   return NextResponse.json(body, {
@@ -29,6 +31,12 @@ export async function POST(request: NextRequest) {
     return json({ error: "Nicht angemeldet." }, 401);
   }
 
+  // Content-Length guard — reject oversized requests before parsing JSON.
+  const contentLength = parseInt(request.headers.get("content-length") ?? "0", 10);
+  if (contentLength > MAX_REQUEST_BYTES) {
+    return json({ error: "Anfrage zu gross." }, 413);
+  }
+
   try {
     const {
       pdfBase64,
@@ -48,6 +56,18 @@ export async function POST(request: NextRequest) {
 
     if (!pdfBase64 || !typ || !nummer || !kundenname || betrag === undefined || betrag === null || !datum) {
       return json({ error: "Fehlende Daten fuer die Speicherung." }, 400);
+    }
+
+    // Validate betrag is a finite non-negative number to prevent NaN/Infinity
+    // from being stored or causing arithmetic errors downstream.
+    const betragNum = Number(betrag);
+    if (!Number.isFinite(betragNum) || betragNum < 0 || betragNum > 1_000_000_000) {
+      return json({ error: "Ungültiger Betrag." }, 400);
+    }
+
+    // Prevent path traversal in nummer — it is used directly in Storage file path.
+    if (!isSafeDocumentIdentifier(nummer, 80)) {
+      return json({ error: "Ungültige Dokumentnummer." }, 400);
     }
 
     if (!isValidBase64(pdfBase64)) {
@@ -158,7 +178,7 @@ export async function POST(request: NextRequest) {
       kunde_adresse2: customerSnapshot.adresse2,
       kunde_plz: customerSnapshot.plz,
       kunde_ort: customerSnapshot.ort,
-      betrag,
+      betrag: betragNum,
       datum,
       pdf_url: fileName,
       status: normalizedStatus,
@@ -181,7 +201,7 @@ export async function POST(request: NextRequest) {
         nummer,
         objekt,
         kundenname: customerSnapshot.name,
-        betrag,
+        betrag: betragNum,
         datum,
         pdf_url: fileName,
         status: normalizedStatus,

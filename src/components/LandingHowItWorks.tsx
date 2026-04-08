@@ -47,8 +47,8 @@ export default function LandingHowItWorks() {
         >
           <div className="section-kicker">Ablauf</div>
           <h2 className="section-title mt-5">
-            Nicht komplizierter.{" "}
-            <span style={{ color: "var(--color-primary)" }}>Nur klarer.</span>
+            Weniger Schritte.{" "}
+            <span style={{ color: "var(--color-primary)" }}>Weniger Papierkram.</span>
           </h2>
           <p className="section-copy mt-5">
             Drei Schritte. Kein Training. Kein Setup.

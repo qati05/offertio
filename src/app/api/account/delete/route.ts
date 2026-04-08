@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createSupabaseServer } from "@/lib/supabase-server";
 import { getSupabaseAdmin } from "@/lib/supabase-admin";
 import { isAllowedOrigin } from "@/lib/security";
+import { logger } from "@/lib/logger";
 
 function json(body: unknown, status = 200) {
   return NextResponse.json(body, {
@@ -29,13 +30,13 @@ export async function POST(request: NextRequest) {
     const { error } = await admin.auth.admin.deleteUser(user.id);
 
     if (error) {
-      console.error("Account delete error:", error.message);
+      logger.error("account:delete", error);
       return json({ error: "Konto konnte nicht gelöscht werden." }, 500);
     }
 
     return json({ success: true });
   } catch (err) {
-    console.error("Account delete route error:", (err as Error)?.message);
+    logger.error("account:delete:unexpected", err);
     return json({ error: "Server-Fehler" }, 500);
   }
 }

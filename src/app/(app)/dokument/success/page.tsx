@@ -68,10 +68,25 @@ function ConfettiBurst() {
   );
 }
 
+function downloadIcs(filename: string, content: string) {
+  const blob = new Blob([content], { type: "text/calendar;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(url), 5000);
+}
+
+function formatIcsDate(d: Date): string {
+  return d.toISOString().replace(/[-:]/g, "").split(".")[0] + "Z";
+}
+
 export default function DokumentSuccessPage() {
   const searchParams = useSearchParams();
   const [info, setInfo] = useState<SuccessInfo | null>(null);
   const [showConfetti, setShowConfetti] = useState(false);
+  const [reminderSent, setReminderSent] = useState(false);
 
   useEffect(() => {
     try {
@@ -132,6 +147,41 @@ export default function DokumentSuccessPage() {
     message = `Eine Kopie wurde an ${email} gesendet.${downloaded ? " Das PDF liegt zusätzlich auf deinem Gerät." : ""}`;
   } else if (downloaded) {
     message = "Das PDF liegt auf deinem Gerät — sauber und bereit.";
+  }
+
+  function handleReminder() {
+    const now = new Date();
+    const reminderDate = new Date(now);
+    reminderDate.setDate(reminderDate.getDate() + 7);
+    reminderDate.setHours(9, 0, 0, 0);
+
+    const label = typ === "offerte" ? "Offerte" : "Rechnung";
+    const kundeLabel = info?.kunde?.firma || info?.kunde?.name || "Kunde";
+    const summary = `Nachfassen: ${label} ${nummer} — ${kundeLabel}`;
+    const description = `Hast du bereits eine Rückmeldung zu ${label} ${nummer}${info?.kunde?.name ? ` für ${info.kunde.firma || info.kunde.name}` : ""}?\\nFalls nicht — jetzt kurz nachfragen!`;
+
+    const ics = [
+      "BEGIN:VCALENDAR",
+      "VERSION:2.0",
+      "PRODID:-//Offertio//DE",
+      "BEGIN:VEVENT",
+      `UID:${nummer}-reminder-${Date.now()}@offertio`,
+      `DTSTAMP:${formatIcsDate(now)}`,
+      `DTSTART:${formatIcsDate(reminderDate)}`,
+      `DTEND:${formatIcsDate(new Date(reminderDate.getTime() + 15 * 60 * 1000))}`,
+      `SUMMARY:${summary}`,
+      `DESCRIPTION:${description}`,
+      "BEGIN:VALARM",
+      "TRIGGER:-PT0M",
+      "ACTION:DISPLAY",
+      `DESCRIPTION:${summary}`,
+      "END:VALARM",
+      "END:VEVENT",
+      "END:VCALENDAR",
+    ].join("\r\n");
+
+    downloadIcs(`erinnerung-${nummer}.ics`, ics);
+    setReminderSent(true);
   }
 
   const ease = [0.16, 1, 0.3, 1] as const;
@@ -255,6 +305,32 @@ export default function DokumentSuccessPage() {
               >
                 Zum Dashboard
               </Link>
+            </div>
+
+            {/* 7-day follow-up reminder */}
+            <div style={{ marginTop: 20, textAlign: "center" }}>
+              {reminderSent ? (
+                <p style={{ fontSize: 12, color: "var(--app-text-muted)" }}>
+                  Erinnerung in Kalender gespeichert.
+                </p>
+              ) : (
+                <button
+                  type="button"
+                  onClick={handleReminder}
+                  style={{
+                    background: "none",
+                    border: "none",
+                    cursor: "pointer",
+                    fontSize: 12,
+                    color: "var(--app-text-muted)",
+                    textDecoration: "underline",
+                    textDecorationStyle: "dotted",
+                    padding: 0,
+                  }}
+                >
+                  In 7 Tagen erinnern (Kalender)
+                </button>
+              )}
             </div>
           </motion.div>
         </div>

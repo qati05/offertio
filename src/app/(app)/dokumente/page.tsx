@@ -11,7 +11,7 @@ import { groupDocumentsByCustomer } from "@/lib/customer-folders";
 import { computeDocumentStatus } from "@/lib/dokument-status";
 import type { DokumentHistorie, Profile } from "@/lib/types";
 
-const STATUS: Record<string, { label: string; color: string; bg: string }> = {
+const STATUS_META: Record<string, { label: string; color: string; bg: string }> = {
   entwurf:      { label: "In Arbeit",  color: "#6b7280", bg: "rgba(107,114,128,0.07)" },
   gesendet:     { label: "Ausstehend", color: "#A8622E", bg: "rgba(200,121,61,0.07)" },
   bezahlt:      { label: "Erledigt",   color: "#15803d", bg: "rgba(21,128,61,0.07)" },

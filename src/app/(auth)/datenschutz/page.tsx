@@ -9,7 +9,7 @@ export default function DatenschutzPage() {
           Datenschutzerklärung
         </h1>
         <p style={{ color: "var(--color-text-muted)", fontSize: 13, marginBottom: 32 }}>
-          Zuletzt aktualisiert: März 2026
+          Zuletzt aktualisiert: April 2026
         </p>
 
         <div style={{ fontSize: 14, lineHeight: 1.7, color: "var(--color-text)" }}>
@@ -23,47 +23,72 @@ export default function DatenschutzPage() {
           <p>Wir erheben folgende Daten:</p>
           <ul style={{ paddingLeft: 20, marginTop: 8 }}>
             <li>E-Mail-Adresse und verschlüsseltes Passwort (für Anmeldung und Kontoerstellung)</li>
-            <li>Firmendaten (Name, Adresse, IBAN, UID-Nr.) — freiwillig eingegeben</li>
-            <li>Erstellte Dokumente (Offerten, Rechnungen) — nur lokal im Browser gespeichert</li>
+            <li>Firmendaten (Name, Adresse, IBAN, UID-Nr., Steuernummer) — freiwillig eingegeben, serverseitig gespeichert</li>
+            <li>Kundendaten (Name, Adresse, E-Mail, UID-Nr. des Kunden) — serverseitig gespeichert für Dokumentwiederverwendung</li>
+            <li>Erstellte Dokumente (Offerten, Rechnungen) — Metadaten und PDF-Dateien serverseitig in Supabase gespeichert</li>
             <li>Logo-Dateien (optional, in Supabase Storage)</li>
+            <li>Dokument-Entwürfe — temporär im lokalen Browser-Speicher (localStorage) für die aktive Sitzung</li>
           </ul>
 
           <h2 style={{ fontSize: 18, marginTop: 32, marginBottom: 12 }}>3. Zweck der Datenverarbeitung</h2>
           <p>
             Die erhobenen Daten werden ausschliesslich zur Bereitstellung der Offertio-Dienste verwendet:
             Erstellung und Versand von Offerten und Rechnungen, Profilanzeige auf Dokumenten,
-            und Authentifizierung.
+            Dokumentenarchivierung sowie Authentifizierung.
+          </p>
+          <p style={{ marginTop: 8 }}>
+            Rechtsgrundlage: Art. 6 Abs. 1 lit. b DSGVO (Vertragserfüllung) und lit. c (gesetzliche Verpflichtung —
+            steuerliche Aufbewahrungspflichten gemäss Art. 70 MWSTG / §147 AO / §132 BAO).
           </p>
 
-          <h2 style={{ fontSize: 18, marginTop: 32, marginBottom: 12 }}>4. Datenspeicherung</h2>
+          <h2 style={{ fontSize: 18, marginTop: 32, marginBottom: 12 }}>4. Datenspeicherung und Aufbewahrung</h2>
           <p>
-            Profildaten werden in einer Supabase-Datenbank (Hosting: EU/CH) gespeichert.
-            Dokument-Entwürfe und Verlauf werden ausschliesslich im lokalen Browser-Speicher
-            (localStorage) abgelegt und nie an Server übertragen.
+            Profildaten, Kundendaten und Dokument-Metadaten werden in einer Supabase-Datenbank
+            (Hosting: EU/CH) gespeichert. Generierte PDF-Dokumente werden in Supabase Storage (EU/CH) abgelegt.
+          </p>
+          <p style={{ marginTop: 8 }}>
+            <strong>Gesetzliche Aufbewahrungspflichten:</strong> Als Nutzer sind Sie verpflichtet,
+            Ihre Rechnungen während der gesetzlich vorgeschriebenen Frist aufzubewahren:
+            Schweiz 10 Jahre (Art. 958f OR / Art. 70 MWSTG), Deutschland 10 Jahre (§147 AO),
+            Österreich 7 Jahre (§132 BAO). Bitte laden Sie Ihre Dokumente regelmässig herunter.
+          </p>
+          <p style={{ marginTop: 8 }}>
+            Dokument-Entwürfe werden temporär im lokalen Browser-Speicher (localStorage) gespeichert
+            und beim Abschliessen oder Verwerfen des Dokuments gelöscht.
           </p>
 
-          <h2 style={{ fontSize: 18, marginTop: 32, marginBottom: 12 }}>5. E-Mail-Versand</h2>
+          <h2 style={{ fontSize: 18, marginTop: 32, marginBottom: 12 }}>5. Auftragsverarbeitung</h2>
           <p>
-            Wenn Sie eine Offerte oder Rechnung per E-Mail senden, wird das generierte PDF über
-            den Dienst Resend (resend.com) an die angegebene E-Mail-Adresse übermittelt.
-            Resend verarbeitet die Daten gemäss ihrer eigenen Datenschutzrichtlinie.
+            Offertio nutzt folgende Auftragsverarbeiter, mit denen Datenschutzverträge (DPA/AVV) bestehen:
+          </p>
+          <ul style={{ paddingLeft: 20, marginTop: 8 }}>
+            <li><strong>Supabase Inc.</strong> — Datenbank, Authentifizierung und Dateispeicherung (EU-Hosting)</li>
+          </ul>
+
+          <h2 style={{ fontSize: 18, marginTop: 32, marginBottom: 12 }}>6. Dokument-Weitergabe</h2>
+          <p>
+            Offerten und Rechnungen werden als PDF generiert und lokal auf Ihrem Gerät gespeichert
+            oder über die native Teilen-Funktion Ihres Geräts weitergegeben (z.B. per WhatsApp,
+            E-Mail aus Ihrem eigenen E-Mail-Programm, etc.). Offertio sendet keine Dokumente
+            über eigene Server an Dritte — der Versand erfolgt ausschliesslich durch Sie.
           </p>
 
-          <h2 style={{ fontSize: 18, marginTop: 32, marginBottom: 12 }}>6. Cookies & Tracking</h2>
+          <h2 style={{ fontSize: 18, marginTop: 32, marginBottom: 12 }}>7. Cookies & Tracking</h2>
           <p>
             Offertio verwendet keine Marketing-Cookies oder Tracking-Dienste von Drittanbietern.
             Es werden nur technisch notwendige Cookies für die Authentifizierung eingesetzt
             (Supabase Auth Session).
           </p>
 
-          <h2 style={{ fontSize: 18, marginTop: 32, marginBottom: 12 }}>7. Ihre Rechte</h2>
+          <h2 style={{ fontSize: 18, marginTop: 32, marginBottom: 12 }}>8. Ihre Rechte</h2>
           <p>
-            Sie haben das Recht auf Auskunft, Berichtigung und Löschung Ihrer Daten.
-            Sie können Ihr Konto jederzeit in den Einstellungen löschen. Dabei werden alle
-            Profildaten und Vorlagen unwiderruflich entfernt.
+            Sie haben das Recht auf Auskunft, Berichtigung und Löschung Ihrer Daten (Art. 17 DSGVO / Art. 32 DSG).
+            Bitte beachten Sie: Die Löschung Ihres Kontos entfernt Ihre Profildaten und Vorlagen.
+            Dokumente, für die gesetzliche Aufbewahrungspflichten gelten, müssen Sie vor der Kontolöschung
+            selbst sichern. Sie können Ihr Konto jederzeit in den Einstellungen löschen.
           </p>
 
-          <h2 style={{ fontSize: 18, marginTop: 32, marginBottom: 12 }}>8. Kontakt</h2>
+          <h2 style={{ fontSize: 18, marginTop: 32, marginBottom: 12 }}>9. Kontakt</h2>
           <p>
             Bei Fragen zum Datenschutz kontaktieren Sie uns unter: datenschutz@offertio.ch
           </p>

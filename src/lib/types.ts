@@ -34,6 +34,14 @@ export interface Profile {
   plan_cancelled_at?: string | null;
   onboarding_complete?: boolean;
   pdf_template?: "classic" | "modern" | "minimal" | "professionell";
+  /**
+   * Kleinunternehmer / VAT-exempt flag.
+   * CH: Art. 10 MWSTG (< CHF 100k revenue)
+   * DE: §19 UStG (≤ EUR 22k prior year / EUR 50k current year)
+   * AT: §6 Abs. 1 Z 27 öUStG (< EUR 35k net revenue)
+   * When true: PDF shows legal exemption notice, MWST rate locked to 0%.
+   */
+  kleinunternehmer?: boolean;
   created_at: string;
 }
 
@@ -119,4 +127,6 @@ export interface OfferteData {
   mwstSatz: number;
   notiz: string;
   profil: Profile;
+  /** Discount — must be included so ZUGFeRD XML totals match the PDF */
+  rabatt?: RabattInfo;
 }

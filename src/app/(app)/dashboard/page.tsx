@@ -196,68 +196,17 @@ export default function DashboardPage() {
           style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 48 }}
         >
           {/* Primary — Offerte */}
-          <Link
-            href="/dokument/neu"
-            className="dash-tile"
-            style={{
-              display: "block",
-              background: "var(--color-primary)",
-              borderRadius: 21,
-              padding: "24px 20px",
-              textDecoration: "none",
-            }}
-          >
-            <div style={{
-              fontSize: 11, fontWeight: 600, letterSpacing: "0.13em",
-              textTransform: "uppercase", color: "rgba(255,255,255,0.6)", marginBottom: 10,
-            }}>
-              Offerte
-            </div>
-            <div style={{
-              fontSize: 20, fontWeight: 700, letterSpacing: "-0.03em",
-              color: "#fff", lineHeight: 1.2, fontFamily: "var(--font-display)",
-            }}>
-              Neue Offerte
-            </div>
-            <div style={{
-              fontSize: 12, color: "rgba(255,255,255,0.55)",
-              marginTop: 8, lineHeight: 1.6,
-            }}>
-              Vor Ort. In Sekunden.
-            </div>
+          <Link href="/dokument/neu" className="dash-tile dash-tile-primary">
+            <div className="dash-tile-kicker">Offerte</div>
+            <div className="dash-tile-title">Neue Offerte</div>
+            <div className="dash-tile-sub">Vor Ort. In Sekunden.</div>
           </Link>
 
           {/* Secondary — Rechnung */}
-          <Link
-            href="/dokument/neu?typ=rechnung"
-            className="dash-tile"
-            style={{
-              display: "block",
-              background: "var(--app-card)",
-              border: "1px solid var(--app-border)",
-              borderRadius: 21,
-              padding: "24px 20px",
-              textDecoration: "none",
-            }}
-          >
-            <div style={{
-              fontSize: 11, fontWeight: 600, letterSpacing: "0.13em",
-              textTransform: "uppercase", color: "var(--app-text-soft)", marginBottom: 10,
-            }}>
-              Rechnung
-            </div>
-            <div style={{
-              fontSize: 20, fontWeight: 700, letterSpacing: "-0.03em",
-              color: "var(--app-text)", lineHeight: 1.2, fontFamily: "var(--font-display)",
-            }}>
-              Neue Rechnung
-            </div>
-            <div style={{
-              fontSize: 12, color: "var(--app-text-muted)",
-              marginTop: 8, lineHeight: 1.6,
-            }}>
-              Exakt. DACH-konform.
-            </div>
+          <Link href="/dokument/neu?typ=rechnung" className="dash-tile dash-tile-secondary">
+            <div className="dash-tile-kicker">Rechnung</div>
+            <div className="dash-tile-title">Neue Rechnung</div>
+            <div className="dash-tile-sub">Exakt. DACH-konform.</div>
           </Link>
         </motion.div>
 
@@ -333,18 +282,7 @@ export default function DashboardPage() {
               </p>
               <Link
                 href="/dokument/neu"
-                className="dash-tile"
-                style={{
-                  display: "inline-block",
-                  background: "var(--color-primary)",
-                  color: "#fff",
-                  borderRadius: 13,
-                  padding: "10px 20px",
-                  fontSize: 14,
-                  fontWeight: 600,
-                  textDecoration: "none",
-                  letterSpacing: "-0.01em",
-                }}
+                className="btn-premium btn-premium-primary"
               >
                 Neue Offerte
               </Link>
@@ -473,20 +411,8 @@ export default function DashboardPage() {
               </div>
               <a
                 href={getCheckoutUrl("pro_yearly", profil?.email, profil?.id)}
-                className="dash-tile"
-                style={{
-                  display: "inline-block",
-                  background: "var(--color-primary)",
-                  color: "#fff",
-                  borderRadius: 13,
-                  padding: "9px 16px",
-                  fontSize: 13,
-                  fontWeight: 600,
-                  textDecoration: "none",
-                  whiteSpace: "nowrap",
-                  flexShrink: 0,
-                  letterSpacing: "-0.01em",
-                }}
+                className="btn-premium btn-premium-primary"
+                style={{ flexShrink: 0 }}
                 onClick={() => trackUpgradeClick("dashboard")}
               >
                 Pro freischalten

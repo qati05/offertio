@@ -11,15 +11,22 @@ export function maskIBAN(iban: string): string {
 }
 
 /**
- * Sanitize user input to prevent XSS in PDF/email output.
+ * Sanitize user input to prevent XSS in PDF/HTML output and CSV/formula
+ * injection (spreadsheet formula injection via leading =, +, -, @, \t, \r).
  */
 export function sanitize(input: string): string {
-  return input
+  let result = input
     .replace(/&/g, "&amp;")
     .replace(/</g, "&lt;")
     .replace(/>/g, "&gt;")
     .replace(/"/g, "&quot;")
     .replace(/'/g, "&#x27;");
+
+  // Strip leading formula-injection characters to prevent CSV/spreadsheet
+  // formula execution if this value is ever exported to CSV.
+  result = result.replace(/^[=+\-@\t\r]+/, "");
+
+  return result;
 }
 
 /**
@@ -73,8 +80,13 @@ export function stripControlChars(input: string): string {
   return firstLine.replace(/[\x00-\x1F\x7F-\x9F]/g, "").trim();
 }
 
+// Max base64 payload: 10 MB encoded ≈ ~13.7 MB base64 chars. Cap at 15 MB of
+// characters to prevent ReDoS on pathological inputs before the regex runs.
+const MAX_BASE64_CHARS = 15 * 1024 * 1024;
+
 export function isValidBase64(value: unknown): value is string {
-  return typeof value === "string" && /^[A-Za-z0-9+/]+={0,2}$/.test(value);
+  if (typeof value !== "string" || value.length > MAX_BASE64_CHARS) return false;
+  return /^[A-Za-z0-9+/]+=*$/.test(value);
 }
 
 export function isSafeDocumentIdentifier(value: unknown, maxLength = 50): value is string {

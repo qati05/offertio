@@ -2,6 +2,13 @@ import { createSupabaseServer } from "@/lib/supabase-server";
 import { NextRequest, NextResponse } from "next/server";
 import type { EmailOtpType } from "@supabase/supabase-js";
 
+/**
+ * All redirect destinations in this route are hardcoded relative paths.
+ * We intentionally do NOT read a `redirect_to` / `next` parameter from the
+ * query string to prevent open redirect attacks where an attacker crafts a
+ * link like /callback?code=X&next=https://evil.com and the victim is sent
+ * to an external site after a legitimate auth flow.
+ */
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
   const code = searchParams.get("code");

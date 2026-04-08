@@ -212,7 +212,7 @@ export default function LandingPricing() {
             </ul>
 
             <Link
-              href="/login"
+              href="/login?plan=pro"
               className="cta-primary mt-7 w-full"
               onClick={() => trackCtaClick("pricing_pro")}
             >
