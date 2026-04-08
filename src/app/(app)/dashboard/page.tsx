@@ -6,12 +6,11 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { createSupabaseBrowser } from "@/lib/supabase-browser";
-import { isPro, remainingFreeDocuments, getCheckoutUrl } from "@/lib/payment";
+import { isPro, FREE_LIMIT, getCheckoutUrl } from "@/lib/payment";
 import { trackUpgradeClick } from "@/lib/analytics";
 import { computeDocumentStatus, countOpenActions, getStatus, statusBadgeVariants } from "@/lib/dokument-status";
 import type { Profile, DokumentHistorie } from "@/lib/types";
 
-const FREE_DOCS = 5;
 const ease = [0.16, 1, 0.3, 1] as const;
 
 // Shared label style — 11px uppercase, max breathing room
@@ -28,6 +27,7 @@ export default function DashboardPage() {
   const [profil, setProfil] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
   const [history, setHistory] = useState<DokumentHistorie[]>([]);
+  const [serverRemaining, setServerRemaining] = useState<number | null>(null);
 
   useEffect(() => { void loadData(); }, []);
 
@@ -36,7 +36,7 @@ export default function DashboardPage() {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
 
-    const [profilRes, docsRes] = await Promise.all([
+    const [profilRes, docsRes, limitRes] = await Promise.all([
       supabase.from("profiles").select("*").eq("id", user.id).maybeSingle(),
       supabase
         .from("dokumente")
@@ -44,9 +44,11 @@ export default function DashboardPage() {
         .eq("user_id", user.id)
         .order("datum", { ascending: false })
         .limit(8),
+      fetch("/api/dokument/check-limit").then((r) => r.ok ? r.json() : null).catch(() => null),
     ]);
 
     if (profilRes.data) setProfil(profilRes.data as Profile);
+    if (limitRes?.remaining !== undefined) setServerRemaining(limitRes.remaining);
 
     const zahlungsfrist = (profilRes.data as Profile | null)?.zahlungsfrist ?? 30;
 
@@ -59,7 +61,6 @@ export default function DashboardPage() {
             betrag: Number(d.betrag),
           })),
         );
-        setHistorySource("local");
       } catch {
         setHistory([]);
       }
@@ -69,14 +70,13 @@ export default function DashboardPage() {
         betrag: Number(d.betrag),
       })) as DokumentHistorie[];
       setHistory(docs.map((doc) => computeDocumentStatus(doc, zahlungsfrist)));
-      setHistorySource("cloud");
     }
 
     setLoading(false);
   }
 
   const proUser = isPro(profil?.plan);
-  const remaining = remainingFreeDocuments(profil?.plan);
+  const remaining = proUser ? Infinity : (serverRemaining ?? FREE_LIMIT);
   const companyName = profil?.firmenname || profil?.vorname || "Offertio";
   const reminderCount = countOpenActions(history, profil?.zahlungsfrist ?? 30);
   const totalDocs = history.length;
@@ -92,7 +92,7 @@ export default function DashboardPage() {
   const openDocs = history.filter((d) =>
     ["gesendet", "angenommen", "ueberfaellig"].includes(d.status)
   );
-  const used = FREE_DOCS - Math.max(0, Math.min(remaining, FREE_DOCS));
+  const used = FREE_LIMIT - Math.max(0, Math.min(remaining, FREE_LIMIT));
 
   return (
     <div style={{ minHeight: "100%", background: "var(--app-bg)", WebkitFontSmoothing: "antialiased" }}>
@@ -394,7 +394,7 @@ export default function DashboardPage() {
                 }}>
                   <div style={{
                     height: "100%",
-                    width: `${Math.min((used / FREE_DOCS) * 100, 100)}%`,
+                    width: `${Math.min((used / FREE_LIMIT) * 100, 100)}%`,
                     background: remaining <= 1 ? "#A8622E" : "var(--color-primary)",
                     borderRadius: 1,
                     transition: "width 0.8s var(--ease-out-expo)",

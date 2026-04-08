@@ -1,4 +1,4 @@
-﻿import { createElement, type ReactNode } from "react";
+import { createElement, type ReactNode } from "react";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { describe, expect, it, vi, beforeEach } from "vitest";
 import DokumentSuccessPage from "@/app/(app)/dokument/success/page";
@@ -10,6 +10,22 @@ vi.mock("next/link", () => ({
 
 vi.mock("next/navigation", () => ({
   useSearchParams: () => new URLSearchParams(),
+}));
+
+// Mock Supabase to simulate a Pro user
+vi.mock("@/lib/supabase-browser", () => ({
+  createSupabaseBrowser: () => ({
+    auth: {
+      getUser: () => Promise.resolve({ data: { user: { id: "test-user" } } }),
+    },
+    from: () => ({
+      select: () => ({
+        eq: () => ({
+          maybeSingle: () => Promise.resolve({ data: { plan: "pro_monthly" } }),
+        }),
+      }),
+    }),
+  }),
 }));
 
 describe("document success flow", () => {
@@ -48,5 +64,25 @@ describe("document success flow", () => {
     fireEvent.click(screen.getByText(/als rechnung weiterführen/i));
 
     expect(localStorage.getItem("dokument-draft")).toBe(JSON.stringify(carryoverDraft));
+  });
+
+  it("shows conversion card for Pro users on offerte success", async () => {
+    sessionStorage.setItem(
+      "dokument-success",
+      JSON.stringify({
+        typ: "offerte",
+        nummer: "OF-2026-002",
+        email: null,
+        downloaded: true,
+        delivery: "download",
+      }),
+    );
+
+    render(createElement(DokumentSuccessPage));
+
+    // Pro mock is active, so the conversion link should appear
+    await waitFor(() => {
+      expect(screen.getByText(/neue rechnung erstellen/i)).toBeInTheDocument();
+    });
   });
 });

@@ -32,11 +32,23 @@ export async function GET() {
 
     const { data: profile } = await supabase
       .from("profiles")
-      .select("plan")
+      .select("plan, plan_expires_at, ls_subscription_id")
       .eq("id", user.id)
       .maybeSingle();
 
-    const plan = profile?.plan || "free";
+    let plan = profile?.plan || "free";
+
+    // Auto-downgrade expired trials (no LS subscription = was a trial, not a paid sub)
+    if (isPro(plan) && profile?.plan_expires_at && !profile?.ls_subscription_id) {
+      const expiresAt = new Date(profile.plan_expires_at);
+      if (expiresAt < new Date()) {
+        await supabase
+          .from("profiles")
+          .update({ plan: "free", plan_expires_at: null })
+          .eq("id", user.id);
+        plan = "free";
+      }
+    }
 
     if (isPro(plan)) {
       return json({ allowed: true, remaining: Infinity, plan });
@@ -81,11 +93,24 @@ export async function POST(request: Request) {
 
     const { data: profile } = await supabase
       .from("profiles")
-      .select("plan")
+      .select("plan, plan_expires_at, ls_subscription_id")
       .eq("id", user.id)
       .maybeSingle();
 
-    const plan = profile?.plan || "free";
+    let plan = profile?.plan || "free";
+
+    // Auto-downgrade expired trials
+    if (isPro(plan) && profile?.plan_expires_at && !profile?.ls_subscription_id) {
+      const expiresAt = new Date(profile.plan_expires_at);
+      if (expiresAt < new Date()) {
+        await supabase
+          .from("profiles")
+          .update({ plan: "free", plan_expires_at: null })
+          .eq("id", user.id);
+        plan = "free";
+      }
+    }
+
     const monat = getCurrentMonat();
 
     // Pre-flight check for free users to avoid incrementing a blocked counter.

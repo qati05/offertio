@@ -101,13 +101,18 @@ export default function OnboardingPage() {
       return;
     }
 
+    // Start every new user with a 14-day Pro trial
+    const trialEnd = new Date();
+    trialEnd.setDate(trialEnd.getDate() + 14);
+
     const { error: upsertError } = await supabase.from("profiles").upsert(
       {
         id: user.id,
         email: user.email || "",
         ...form,
         zahlungsfrist: parseInt(form.zahlungsfrist, 10) || 30,
-        plan: "free",
+        plan: "pro_monthly",
+        plan_expires_at: trialEnd.toISOString(),
         onboarding_complete: true,
       },
       { onConflict: "id" },

@@ -1,9 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { trackCtaClick } from "@/lib/analytics";
+import { PRICING } from "@/lib/payment";
 
 const freeFeatures = [
   "5 Dokumente pro Monat",
@@ -22,8 +23,21 @@ const proFeatures = [
   "Vorlagen-Bibliothek",
 ];
 
+function detectCurrency(): "CHF" | "EUR" {
+  if (typeof navigator === "undefined") return "CHF";
+  const lang = navigator.language || "";
+  // de-DE, de-AT, or any DE/AT locale → EUR
+  if (/[-_](DE|AT)$/i.test(lang)) return "EUR";
+  return "CHF";
+}
+
 export default function LandingPricing() {
   const [annual, setAnnual] = useState(true);
+  const [currency, setCurrency] = useState<"CHF" | "EUR">("CHF");
+
+  useEffect(() => {
+    setCurrency(detectCurrency());
+  }, []);
 
   return (
     <section className="py-24 sm:py-32" id="preise">
@@ -111,7 +125,7 @@ export default function LandingPricing() {
                 className="text-4xl font-bold leading-none tracking-tight"
                 style={{ color: "var(--color-text)", fontFamily: "var(--font-display)" }}
               >
-                CHF 0
+                {currency} 0
               </span>
               <span className="mb-0.5 text-sm" style={{ color: "var(--color-text-soft)" }}>/Monat</span>
             </div>
@@ -182,7 +196,7 @@ export default function LandingPricing() {
                 className="text-4xl font-bold leading-none tracking-tight"
                 style={{ color: "var(--color-primary)", fontFamily: "var(--font-display)" }}
               >
-                CHF {annual ? "20" : "28"}
+                {currency} {annual ? PRICING[currency].yearlyPerMonth : PRICING[currency].monthly}
               </span>
               <span className="mb-0.5 text-sm" style={{ color: "var(--color-text-soft)" }}>/Monat</span>
               {annual && (
@@ -190,7 +204,7 @@ export default function LandingPricing() {
                   className="mb-0.5 text-xs font-medium px-2 py-0.5 rounded-md"
                   style={{ background: "rgba(200,121,61,0.10)", color: "var(--color-primary)" }}
                 >
-                  = CHF 240/Jahr
+                  = {currency} {PRICING[currency].yearly}/Jahr
                 </span>
               )}
             </div>

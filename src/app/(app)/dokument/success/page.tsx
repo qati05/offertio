@@ -7,6 +7,8 @@ import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { motion } from "framer-motion";
 import OffertioLogo from "@/components/OffertioLogo";
+import { createSupabaseBrowser } from "@/lib/supabase-browser";
+import { isPro } from "@/lib/payment";
 
 interface SuccessInfo {
   typ: "offerte" | "rechnung";
@@ -87,6 +89,7 @@ export default function DokumentSuccessPage() {
   const [info, setInfo] = useState<SuccessInfo | null>(null);
   const [showConfetti, setShowConfetti] = useState(false);
   const [reminderSent, setReminderSent] = useState(false);
+  const [proUser, setProUser] = useState(false);
 
   useEffect(() => {
     try {
@@ -116,6 +119,22 @@ export default function DokumentSuccessPage() {
     } catch {
       // Fall back to query params on corrupted session state.
     }
+
+    // Check Pro status
+    createSupabaseBrowser()
+      .auth.getUser()
+      .then(({ data: { user } }) => {
+        if (!user) return;
+        return createSupabaseBrowser()
+          .from("profiles")
+          .select("plan")
+          .eq("id", user.id)
+          .maybeSingle();
+      })
+      .then((res) => {
+        if (res?.data?.plan) setProUser(isPro(res.data.plan));
+      })
+      .catch(() => {});
 
     // Trigger confetti burst after mount
     const t = setTimeout(() => setShowConfetti(true), 80);
@@ -269,24 +288,43 @@ export default function DokumentSuccessPage() {
             )}
 
             {typ === "offerte" && (
-              <a
-                href="/dokument/neu?typ=rechnung"
-                onClick={() => {
-                  if (carryoverDraft) {
-                    localStorage.setItem("dokument-draft", JSON.stringify(carryoverDraft));
-                  }
-                }}
-                className="success-convert-card"
-              >
-                <div className="text-sm font-semibold" style={{ color: "var(--app-text)" }}>
-                  {carryoverDraft ? "Als Rechnung weiterführen" : "Neue Rechnung erstellen"}
+              proUser ? (
+                <a
+                  href="/dokument/neu?typ=rechnung"
+                  onClick={() => {
+                    if (carryoverDraft) {
+                      localStorage.setItem("dokument-draft", JSON.stringify(carryoverDraft));
+                    }
+                  }}
+                  className="success-convert-card"
+                >
+                  <div className="text-sm font-semibold" style={{ color: "var(--app-text)" }}>
+                    {carryoverDraft ? "Als Rechnung weiterführen" : "Neue Rechnung erstellen"}
+                  </div>
+                  <div className="mt-1 text-xs leading-6" style={{ color: "var(--app-text-muted)" }}>
+                    {carryoverDraft
+                      ? "Kundendaten und Positionen direkt übernehmen."
+                      : "Direkt von hier aus zur nächsten Rechnung."}
+                  </div>
+                </a>
+              ) : (
+                <div className="success-convert-card" style={{ opacity: 0.85 }}>
+                  <div className="flex items-center gap-2">
+                    <div className="text-sm font-semibold" style={{ color: "var(--app-text)" }}>
+                      Als Rechnung weiterfuehren
+                    </div>
+                    <span
+                      className="rounded-md px-2 py-0.5 text-[10px] font-bold uppercase tracking-[0.1em]"
+                      style={{ background: "var(--color-primary)", color: "white" }}
+                    >
+                      Pro
+                    </span>
+                  </div>
+                  <div className="mt-1 text-xs leading-6" style={{ color: "var(--app-text-muted)" }}>
+                    Mit Pro uebernimmst du Kundendaten und Positionen direkt in die Rechnung.
+                  </div>
                 </div>
-                <div className="mt-1 text-xs leading-6" style={{ color: "var(--app-text-muted)" }}>
-                  {carryoverDraft
-                    ? "Kundendaten und Positionen direkt übernehmen."
-                    : "Direkt von hier aus zur nächsten Rechnung."}
-                </div>
-              </a>
+              )
             )}
 
             <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:justify-center">

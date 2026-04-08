@@ -7,7 +7,6 @@ import {
   isCheckoutConfigured,
   PRO_FEATURES,
   FREE_LIMIT,
-  getMonthlyDocCount,
 } from "@/lib/payment";
 import { trackUpgradeClick } from "@/lib/analytics";
 import type { Land } from "@/lib/types";
@@ -15,14 +14,17 @@ import type { Land } from "@/lib/types";
 interface UpgradeScreenProps {
   email?: string;
   land?: Land;
+  /** Server-sourced remaining documents for the current month */
+  serverRemaining?: number | null;
   onClose?: () => void;
 }
 
-export default function UpgradeScreen({ email, land, onClose }: UpgradeScreenProps) {
+export default function UpgradeScreen({ email, land, serverRemaining, onClose }: UpgradeScreenProps) {
   const [billing, setBilling] = useState<"monthly" | "yearly">("yearly");
   const [offlineHint, setOfflineHint] = useState(false);
   const { currency, prices } = getPricing(land);
-  const docCount = getMonthlyDocCount();
+  const remaining = serverRemaining ?? 0;
+  const docCount = FREE_LIMIT - remaining;
   const billingOptions: { key: "monthly" | "yearly"; label: string }[] = [
     { key: "monthly", label: "Monatlich" },
     { key: "yearly", label: "Jährlich" },
@@ -31,7 +33,6 @@ export default function UpgradeScreen({ email, land, onClose }: UpgradeScreenPro
   const price = billing === "yearly" ? prices.yearlyPerMonth : prices.monthly;
   const checkoutType = billing === "yearly" ? "pro_yearly" : "pro_monthly";
   const checkoutReady = isCheckoutConfigured(checkoutType);
-  const remaining = Math.max(0, FREE_LIMIT - docCount);
 
   return (
     <div className="mx-auto w-full max-w-[460px]">

@@ -9,7 +9,7 @@ import { peekNextNummer, commitNummer } from "@/lib/dokument-nummer";
 import { useOnlineStatus } from "@/components/OfflineBanner";
 import { findReusableCustomer, getCustomerDisplayName, mergeCustomerIntoDraft } from "@/lib/customers";
 import { getDachConfig } from "@/lib/dach";
-import { isPro, incrementMonthlyDocCount } from "@/lib/payment";
+import { isPro } from "@/lib/payment";
 import UpgradeScreen from "@/components/UpgradeScreen";
 import { trackDocumentCreated } from "@/lib/analytics";
 import { getMissingProfileFieldsForDocument } from "@/lib/profile";
@@ -633,7 +633,6 @@ export default function DokumentNeuPage() {
       }
 
       commitNummer(dokumentTyp);
-      incrementMonthlyDocCount();
       trackDocumentCreated(dokumentTyp, delivery);
       localStorage.removeItem("dokument-draft");
 
@@ -904,6 +903,7 @@ export default function DokumentNeuPage() {
         <UpgradeScreen
           email={profil.email}
           land={profil.land}
+          serverRemaining={freePlanRemaining}
         />
       )}
 
