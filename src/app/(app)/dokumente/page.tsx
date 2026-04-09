@@ -4,6 +4,7 @@ export const dynamic = "force-dynamic";
 
 import Link from "next/link";
 import { useEffect, useMemo, useState, useCallback } from "react";
+import { motion } from "framer-motion";
 import { createSupabaseBrowser } from "@/lib/supabase-browser";
 import { getDachConfig } from "@/lib/dach";
 import { buildDokumentCsv } from "@/lib/export";
@@ -410,9 +411,36 @@ export default function DokumentePage() {
             </div>
           ) : (
             <div className="space-y-3">
-              {filteredFolders.map((folder) => (
-                <CustomerFolder
+              {filteredFolders.map((folder, i) => (
+                <motion.div
                   key={folder.slug}
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.3, delay: i * 0.04, ease: [0.16, 1, 0.3, 1] }}
+                >
+                  <CustomerFolder
+                    folder={folder}
+                    expanded={expandedCustomer === folder.slug}
+                    onToggle={() => setExpandedCustomer(expandedCustomer === folder.slug ? null : folder.slug)}
+                    zahlungsfrist={zahlungsfrist}
+                    DocRow={DocRow}
+                    currency={currency}
+                  />
+                </motion.div>
+              ))}
+            </div>
+          )
+        ) : (
+          /* Default view — recent documents grouped by customer */
+          <div className="space-y-3">
+            {filteredFolders.map((folder, i) => (
+              <motion.div
+                key={folder.slug}
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.3, delay: i * 0.04, ease: [0.16, 1, 0.3, 1] }}
+              >
+                <CustomerFolder
                   folder={folder}
                   expanded={expandedCustomer === folder.slug}
                   onToggle={() => setExpandedCustomer(expandedCustomer === folder.slug ? null : folder.slug)}
@@ -420,22 +448,7 @@ export default function DokumentePage() {
                   DocRow={DocRow}
                   currency={currency}
                 />
-              ))}
-            </div>
-          )
-        ) : (
-          /* Default view — recent documents grouped by customer */
-          <div className="space-y-3">
-            {filteredFolders.map((folder) => (
-              <CustomerFolder
-                key={folder.slug}
-                folder={folder}
-                expanded={expandedCustomer === folder.slug}
-                onToggle={() => setExpandedCustomer(expandedCustomer === folder.slug ? null : folder.slug)}
-                zahlungsfrist={zahlungsfrist}
-                DocRow={DocRow}
-                currency={currency}
-              />
+              </motion.div>
             ))}
           </div>
         )}
