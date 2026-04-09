@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createSupabaseServer } from "@/lib/supabase-server";
 import { getSupabaseAdmin } from "@/lib/supabase-admin";
 import { getCustomerDisplayName, makePrimaryCustomerLookupKey } from "@/lib/customers";
-import { isAllowedOrigin, isValidBase64, isSafeDocumentIdentifier } from "@/lib/security";
+import { isAllowedOrigin, isValidBase64, isSafeDocumentIdentifier, isValidUUID } from "@/lib/security";
 import { logger } from "@/lib/logger";
 import type { KundenInfo } from "@/lib/types";
 
@@ -57,6 +57,20 @@ export async function POST(request: NextRequest) {
 
     if (!pdfBase64 || !typ || !nummer || !kundenname || betrag === undefined || betrag === null || !datum) {
       return json({ error: "Fehlende Daten fuer die Speicherung." }, 400);
+    }
+
+    // Whitelist document type — must match DB CHECK constraint.
+    const VALID_TYPES = new Set(["offerte", "rechnung"]);
+    if (!VALID_TYPES.has(typ)) {
+      return json({ error: "Ungültiger Dokumenttyp." }, 400);
+    }
+
+    // Validate optional document IDs as UUIDs before any DB query.
+    if (existingDocumentId && !isValidUUID(existingDocumentId)) {
+      return json({ error: "Ungültige Dokument-ID." }, 400);
+    }
+    if (sourceDocumentId && !isValidUUID(sourceDocumentId)) {
+      return json({ error: "Ungültige Quell-Dokument-ID." }, 400);
     }
 
     // Validate betrag is a finite non-negative number to prevent NaN/Infinity

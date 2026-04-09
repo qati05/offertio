@@ -109,12 +109,14 @@ export async function POST(request: Request) {
     );
 
     if (rpcError) {
-      // P0001 = limit_exceeded raised inside increment_dokument_counter
-      if (rpcError.code === "P0001") {
-        return json({ error: "Monatslimit erreicht", remaining: 0 }, 403);
-      }
       logger.error("check-limit:POST:rpc", rpcError, { userId: user.id });
       return json({ error: "Server-Fehler" }, 500);
+    }
+
+    // Post-increment guard: the SQL function increments unconditionally,
+    // so verify the returned count is still within the free-tier limit.
+    if (!isPro(plan) && (newAnzahl as number) > FREE_LIMIT) {
+      return json({ error: "Monatslimit erreicht", remaining: 0 }, 403);
     }
 
     return json({

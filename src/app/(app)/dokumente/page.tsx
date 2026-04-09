@@ -67,7 +67,8 @@ export default function DokumentePage() {
         .limit(200),
     ]);
 
-    if (profileRes.data) setProfile(profileRes.data as Profile);
+    const loadedProfile = profileRes.data as Profile | null;
+    if (loadedProfile) setProfile(loadedProfile);
 
     if (docsRes.error) {
       try {
@@ -84,7 +85,8 @@ export default function DokumentePage() {
         betrag: Number(d.betrag),
       })) as DokumentHistorie[];
       // Apply auto-computed statuses (überfällig / abgelaufen)
-      setHistory(docs.map((doc) => computeDocumentStatus(doc, profile?.zahlungsfrist ?? 30)));
+      const frist = loadedProfile?.zahlungsfrist ?? 30;
+      setHistory(docs.map((doc) => computeDocumentStatus(doc, frist)));
       setSource("cloud");
     }
 

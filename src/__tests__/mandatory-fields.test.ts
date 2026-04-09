@@ -4,7 +4,7 @@
  * Validates that each DACH region correctly enforces its legal requirements:
  *   CH  — IBAN required for Rechnungen (QR-Bill)
  *   DE  — Leistungsdatum + Steuernummer/USt-IdNr required for Rechnungen
- *   AT  — Leistungsdatum always required; UID of issuer + recipient required ≥ EUR 10 000
+ *   AT  — Leistungsdatum always required; UID of issuer required > EUR 400 (§11 Abs. 1 Z 3); recipient UID ≥ EUR 10 000 (§11 Abs. 1 Z 8)
  *
  * "Fix code, not tests."
  */
@@ -149,26 +149,26 @@ describe("AT — Austrian invoice validation", () => {
     expect(result.errors["leistungsdatum"]).toMatch(/§11/);
   });
 
-  it("accepts a AT Rechnung with Leistungsdatum, betrag < 10 000, no UID", () => {
+  it("accepts a AT Rechnung with Leistungsdatum, betrag <= 400 (Kleinbetragsrechnung), no UID", () => {
     const result = validateForRegion(
-      baseInput({ profil: atProfileNoUid, leistungsdatum: "2026-03-15", betrag: 5_000 }),
+      baseInput({ profil: atProfileNoUid, leistungsdatum: "2026-03-15", betrag: 400 }),
       "AT",
     );
     expect(result.valid).toBe(true);
   });
 
-  it("rejects a AT Rechnung with betrag ≥ 10 000 when issuer UID is missing", () => {
+  it("rejects a AT Rechnung with betrag > 400 when issuer UID is missing (§11 Abs. 1 Z 3)", () => {
     const result = validateForRegion(
       baseInput({
         profil: atProfileNoUid,
         leistungsdatum: "2026-03-15",
-        betrag: 10_000,
+        betrag: 500,
         kundeUidMwst: "ATU99887766",
       }),
       "AT",
     );
     expect(result.valid).toBe(false);
-    expect(result.errors["profil.uid_mwst"]).toMatch(/EUR 10.000/);
+    expect(result.errors["profil.uid_mwst"]).toMatch(/EUR 400/);
   });
 
   it("rejects a AT Rechnung with betrag ≥ 10 000 when recipient UID is missing", () => {
@@ -198,12 +198,12 @@ describe("AT — Austrian invoice validation", () => {
     expect(result.valid).toBe(true);
   });
 
-  it("boundary: betrag exactly 9 999.99 EUR — UID not required", () => {
+  it("boundary: betrag exactly 400.00 EUR — UID not required (Kleinbetragsrechnung)", () => {
     const result = validateForRegion(
       baseInput({
         profil: atProfileNoUid,
         leistungsdatum: "2026-03-15",
-        betrag: 9_999.99,
+        betrag: 400,
         kundeUidMwst: "",
       }),
       "AT",
@@ -304,17 +304,17 @@ describe("error messages — human-readable, law-cited", () => {
     expect(result.errors["leistungsdatum"]).toContain("§11");
   });
 
-  it("AT UID threshold error mentions EUR 10.000", () => {
+  it("AT UID threshold error mentions EUR 400 (Vollrechnung, §11 Abs. 1 Z 3)", () => {
     const result = validateForRegion(
       baseInput({
         profil: { land: "AT", uid_mwst: "", steuernummer: "", iban: "" },
         leistungsdatum: "2026-03-15",
-        betrag: 10_001,
+        betrag: 500,
         kundeUidMwst: "ATU...",
       }),
       "AT",
     );
-    expect(result.errors["profil.uid_mwst"]).toContain("10.000");
+    expect(result.errors["profil.uid_mwst"]).toContain("400");
   });
 
   it("CH IBAN error mentions IBAN", () => {
