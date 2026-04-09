@@ -18,7 +18,7 @@ describe("document export", () => {
     ];
 
     const csv = buildDokumentCsv(docs, "CHF");
-    expect(csv).toContain("Typ,Nummer,Quelle,Kunde,Objekt,Datum,Status,Betrag,Waehrung");
-    expect(csv).toContain("offerte,OF-1,OF-0,Muster AG,Objekt,2026-04-03,gesendet,123.45,CHF");
+    expect(csv).toContain("Typ,Nummer,Quelle,Kunde,Objekt,Datum,Leistungsdatum,Status,Betrag,Waehrung");
+    expect(csv).toContain("offerte,OF-1,OF-0,Muster AG,Objekt,2026-04-03,,gesendet,123.45,CHF");
   });
 });
