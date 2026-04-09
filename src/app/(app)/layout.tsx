@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState, useCallback } from "react";
+import React, { useEffect, useRef, useState, useCallback } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
@@ -141,6 +141,8 @@ function AppLayoutInner({ children }: { children: React.ReactNode }) {
     });
   }, []);
 
+  const profileFetched = useRef(false);
+
   useEffect(() => {
     const supabase = createSupabaseBrowser();
 
@@ -155,20 +157,25 @@ function AppLayoutInner({ children }: { children: React.ReactNode }) {
 
       setUser(currentUser);
 
-      const { data: profileData } = await supabase
-        .from("profiles")
-        .select("*")
-        .eq("id", currentUser.id)
-        .maybeSingle();
+      // Fetch profile only once on mount — avoids a DB query on every navigation.
+      if (!profileFetched.current) {
+        profileFetched.current = true;
 
-      if (profileData) setProfile(profileData as Profile);
+        const { data: profileData } = await supabase
+          .from("profiles")
+          .select("*")
+          .eq("id", currentUser.id)
+          .maybeSingle();
 
-      const onOnboarding = pathname === "/onboarding";
+        if (profileData) setProfile(profileData as Profile);
 
-      if (!profileData?.onboarding_complete && !onOnboarding) {
-        router.replace("/onboarding");
-      } else if (profileData?.onboarding_complete && onOnboarding) {
-        router.replace("/dashboard");
+        const onOnboarding = pathname === "/onboarding";
+
+        if (!profileData?.onboarding_complete && !onOnboarding) {
+          router.replace("/onboarding");
+        } else if (profileData?.onboarding_complete && onOnboarding) {
+          router.replace("/dashboard");
+        }
       }
 
       setLoading(false);

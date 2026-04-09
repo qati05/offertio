@@ -34,6 +34,6 @@ describe("landing funnel messaging", () => {
     render(createElement(LandingPricing));
 
     expect(screen.getByRole("link", { name: /kostenlos starten/i })).toHaveAttribute("href", "/login");
-    expect(screen.getByRole("link", { name: /pro freischalten/i })).toHaveAttribute("href", "/login");
+    expect(screen.getByRole("link", { name: /pro freischalten/i })).toHaveAttribute("href", "/login?plan=pro");
   });
 });
