@@ -9,7 +9,7 @@ import { peekNextNummer, commitNummer } from "@/lib/dokument-nummer";
 import { useOnlineStatus } from "@/components/OfflineBanner";
 import { findReusableCustomer, getCustomerDisplayName, mergeCustomerIntoDraft } from "@/lib/customers";
 import { getDachConfig } from "@/lib/dach";
-import { isPro, incrementMonthlyDocCount } from "@/lib/payment";
+import { isPro } from "@/lib/payment";
 import UpgradeScreen from "@/components/UpgradeScreen";
 import { trackDocumentCreated } from "@/lib/analytics";
 import { getMissingProfileFieldsForDocument } from "@/lib/profile";
@@ -557,19 +557,20 @@ export default function DokumentNeuPage() {
       let delivery: "download" | "share" = "share";
       let cloudSaved = true;
       let savedCustomerId: string | null = null;
+      let finalNummer = nummer;
 
       if (downloadPdf) {
-        downloadBlob(blob, `${nummer}.pdf`);
+        downloadBlob(blob, `${finalNummer}.pdf`);
         downloadedResult = true;
         delivery = "download";
       }
 
       if (sharePdf) {
-        const shared = await trySharePdf(blob, `${nummer}.pdf`);
+        const shared = await trySharePdf(blob, `${finalNummer}.pdf`);
         if (!shared) {
           // Web Share API not available — fall back to download
           if (!downloadedResult) {
-            downloadBlob(blob, `${nummer}.pdf`);
+            downloadBlob(blob, `${finalNummer}.pdf`);
             downloadedResult = true;
           }
           delivery = "download";
@@ -612,6 +613,7 @@ export default function DokumentNeuPage() {
             savedDocumentId = saveData.document?.id || null;
             savedSourceDocumentNumber = saveData.document?.source_document_nummer || sourceDocumentNumber;
             savedCustomerId = saveData.document?.customer_id || null;
+            finalNummer = saveData.document?.nummer || nummer;
           }
         }
       } catch (e) {
@@ -619,21 +621,24 @@ export default function DokumentNeuPage() {
         cloudSaved = false;
       }
 
-      // Increment counters
+      // Increment counters only after the server confirms the increment.
       try {
         const incrRes = await fetch("/api/dokument/check-limit", { method: "POST" });
         if (incrRes.ok) {
           const incrData = await incrRes.json();
           if (incrData.remaining !== undefined) {
+            setFreePlanRemaining(incrData.remaining);
             setServerAllowed(incrData.remaining > 0);
           }
+        } else if (incrRes.status === 403) {
+          setFreePlanRemaining(0);
+          setServerAllowed(false);
         }
       } catch (e) {
         console.error("Counter increment error:", e);
       }
 
       commitNummer(dokumentTyp);
-      incrementMonthlyDocCount();
       trackDocumentCreated(dokumentTyp, delivery);
       localStorage.removeItem("dokument-draft");
 
@@ -642,7 +647,7 @@ export default function DokumentNeuPage() {
         const history = JSON.parse(localStorage.getItem("dokument-history") || "[]");
         history.unshift({
           typ: dokumentTyp,
-          nummer,
+          nummer: finalNummer,
           objekt,
           id: savedDocumentId || undefined,
           kundenname: getCustomerDisplayName(kunde),
@@ -675,7 +680,7 @@ export default function DokumentNeuPage() {
               preisMode,
               mwstSatz,
               sourceDocumentId: savedDocumentId,
-              sourceDocumentNumber: nummer,
+              sourceDocumentNumber: finalNummer,
               // Carry over leistungsdatum only when the source Offerte already
               // has one — otherwise leave blank for the user to fill in.
               ...(leistungsdatum ? { leistungsdatum } : {}),
@@ -686,7 +691,7 @@ export default function DokumentNeuPage() {
         "dokument-success",
         JSON.stringify({
           typ: dokumentTyp,
-          nummer,
+          nummer: finalNummer,
           downloaded: downloadedResult,
           delivery,
           cloudSaved,
@@ -697,7 +702,7 @@ export default function DokumentNeuPage() {
       );
       const successParams = new URLSearchParams({
         typ: dokumentTyp,
-        nummer,
+        nummer: finalNummer,
         downloaded: downloadedResult ? "1" : "0",
         delivery,
       });
@@ -737,12 +742,6 @@ export default function DokumentNeuPage() {
       localStorage.setItem("dokument-draft", JSON.stringify({ ...draftPayload, _savedAt: new Date().toISOString() }));
     } catch { /* ignore quota errors */ }
 
-    // If there's already a cloud draft, just update its status (it's still "entwurf").
-    if (cloudDraftId) {
-      showToast("Entwurf gespeichert.");
-      return;
-    }
-
     // Try to generate a PDF and save to Supabase as "entwurf" for cross-device access.
     if (!profil) {
       showToast("Entwurf lokal gespeichert.");
@@ -774,23 +773,28 @@ export default function DokumentNeuPage() {
           sourceDocumentId,
           sourceDocumentNummer: sourceDocumentNumber,
           sourceDocumentTyp: sourceDocumentId ? "offerte" : null,
+          existingDocumentId: cloudDraftId,
         }),
       });
 
       if (saveRes.ok) {
         const saveData = await saveRes.json();
-        const newCloudDraftId = saveData.document?.id ?? null;
+        const newCloudDraftId = saveData.document?.id ?? cloudDraftId ?? null;
+        const resolvedDraftNummer = saveData.document?.nummer ?? nummer;
         if (newCloudDraftId) {
           setCloudDraftId(newCloudDraftId);
+          if (resolvedDraftNummer !== nummer) {
+            setNummer(resolvedDraftNummer);
+          }
           // Persist cloudDraftId into localStorage draft so it survives page reload.
           try {
             localStorage.setItem(
               "dokument-draft",
-              JSON.stringify({ ...draftPayload, cloudDraftId: newCloudDraftId }),
+              JSON.stringify({ ...draftPayload, nummer: resolvedDraftNummer, cloudDraftId: newCloudDraftId, _savedAt: new Date().toISOString() }),
             );
           } catch { /* ignore */ }
         }
-        showToast("Entwurf in der Cloud gespeichert.");
+        showToast(cloudDraftId ? "Cloud-Entwurf aktualisiert." : "Entwurf in der Cloud gespeichert.");
       } else {
         showToast("Entwurf lokal gespeichert.");
       }

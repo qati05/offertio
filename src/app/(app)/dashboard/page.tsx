@@ -6,7 +6,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { createSupabaseBrowser } from "@/lib/supabase-browser";
-import { isPro, remainingFreeDocuments, getCheckoutUrl } from "@/lib/payment";
+import { isPro, getCheckoutUrl } from "@/lib/payment";
 import { trackUpgradeClick } from "@/lib/analytics";
 import { computeDocumentStatus, countOpenActions, getStatus, statusBadgeVariants } from "@/lib/dokument-status";
 import type { Profile, DokumentHistorie } from "@/lib/types";
@@ -28,6 +28,8 @@ export default function DashboardPage() {
   const [profil, setProfil] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
   const [history, setHistory] = useState<DokumentHistorie[]>([]);
+  const [serverRemaining, setServerRemaining] = useState<number | null>(null);
+  const [, setHistorySource] = useState<"local" | "cloud">("cloud");
 
   useEffect(() => { void loadData(); }, []);
 
@@ -36,7 +38,7 @@ export default function DashboardPage() {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
 
-    const [profilRes, docsRes] = await Promise.all([
+    const [profilRes, docsRes, limitRes] = await Promise.all([
       supabase.from("profiles").select("*").eq("id", user.id).maybeSingle(),
       supabase
         .from("dokumente")
@@ -44,6 +46,7 @@ export default function DashboardPage() {
         .eq("user_id", user.id)
         .order("datum", { ascending: false })
         .limit(8),
+      fetch("/api/dokument/check-limit").catch(() => null),
     ]);
 
     if (profilRes.data) setProfil(profilRes.data as Profile);
@@ -72,11 +75,22 @@ export default function DashboardPage() {
       setHistorySource("cloud");
     }
 
+    if (limitRes?.ok) {
+      try {
+        const limitData = await limitRes.json();
+        setServerRemaining(typeof limitData.remaining === "number" ? limitData.remaining : null);
+      } catch {
+        setServerRemaining(null);
+      }
+    } else {
+      setServerRemaining(null);
+    }
+
     setLoading(false);
   }
 
   const proUser = isPro(profil?.plan);
-  const remaining = remainingFreeDocuments(profil?.plan);
+  const remaining = proUser ? Infinity : (serverRemaining ?? 5);
   const companyName = profil?.firmenname || profil?.vorname || "Offertio";
   const reminderCount = countOpenActions(history, profil?.zahlungsfrist ?? 30);
   const totalDocs = history.length;

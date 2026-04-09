@@ -52,6 +52,7 @@ export async function POST(request: NextRequest) {
       sourceDocumentNummer,
       sourceDocumentNumber,
       sourceDocumentTyp,
+      existingDocumentId,
     } = await request.json();
 
     if (!pdfBase64 || !typ || !nummer || !kundenname || betrag === undefined || betrag === null || !datum) {
@@ -138,31 +139,36 @@ export async function POST(request: NextRequest) {
     // Two devices or a localStorage reset can produce the same nummer for the same user.
     // We resolve this transparently by appending a suffix (-1, -2, …) until we find a free slot.
     const userId = user.id; // capture for use inside nested async function (TS narrowing)
-    async function resolveUniqueNummer(candidate: string): Promise<string> {
-      const { count } = await admin
+    async function hasNumberCollision(candidate: string, currentDocumentId?: string | null): Promise<boolean> {
+      const { data, error } = await admin
         .from("dokumente")
-        .select("id", { count: "exact", head: true })
+        .select("id")
         .eq("user_id", userId)
-        .eq("nummer", candidate);
+        .eq("nummer", candidate)
+        .limit(2);
 
-      if (!count || count === 0) return candidate;
+      if (error) {
+        logger.error("dokument-save:number-check", error, { userId, candidate, currentDocumentId });
+        return true;
+      }
+
+      const collisions = (data || []).filter((doc) => doc.id !== currentDocumentId);
+      return collisions.length > 0;
+    }
+
+    async function resolveUniqueNummer(candidate: string, currentDocumentId?: string | null): Promise<string> {
+      if (!(await hasNumberCollision(candidate, currentDocumentId))) return candidate;
 
       // Collision detected — try suffixed variants
       for (let suffix = 1; suffix <= 99; suffix++) {
         const suffixed = `${candidate}-${suffix}`;
-        const { count: suffixCount } = await admin
-          .from("dokumente")
-          .select("id", { count: "exact", head: true })
-          .eq("user_id", userId)
-          .eq("nummer", suffixed);
-
-        if (!suffixCount || suffixCount === 0) return suffixed;
+        if (!(await hasNumberCollision(suffixed, currentDocumentId))) return suffixed;
       }
       // Extremely unlikely: fall back to timestamp-based uniqueness
       return `${candidate}-${Date.now()}`;
     }
 
-    const resolvedNummer = await resolveUniqueNummer(nummer);
+    const resolvedNummer = await resolveUniqueNummer(nummer, existingDocumentId || null);
     // ---
 
     const relationNumber = sourceDocumentNummer || sourceDocumentNumber || null;
@@ -187,14 +193,22 @@ export async function POST(request: NextRequest) {
       source_document_typ: sourceDocumentTyp || null,
     };
 
-    const { data: insertedDocument, error: dbError } = await admin
-      .from("dokumente")
-      .insert(documentPayload)
-      .select("id, nummer, source_document_id, source_document_nummer, source_document_typ, customer_id")
-      .single();
+    const { data: insertedDocument, error: dbError } = existingDocumentId
+      ? await admin
+          .from("dokumente")
+          .update(documentPayload)
+          .eq("id", existingDocumentId)
+          .eq("user_id", user.id)
+          .select("id, nummer, source_document_id, source_document_nummer, source_document_typ, customer_id")
+          .single()
+      : await admin
+          .from("dokumente")
+          .insert(documentPayload)
+          .select("id, nummer, source_document_id, source_document_nummer, source_document_typ, customer_id")
+          .single();
 
     if (dbError) {
-      logger.error("db-insert-dokument", dbError);
+      logger.error(existingDocumentId ? "db-update-dokument" : "db-insert-dokument", dbError);
       const legacyPayload = {
         user_id: user.id,
         typ,
@@ -207,14 +221,22 @@ export async function POST(request: NextRequest) {
         status: normalizedStatus,
       };
 
-      const { data: legacyDocument, error: legacyError } = await admin
-        .from("dokumente")
-        .insert(legacyPayload)
-        .select("id, nummer")
-        .single();
+      const { data: legacyDocument, error: legacyError } = existingDocumentId
+        ? await admin
+            .from("dokumente")
+            .update(legacyPayload)
+            .eq("id", existingDocumentId)
+            .eq("user_id", user.id)
+            .select("id, nummer")
+            .single()
+        : await admin
+            .from("dokumente")
+            .insert(legacyPayload)
+            .select("id, nummer")
+            .single();
 
       if (legacyError) {
-        logger.error("db-insert-dokument-legacy", legacyError);
+        logger.error(existingDocumentId ? "db-update-dokument-legacy" : "db-insert-dokument-legacy", legacyError);
         return json({
           success: true,
           path: fileName,
