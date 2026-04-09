@@ -2,7 +2,7 @@
 
 export const dynamic = "force-dynamic";
 
-import { useEffect, useState, useCallback, useRef } from "react";
+import { useEffect, useState, useCallback, useRef, useMemo } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { createSupabaseBrowser } from "@/lib/supabase-browser";
 import { peekNextNummer, commitNummer } from "@/lib/dokument-nummer";
@@ -33,6 +33,9 @@ export default function DokumentNeuPage() {
   const [fieldErrors, setFieldErrors] = useState<Record<string, boolean>>({});
   const [customerRecords, setCustomerRecords] = useState<CustomerRecord[]>([]);
   const [customerReuseHint, setCustomerReuseHint] = useState("");
+  const [showCustomerDropdown, setShowCustomerDropdown] = useState(false);
+  const [customerDropdownIdx, setCustomerDropdownIdx] = useState(-1);
+  const customerDropdownRef = useRef<HTMLDivElement | null>(null);
   const [sourceDocumentId, setSourceDocumentId] = useState<string | null>(null);
   const [sourceDocumentNumber, setSourceDocumentNumber] = useState<string | null>(null);
   // Cloud draft ID: set when we've already saved this draft to Supabase as "entwurf"
@@ -191,6 +194,18 @@ export default function DokumentNeuPage() {
     if (vorlagenRes.data) setVorlagen(vorlagenRes.data as Vorlage[]);
     if (customersRes.data) setCustomerRecords(customersRes.data as CustomerRecord[]);
 
+    // Guard: warn if source offerte was already converted to a Rechnung
+    if (sourceDocumentId) {
+      const { data: sourceDoc } = await supabase
+        .from("dokumente")
+        .select("converted_document_id, converted_document_nummer")
+        .eq("id", sourceDocumentId)
+        .maybeSingle();
+      if (sourceDoc?.converted_document_id && sourceDoc.converted_document_id !== cloudDraftId) {
+        showToast(`Hinweis: Zu dieser Offerte existiert bereits Rechnung ${sourceDoc.converted_document_nummer || ""}.`);
+      }
+    }
+
     // Server is the source of truth for the document limit
     if (limitRes.ok) {
       const limitData = await limitRes.json();
@@ -251,6 +266,33 @@ export default function DokumentNeuPage() {
       appliedReuseKeyRef.current = null;
     }
     setKunde((k) => ({ ...k, [key]: value }));
+  }
+
+  // ── Customer Autocomplete ──────────────────────────────
+  const customerQuery = (kunde.name || kunde.firma || "").toLowerCase().trim();
+  const filteredCustomers = useMemo(() => {
+    if (!customerQuery || customerQuery.length < 2) return [];
+    return customerRecords
+      .filter((c) => c.display_name.toLowerCase().includes(customerQuery))
+      .slice(0, 6);
+  }, [customerRecords, customerQuery]);
+
+  function selectCustomer(record: CustomerRecord) {
+    const { next, reusedFields } = mergeCustomerIntoDraft(
+      { ...kunde, name: record.display_name },
+      record,
+    );
+    // Set name explicitly since mergeCustomerIntoDraft only fills empty fields
+    next.name = record.display_name;
+    appliedReuseKeyRef.current = record.lookup_key;
+    setKunde(next);
+    setShowCustomerDropdown(false);
+    setCustomerDropdownIdx(-1);
+    setCustomerReuseHint(
+      reusedFields.length > 0
+        ? `Kundendaten für ${record.display_name} übernommen.`
+        : `${record.display_name} ausgewählt.`,
+    );
   }
 
   function updateProfilField(key: keyof Profile, value: string) {
@@ -423,11 +465,24 @@ export default function DokumentNeuPage() {
     }
   }
 
-  function focusField(key: "kundeEmail" | "leistungsdatum") {
+  function focusField(key: "kundeEmail" | "leistungsdatum" | "profileRequirements") {
     const target =
-      key === "kundeEmail" ? emailInputRef.current : leistungsdatumInputRef.current;
-    target?.scrollIntoView({ behavior: "smooth", block: "center" });
-    target?.focus();
+      key === "kundeEmail"
+        ? emailInputRef.current
+        : key === "leistungsdatum"
+          ? leistungsdatumInputRef.current
+          : profileRequirementsRef.current;
+    if (!target) return;
+    // Smooth scroll with visual offset so field isn't cramped at viewport edge
+    const yOffset = -120;
+    const y = target.getBoundingClientRect().top + window.scrollY + yOffset;
+    window.scrollTo({ top: y, behavior: "smooth" });
+    // Focus the element after scroll animation completes
+    setTimeout(() => {
+      if ("focus" in target && typeof (target as HTMLElement).focus === "function") {
+        (target as HTMLElement).focus();
+      }
+    }, 400);
   }
 
   async function persistProfileIfNeeded() {
@@ -497,7 +552,7 @@ export default function DokumentNeuPage() {
         profil.land,
       );
       if (!regionCheck.valid) {
-        // Surface the most critical error
+        // Surface the most critical error with legal context
         const firstError = Object.values(regionCheck.errors)[0];
         showToast(firstError ?? "Rechtliche Pflichtangaben fehlen.");
         if (regionCheck.errors.leistungsdatum) {
@@ -505,15 +560,16 @@ export default function DokumentNeuPage() {
           setTouchedLeistungsdatum(true);
           focusField("leistungsdatum");
         } else {
-          profileRequirementsRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+          focusField("profileRequirements");
         }
         return;
       }
     }
 
     if (missingProfileFields.length > 0) {
-      showToast(`Bitte ergänze inline: ${missingProfileFields.map((field) => field.label).join(", ")}. Für ${typLabel.toLowerCase()} in ${dachConfig.name} ist das erforderlich.`);
-      profileRequirementsRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+      const fieldNames = missingProfileFields.map((field) => field.label).join(", ");
+      showToast(`${fieldNames} — erforderlich für ${typLabel} in ${dachConfig.name}.`);
+      focusField("profileRequirements");
       return;
     }
 
@@ -604,6 +660,7 @@ export default function DokumentNeuPage() {
             kunde,
             betrag: total,
             datum,
+            leistungsdatum: leistungsdatum || null,
             status: "entwurf",
             sourceDocumentId,
             sourceDocumentNummer: sourceDocumentNumber,
@@ -779,6 +836,7 @@ export default function DokumentNeuPage() {
           kunde,
           betrag: total,
           datum,
+          leistungsdatum: leistungsdatum || null,
           status: "entwurf",
           sourceDocumentId,
           sourceDocumentNummer: sourceDocumentNumber,
@@ -825,8 +883,9 @@ export default function DokumentNeuPage() {
     }
 
     if (missingProfileFields.length > 0) {
-      showToast(`Bitte ergänze inline: ${missingProfileFields.map((field) => field.label).join(", ")}. Für ${typLabel.toLowerCase()} in ${dachConfig.name} ist das erforderlich.`);
-      profileRequirementsRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+      const fieldNames = missingProfileFields.map((field) => field.label).join(", ");
+      showToast(`${fieldNames} — erforderlich für ${typLabel} in ${dachConfig.name}.`);
+      focusField("profileRequirements");
       return;
     }
 
@@ -933,7 +992,7 @@ export default function DokumentNeuPage() {
           gap: 8,
           marginBottom: 14,
           padding: "10px 14px",
-          borderRadius: 10,
+          borderRadius: 13,
           background: "rgba(200,121,61,0.08)",
           border: "1px solid rgba(200,121,61,0.2)",
           fontSize: 13,
@@ -1064,7 +1123,7 @@ export default function DokumentNeuPage() {
             className="form-section"
             style={{
               marginBottom: 20,
-              border: "1px solid var(--color-border, #ddd)",
+              border: "1px solid var(--app-border)",
               background: "transparent",
             }}
           >
@@ -1092,9 +1151,9 @@ export default function DokumentNeuPage() {
           display: "flex",
           gap: 0,
           marginBottom: 20,
-          borderRadius: 10,
+          borderRadius: 13,
           overflow: "hidden",
-          border: "1px solid var(--color-border, #ddd)",
+          border: "1px solid var(--app-border)",
         }}
       >
         <button
@@ -1121,7 +1180,7 @@ export default function DokumentNeuPage() {
             fontSize: 14,
             fontWeight: 600,
             border: "none",
-            borderLeft: "1px solid var(--color-border, #ddd)",
+            borderLeft: "1px solid var(--app-border)",
             cursor: "pointer",
             background: dokumentTyp === "rechnung" ? "var(--color-primary)" : "transparent",
             color: dokumentTyp === "rechnung" ? "#fff" : "var(--color-text-muted)",
@@ -1246,7 +1305,7 @@ export default function DokumentNeuPage() {
               style={{
                 background: "transparent",
                 border: (fieldErrors.leistungsdatum || (touchedLeistungsdatum && !leistungsdatum))
-                  ? "1px solid #b42318"
+                  ? "1px solid var(--color-error)"
                   : "none",
                 borderRadius: 4,
                 outline: "none",
@@ -1270,7 +1329,7 @@ export default function DokumentNeuPage() {
             <div style={{
               textAlign: "right",
               fontSize: 10,
-              color: "#b42318",
+              color: "var(--color-error)",
               marginTop: 3,
               lineHeight: 1.4,
             }}>
@@ -1300,16 +1359,94 @@ export default function DokumentNeuPage() {
       {/* Kunde */}
       <div className="form-section" style={{ marginBottom: 20 }}>
         <div className="form-label">Kunde</div>
-        <input
-          className="input-field"
-          placeholder="Name / Firma"
-          value={kunde.name || kunde.firma}
-          onChange={(e) => {
-            updateKunde("name", e.target.value);
-          }}
-        />
+        <div style={{ position: "relative" }}>
+          <input
+            className="input-field"
+            placeholder="Name / Firma"
+            value={kunde.name || kunde.firma}
+            autoComplete="off"
+            onChange={(e) => {
+              updateKunde("name", e.target.value);
+              setShowCustomerDropdown(true);
+              setCustomerDropdownIdx(-1);
+            }}
+            onFocus={() => {
+              if (customerQuery.length >= 2) setShowCustomerDropdown(true);
+            }}
+            onBlur={() => {
+              // Delay so click on dropdown item registers first
+              setTimeout(() => setShowCustomerDropdown(false), 180);
+            }}
+            onKeyDown={(e) => {
+              if (!showCustomerDropdown || filteredCustomers.length === 0) return;
+              if (e.key === "ArrowDown") {
+                e.preventDefault();
+                setCustomerDropdownIdx((i) => Math.min(i + 1, filteredCustomers.length - 1));
+              } else if (e.key === "ArrowUp") {
+                e.preventDefault();
+                setCustomerDropdownIdx((i) => Math.max(i - 1, 0));
+              } else if (e.key === "Enter" && customerDropdownIdx >= 0) {
+                e.preventDefault();
+                selectCustomer(filteredCustomers[customerDropdownIdx]);
+              } else if (e.key === "Escape") {
+                setShowCustomerDropdown(false);
+              }
+            }}
+          />
+          {/* Autocomplete dropdown */}
+          {showCustomerDropdown && filteredCustomers.length > 0 && (
+            <div
+              ref={customerDropdownRef}
+              style={{
+                position: "absolute",
+                top: "100%",
+                left: 0,
+                right: 0,
+                zIndex: 20,
+                marginTop: 4,
+                borderRadius: 13,
+                border: "1px solid var(--app-border-strong)",
+                background: "var(--app-card)",
+                boxShadow: "var(--shadow-float)",
+                overflow: "hidden",
+                animation: "toast-in 0.18s var(--ease-out-expo) both",
+              }}
+            >
+              {filteredCustomers.map((record, i) => (
+                <button
+                  key={record.id}
+                  type="button"
+                  onMouseDown={(e) => e.preventDefault()}
+                  onClick={() => selectCustomer(record)}
+                  style={{
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: 2,
+                    width: "100%",
+                    padding: "10px 14px",
+                    border: "none",
+                    borderBottom: i < filteredCustomers.length - 1 ? "1px solid var(--app-border)" : "none",
+                    background: i === customerDropdownIdx ? "var(--color-primary-soft)" : "transparent",
+                    cursor: "pointer",
+                    textAlign: "left",
+                    transition: "background 0.1s ease",
+                  }}
+                >
+                  <span style={{ fontSize: 14, fontWeight: 600, color: "var(--app-text)" }}>
+                    {record.display_name}
+                  </span>
+                  {(record.email || record.ort) && (
+                    <span style={{ fontSize: 12, color: "var(--app-text-muted)" }}>
+                      {[record.email, record.ort].filter(Boolean).join(" · ")}
+                    </span>
+                  )}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
         {customerReuseHint && (
-          <div style={{ marginTop: 6, marginBottom: 8, fontSize: 12, color: "var(--color-text-muted)" }}>
+          <div style={{ marginTop: 6, marginBottom: 8, fontSize: 12, color: "var(--app-text-muted)" }}>
             {customerReuseHint}
           </div>
         )}
@@ -1356,7 +1493,7 @@ export default function DokumentNeuPage() {
           ref={emailInputRef}
           style={
             fieldErrors.kundeEmail
-              ? { borderColor: "#b42318", boxShadow: "0 0 0 4px rgba(180,35,24,0.08)" }
+              ? { borderColor: "var(--color-error)", boxShadow: "0 0 0 4px var(--color-error-soft)" }
               : undefined
           }
         />
@@ -1384,12 +1521,12 @@ export default function DokumentNeuPage() {
               style={{
                 marginBottom: 0,
                 borderColor: total >= 10_000 && !kunde.uid_mwst?.trim()
-                  ? "rgba(185,28,28,0.45)"
+                  ? "var(--color-error-border)"
                   : undefined,
               }}
             />
             {total >= 10_000 && !kunde.uid_mwst?.trim() && (
-              <div style={{ fontSize: 10, color: "#b42318", marginTop: 4, lineHeight: 1.4 }}>
+              <div style={{ fontSize: 10, color: "var(--color-error)", marginTop: 4, lineHeight: 1.4 }}>
                 ● Ab EUR 10.000 Pflicht nach §11 Abs. 1 Z 8 UStG
               </div>
             )}
@@ -1536,7 +1673,7 @@ export default function DokumentNeuPage() {
                 style={{
                   padding: "6px 10px",
                   fontSize: 12,
-                  border: "1px solid var(--color-border, #ddd)",
+                  border: "1px solid var(--app-border)",
                   borderRadius: 6,
                   background: rabatt.modus === "chf" ? "var(--color-primary)" : "transparent",
                   color: rabatt.modus === "chf" ? "#fff" : "inherit",
@@ -1550,7 +1687,7 @@ export default function DokumentNeuPage() {
                 style={{
                   padding: "6px 10px",
                   fontSize: 12,
-                  border: "1px solid var(--color-border, #ddd)",
+                  border: "1px solid var(--app-border)",
                   borderRadius: 6,
                   background: rabatt.modus === "prozent" ? "var(--color-primary)" : "transparent",
                   color: rabatt.modus === "prozent" ? "#fff" : "inherit",
@@ -1584,7 +1721,7 @@ export default function DokumentNeuPage() {
             gap: 0,
             borderRadius: 6,
             overflow: "hidden",
-            border: "1px solid var(--color-border, #ddd)",
+            border: "1px solid var(--app-border)",
           }}
         >
           <button
@@ -1609,7 +1746,7 @@ export default function DokumentNeuPage() {
               fontSize: 11,
               fontWeight: 600,
               border: "none",
-              borderLeft: "1px solid var(--color-border, #ddd)",
+              borderLeft: "1px solid var(--app-border)",
               cursor: "pointer",
               background: preisMode === "inkl" ? "var(--color-primary)" : "transparent",
               color: preisMode === "inkl" ? "#fff" : "var(--color-text-muted)",
@@ -1717,7 +1854,7 @@ export default function DokumentNeuPage() {
             color: "var(--app-text)",
           }}
         >
-          <strong style={{ color: "#b42318" }}>Pflichtangaben ab EUR 10.000</strong> (§11 Abs. 1 Z 8 UStG)
+          <strong style={{ color: "var(--color-error)" }}>Pflichtangaben ab EUR 10.000</strong> (§11 Abs. 1 Z 8 UStG)
           <ul style={{ margin: "6px 0 0 16px", padding: 0, color: "var(--app-text-muted)" }}>
             {!profil.uid_mwst?.trim() && (
               <li>Deine UID-Nummer fehlt im Profil</li>
@@ -1772,7 +1909,7 @@ export default function DokumentNeuPage() {
           justifyContent: "center",
           gap: 6,
           fontSize: 12,
-          color: freePlanRemaining <= 1 ? "#b42318" : "var(--app-text-muted)",
+          color: freePlanRemaining <= 1 ? "var(--color-error)" : "var(--app-text-muted)",
         }}>
           <span style={{
             display: "inline-block",
@@ -1803,7 +1940,7 @@ export default function DokumentNeuPage() {
             fontSize: 14,
             fontWeight: 600,
             border: "2px solid var(--color-primary)",
-            borderRadius: 10,
+            borderRadius: 13,
             background: "transparent",
             color: eRechnungLoading ? "var(--color-text-muted)" : "var(--color-primary)",
             cursor: eRechnungLoading ? "not-allowed" : "pointer",
@@ -1814,18 +1951,29 @@ export default function DokumentNeuPage() {
         </button>
       )}
 
-      {/* Bottom Bar */}
-      <div className="bottom-bar">
-        <button className="btn-secondary" style={{ flex: 1 }} onClick={saveDraft}>
-          Entwurf
-        </button>
+      {/* Bottom Bar — single dominant CTA */}
+      <div className="bottom-bar" style={{ flexDirection: "column", gap: 8, alignItems: "stretch" }}>
         <button
           className="btn-primary"
-          style={{ flex: 2 }}
+          style={{ width: "100%", padding: "14px 0", fontSize: 15 }}
           onClick={handleSend}
           disabled={sending || (!downloadPdf && !sharePdf) || serverAllowed === false}
         >
           {sending ? "Wird gesendet…" : sendBtnLabel}
+        </button>
+        <button
+          onClick={saveDraft}
+          style={{
+            background: "none",
+            border: "none",
+            cursor: "pointer",
+            fontSize: 13,
+            fontWeight: 500,
+            color: "var(--app-text-muted)",
+            padding: "4px 0",
+          }}
+        >
+          Als Entwurf speichern
         </button>
       </div>
 

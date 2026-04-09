@@ -543,7 +543,7 @@ export default function ProfilPage() {
             <div className="form-group" key={field.key}>
               <label className="form-label">
                 {field.label}
-                {field.required && <span style={{ color: "var(--color-error, #dc2626)", marginLeft: 2 }}>*</span>}
+                {field.required && <span style={{ color: "var(--color-error)", marginLeft: 2 }}>*</span>}
               </label>
               <input
                 className="field field-full"
@@ -612,7 +612,7 @@ export default function ProfilPage() {
                 onClick={() => setPdfTemplate(t.id)}
                 style={{
                   padding: "13px 15px",
-                  borderRadius: 10,
+                  borderRadius: 13,
                   border: `2px solid ${pdfTemplate === t.id ? "var(--color-primary)" : "var(--color-border)"}`,
                   background: pdfTemplate === t.id ? "rgba(200,121,61,0.06)" : "transparent",
                   cursor: "pointer",
@@ -639,20 +639,20 @@ export default function ProfilPage() {
       </form>
 
       {!isOnboarding && (
-        <div className="app-card" style={{ maxWidth: 640, marginTop: 40, borderColor: "#fecaca" }}>
-          <div className="app-card-title" style={{ color: "#dc2626" }}>Gefahrenzone</div>
+        <div className="app-card" style={{ maxWidth: 640, marginTop: 40, borderColor: "var(--color-error-border)" }}>
+          <div className="app-card-title" style={{ color: "var(--color-error)" }}>Gefahrenzone</div>
           <p style={{ fontSize: 12, color: "var(--color-text-muted)", marginBottom: 8 }}>
             Dein Konto und alle Daten werden unwiderruflich gelöscht.
           </p>
           <div style={{
-            background: "#fef3c7",
-            border: "1px solid #fcd34d",
+            background: "var(--color-warning-soft)",
+            border: "1px solid var(--color-warning-border)",
             borderRadius: 8,
             padding: "10px 14px",
             marginBottom: 16,
             fontSize: 12,
             lineHeight: 1.6,
-            color: "#92400e",
+            color: "var(--color-warning)",
           }}>
             <strong>Gesetzliche Aufbewahrungspflicht:</strong> Du bist verpflichtet, deine Rechnungen
             aufzubewahren — in der Schweiz 10 Jahre (Art. 958f OR), in Deutschland 10 Jahre (§147 AO),
@@ -693,7 +693,7 @@ export default function ProfilPage() {
               }
             }}
             style={{
-              background: "#dc2626",
+              background: "var(--color-error)",
               color: "#fff",
               border: "none",
               borderRadius: 8,

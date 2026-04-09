@@ -29,7 +29,7 @@ const BERUFE = [
   "Anderes",
 ];
 
-const TOTAL_STEPS = 4;
+const TOTAL_STEPS = 2;
 const LAST_STEP = TOTAL_STEPS - 1;
 const ease = [0.16, 1, 0.3, 1] as const;
 
@@ -46,6 +46,7 @@ export default function OnboardingPage() {
   const [direction, setDirection] = useState(1);
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState("");
+  const [showDetails, setShowDetails] = useState(false);
 
   const [form, setForm] = useState({
     sprache: "de" as Locale,
@@ -160,8 +161,7 @@ export default function OnboardingPage() {
   }
 
   function canProceed(): boolean {
-    if (step === 0) return !!form.land;
-    if (step === 1) return !!form.firmenname && !!form.beruf && !!form.vorname;
+    if (step === 0) return !!form.land && !!form.firmenname && !!form.beruf && !!form.vorname;
     return true;
   }
 
@@ -209,14 +209,16 @@ export default function OnboardingPage() {
               exit="exit"
               transition={{ duration: 0.26, ease }}
             >
+              {/* ── Step 1: Land + Firma (merged) ──────────── */}
               {step === 0 && (
                 <div>
                   <div className="app-kicker">Einrichtung</div>
-                  <h1 className="onboarding-title">Wo ist dein Betrieb zuhause?</h1>
+                  <h1 className="onboarding-title">Dein Betrieb in 60 Sekunden.</h1>
                   <p className="onboarding-desc">
-                    Offertio richtet Währung, Steuerlogik und Zahlungsstandards automatisch für dein Land ein.
+                    Land wählen, Firma benennen — los geht's.
                   </p>
 
+                  {/* Country selection */}
                   <div className="mt-8 grid gap-3 sm:grid-cols-3">
                     {getAllLands().map((land, i) => {
                       const config = getDachConfig(land.value);
@@ -264,6 +266,45 @@ export default function OnboardingPage() {
                     })}
                   </div>
 
+                  {/* Company basics — right below country */}
+                  {form.land && (
+                    <motion.div
+                      className="mt-8 space-y-4"
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.3, ease }}
+                    >
+                      <div className="form-group">
+                        <label className="form-label">{t("profile.companyName")} *</label>
+                        <input className="auth-input" value={form.firmenname} onChange={(event) => update("firmenname", event.target.value)} placeholder="Musterfirma GmbH" autoFocus />
+                      </div>
+
+                      <div className="form-group">
+                        <label className="form-label">{t("profile.industry")} *</label>
+                        <div className="select-wrap">
+                          <select value={form.beruf} onChange={(event) => update("beruf", event.target.value)}>
+                            <option value="" disabled>{t("profile.industryPlaceholder")}</option>
+                            {BERUFE.map((beruf) => (
+                              <option key={beruf}>{beruf}</option>
+                            ))}
+                          </select>
+                        </div>
+                      </div>
+
+                      <div className="grid gap-4 sm:grid-cols-2">
+                        <div className="form-group">
+                          <label className="form-label">{t("profile.firstName")} *</label>
+                          <input className="auth-input" value={form.vorname} onChange={(event) => update("vorname", event.target.value)} placeholder="Max" />
+                        </div>
+                        <div className="form-group">
+                          <label className="form-label">{t("profile.lastName")}</label>
+                          <input className="auth-input" value={form.nachname} onChange={(event) => update("nachname", event.target.value)} placeholder="Muster" />
+                        </div>
+                      </div>
+                    </motion.div>
+                  )}
+
+                  {/* Language selector */}
                   <div className="onboarding-language-box">
                     <div className="text-xs font-semibold uppercase tracking-[0.16em]" style={{ color: "var(--app-text-soft)" }}>
                       Sprache
@@ -296,114 +337,7 @@ export default function OnboardingPage() {
                 </div>
               )}
 
-              {step === 1 && (
-                <div>
-                  <div className="app-kicker">Dein Handwerk</div>
-                  <h1 className="onboarding-title">Erzähl uns von deinem Handwerk.</h1>
-                  <p className="onboarding-desc">
-                    Damit Offertio deine Vorlagen und dein erstes Dokument passend vorbereiten kann.
-                  </p>
-
-                  <div className="mt-8 space-y-4">
-                    <div className="form-group">
-                      <label className="form-label">{t("profile.companyName")} *</label>
-                      <input className="auth-input" value={form.firmenname} onChange={(event) => update("firmenname", event.target.value)} placeholder="Musterfirma GmbH" autoFocus />
-                    </div>
-
-                    <div className="form-group">
-                      <label className="form-label">{t("profile.industry")} *</label>
-                      <div className="select-wrap">
-                        <select value={form.beruf} onChange={(event) => update("beruf", event.target.value)}>
-                          <option value="" disabled>{t("profile.industryPlaceholder")}</option>
-                          {BERUFE.map((beruf) => (
-                            <option key={beruf}>{beruf}</option>
-                          ))}
-                        </select>
-                      </div>
-                    </div>
-
-                    <div className="grid gap-4 sm:grid-cols-2">
-                      <div className="form-group">
-                        <label className="form-label">{t("profile.firstName")} *</label>
-                        <input className="auth-input" value={form.vorname} onChange={(event) => update("vorname", event.target.value)} placeholder="Max" />
-                      </div>
-                      <div className="form-group">
-                        <label className="form-label">{t("profile.lastName")}</label>
-                        <input className="auth-input" value={form.nachname} onChange={(event) => update("nachname", event.target.value)} placeholder="Muster" />
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {step === 2 && (
-                <div>
-                  <div className="app-kicker">Details</div>
-                  <h1 className="onboarding-title">Damit dein erstes Dokument stimmt.</h1>
-                  <p className="onboarding-desc">
-                    Alles optional — und jederzeit in den Einstellungen anpassbar.
-                  </p>
-
-                  <div className="mt-8 space-y-4">
-                    <div className="form-group">
-                      <label className="form-label">{t("profile.address")}</label>
-                      <input className="auth-input" value={form.adresse} onChange={(event) => update("adresse", event.target.value)} placeholder="Bahnhofstrasse 12" autoFocus />
-                    </div>
-
-                    <div className="grid gap-4 sm:grid-cols-[120px_1fr]">
-                      <div className="form-group">
-                        <label className="form-label">{t("profile.zip")}</label>
-                        <input className="auth-input" value={form.plz} onChange={(event) => update("plz", event.target.value)} placeholder={dachConfig.plzDigits === 4 ? "8000" : "10115"} />
-                      </div>
-                      <div className="form-group">
-                        <label className="form-label">{t("profile.city")}</label>
-                        <input className="auth-input" value={form.ort} onChange={(event) => update("ort", event.target.value)} placeholder={form.land === "DE" ? "Berlin" : form.land === "AT" ? "Wien" : "Zürich"} />
-                      </div>
-                    </div>
-
-                    <div className="grid gap-4 sm:grid-cols-2">
-                      <div className="form-group">
-                        <label className="form-label">{t("profile.phone")}</label>
-                        <input className="auth-input" value={form.telefon} onChange={(event) => update("telefon", event.target.value)} placeholder="+41 79 123 45 67" />
-                      </div>
-                      <div className="form-group">
-                        <label className="form-label">IBAN</label>
-                        <input className="auth-input" value={form.iban} onChange={(event) => update("iban", event.target.value)} placeholder={`${dachConfig.ibanPrefix}..`} />
-                      </div>
-                    </div>
-
-                    {dachConfig.companyIdFields.length > 0 && (
-                      <div className="grid gap-4 sm:grid-cols-2">
-                        {dachConfig.companyIdFields.map((field) => (
-                          <div className="form-group" key={field.key}>
-                            <label className="form-label">
-                              {field.label}{field.required ? " *" : ""}
-                            </label>
-                            <input
-                              className="auth-input"
-                              value={String(form[field.key] || "")}
-                              onChange={(event) => update(field.key, event.target.value)}
-                              placeholder={field.placeholder}
-                            />
-                          </div>
-                        ))}
-                      </div>
-                    )}
-
-                    <div className="form-group">
-                      <label className="form-label">Zahlungsfrist</label>
-                      <div className="select-wrap">
-                        <select value={form.zahlungsfrist} onChange={(event) => update("zahlungsfrist", event.target.value)}>
-                          <option value="14">14 Tage</option>
-                          <option value="30">30 Tage</option>
-                          <option value="45">45 Tage</option>
-                        </select>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              )}
-
+              {/* ── Step 2: Summary + optional details ────── */}
               {step === LAST_STEP && (
                 <div>
                   <div className="app-kicker">Bereit.</div>
@@ -445,21 +379,95 @@ export default function OnboardingPage() {
                         </span>
                       ))}
                     </div>
-                    <div className="mt-5 grid gap-3 sm:grid-cols-2 text-sm">
-                      <div>
-                        <div className="text-[11px] font-semibold uppercase tracking-[0.12em]" style={{ color: "var(--app-text-soft)" }}>Adresse</div>
-                        <div className="mt-1" style={{ color: "var(--app-text-muted)" }}>
-                          {form.adresse ? `${form.adresse}, ${form.plz} ${form.ort}` : "Jederzeit ergänzbar"}
-                        </div>
-                      </div>
-                      <div>
-                        <div className="text-[11px] font-semibold uppercase tracking-[0.12em]" style={{ color: "var(--app-text-soft)" }}>Zahlung</div>
-                        <div className="mt-1" style={{ color: "var(--app-text-muted)" }}>
-                          {form.iban ? `${form.iban.slice(0, 6)}…` : "IBAN später ergänzen"}
-                        </div>
-                      </div>
-                    </div>
                   </motion.div>
+
+                  {/* Optional details — expandable */}
+                  <div className="mt-6">
+                    <button
+                      type="button"
+                      onClick={() => setShowDetails(!showDetails)}
+                      className="flex w-full items-center justify-between rounded-xl border px-4 py-3 text-sm font-medium transition"
+                      style={{
+                        borderColor: "var(--app-border)",
+                        background: showDetails ? "var(--app-card)" : "transparent",
+                        color: "var(--app-text-muted)",
+                      }}
+                    >
+                      <span>Details jetzt ergänzen</span>
+                      <span style={{ fontSize: 13, color: "var(--app-text-soft)" }}>
+                        {showDetails ? "−" : "+"}
+                      </span>
+                    </button>
+
+                    {showDetails && (
+                      <motion.div
+                        className="mt-4 space-y-4"
+                        initial={{ opacity: 0, height: 0 }}
+                        animate={{ opacity: 1, height: "auto" }}
+                        transition={{ duration: 0.25, ease }}
+                      >
+                        <div className="form-group">
+                          <label className="form-label">{t("profile.address")}</label>
+                          <input className="auth-input" value={form.adresse} onChange={(event) => update("adresse", event.target.value)} placeholder="Bahnhofstrasse 12" />
+                        </div>
+
+                        <div className="grid gap-4 sm:grid-cols-[120px_1fr]">
+                          <div className="form-group">
+                            <label className="form-label">{t("profile.zip")}</label>
+                            <input className="auth-input" value={form.plz} onChange={(event) => update("plz", event.target.value)} placeholder={dachConfig.plzDigits === 4 ? "8000" : "10115"} />
+                          </div>
+                          <div className="form-group">
+                            <label className="form-label">{t("profile.city")}</label>
+                            <input className="auth-input" value={form.ort} onChange={(event) => update("ort", event.target.value)} placeholder={form.land === "DE" ? "Berlin" : form.land === "AT" ? "Wien" : "Zürich"} />
+                          </div>
+                        </div>
+
+                        <div className="grid gap-4 sm:grid-cols-2">
+                          <div className="form-group">
+                            <label className="form-label">{t("profile.phone")}</label>
+                            <input className="auth-input" value={form.telefon} onChange={(event) => update("telefon", event.target.value)} placeholder="+41 79 123 45 67" />
+                          </div>
+                          <div className="form-group">
+                            <label className="form-label">IBAN</label>
+                            <input className="auth-input" value={form.iban} onChange={(event) => update("iban", event.target.value)} placeholder={`${dachConfig.ibanPrefix}..`} />
+                          </div>
+                        </div>
+
+                        {dachConfig.companyIdFields.length > 0 && (
+                          <div className="grid gap-4 sm:grid-cols-2">
+                            {dachConfig.companyIdFields.map((field) => (
+                              <div className="form-group" key={field.key}>
+                                <label className="form-label">
+                                  {field.label}{field.required ? " *" : ""}
+                                </label>
+                                <input
+                                  className="auth-input"
+                                  value={String(form[field.key] || "")}
+                                  onChange={(event) => update(field.key, event.target.value)}
+                                  placeholder={field.placeholder}
+                                />
+                              </div>
+                            ))}
+                          </div>
+                        )}
+
+                        <div className="form-group">
+                          <label className="form-label">Zahlungsfrist</label>
+                          <div className="select-wrap">
+                            <select value={form.zahlungsfrist} onChange={(event) => update("zahlungsfrist", event.target.value)}>
+                              <option value="14">14 Tage</option>
+                              <option value="30">30 Tage</option>
+                              <option value="45">45 Tage</option>
+                            </select>
+                          </div>
+                        </div>
+                      </motion.div>
+                    )}
+
+                    <p className="mt-3 text-center text-xs" style={{ color: "var(--app-text-soft)" }}>
+                      Alles jederzeit in den Einstellungen anpassbar.
+                    </p>
+                  </div>
                 </div>
               )}
 

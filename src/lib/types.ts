@@ -107,8 +107,11 @@ export interface DokumentHistorie {
   kunde_adresse2?: string | null;
   kunde_plz?: string | null;
   kunde_ort?: string | null;
+  kunde_uid_mwst?: string | null;
   betrag: number;
   datum: string;
+  /** Service/delivery date — mandatory for DE/AT invoices */
+  leistungsdatum?: string | null;
   status: "entwurf" | "gesendet" | "angenommen" | "abgelaufen" | "bezahlt" | "ueberfaellig";
   pdf_url?: string;
   source_document_id?: string | null;

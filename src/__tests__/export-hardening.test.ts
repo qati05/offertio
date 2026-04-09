@@ -27,7 +27,7 @@ describe("buildDokumentCsv — correctness", () => {
   it("generates correct header row", () => {
     const csv = buildDokumentCsv([], "CHF");
     const header = csv.split("\n")[0];
-    expect(header).toBe("Typ,Nummer,Quelle,Kunde,Objekt,Datum,Status,Betrag,Waehrung");
+    expect(header).toBe("Typ,Nummer,Quelle,Kunde,Objekt,Datum,Leistungsdatum,Status,Betrag,Waehrung");
   });
 
   it("generates correct data row", () => {
@@ -35,7 +35,7 @@ describe("buildDokumentCsv — correctness", () => {
     const csv = buildDokumentCsv([doc], "CHF");
     const rows = csv.split("\n");
     expect(rows).toHaveLength(2);
-    expect(rows[1]).toBe("offerte,OF-2026-001,,Muster AG,Testauftrag,2026-04-05,gesendet,1234.56,CHF");
+    expect(rows[1]).toBe("offerte,OF-2026-001,,Muster AG,Testauftrag,2026-04-05,,gesendet,1234.56,CHF");
   });
 
   it("formats betrag with exactly 2 decimal places", () => {
