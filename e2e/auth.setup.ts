@@ -27,7 +27,7 @@ setup("authenticate", async ({ page }) => {
   await expect(page.locator("input[type='email']")).toBeVisible({ timeout: 10_000 });
 
   // Switch to password mode if needed (page defaults to signup)
-  const passwordToggle = page.getByText("Bereits ein Konto?");
+  const passwordToggle = page.getByRole("button", { name: "Anmelden" });
   if (await passwordToggle.isVisible()) {
     await passwordToggle.click();
   }

@@ -13,7 +13,9 @@ test.describe("Landing page", () => {
     await expect(page.locator("nav")).toBeVisible();
 
     // CTA buttons exist
-    const ctaLinks = page.getByRole("link", { name: /Jetzt starten|Kostenlos testen/i });
+    const ctaLinks = page.getByRole("link", {
+      name: /Jetzt (kostenlos )?starten|Kostenlos starten|Jetzt ausprobieren/i,
+    });
     await expect(ctaLinks.first()).toBeVisible();
   });
 

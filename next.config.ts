@@ -4,6 +4,7 @@ import type { NextConfig } from "next";
 // (nonce-based, so it cannot be a static header here).
 const nextConfig: NextConfig = {
   allowedDevOrigins: ["127.0.0.1"],
+  outputFileTracingRoot: process.cwd(),
   poweredByHeader: false,
   headers: async () => [
     {

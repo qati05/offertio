@@ -1,13 +1,49 @@
 import { defineConfig, devices } from "@playwright/test";
 
+const hasAuthCredentials = Boolean(process.env.E2E_USER_EMAIL && process.env.E2E_USER_PASSWORD);
+const port = Number(process.env.PORT || process.env.E2E_PORT || 3000);
+const baseURL = process.env.E2E_BASE_URL || `http://localhost:${port}`;
+
+const authProjects = hasAuthCredentials
+  ? [
+      {
+        name: "setup",
+        testMatch: /.*\.setup\.ts/,
+      },
+      {
+        name: "app",
+        testMatch: /app\/.*/,
+        dependencies: ["setup"],
+        use: {
+          ...devices["Desktop Chrome"],
+          storageState: "e2e/.auth/user.json",
+        },
+      },
+      {
+        name: "mobile",
+        testMatch: /mobile\/.*/,
+        dependencies: ["setup"],
+        use: {
+          ...devices["Pixel 5"],
+          storageState: "e2e/.auth/user.json",
+        },
+      },
+    ]
+  : [
+      {
+        name: "mobile-public",
+        testMatch: /mobile\/.*\.spec\.ts/,
+        use: { ...devices["Pixel 5"] },
+        grep: /login page is usable on mobile/,
+      },
+    ];
+
 /**
- * Offertio E2E — Playwright configuration
+ * Offertio E2E - Playwright configuration
  *
- * Run:   npx playwright test
- * UI:    npx playwright test --ui
- * Debug: npx playwright test --debug
- *
- * First time: npx playwright install chromium
+ * Public smoke tests run without real Supabase credentials. Authenticated app
+ * tests are enabled automatically once E2E_USER_EMAIL and E2E_USER_PASSWORD are
+ * present in the environment.
  */
 export default defineConfig({
   testDir: "./e2e",
@@ -19,51 +55,38 @@ export default defineConfig({
   timeout: 30_000,
 
   use: {
-    baseURL: process.env.E2E_BASE_URL || "http://localhost:3000",
+    baseURL,
     trace: "on-first-retry",
     screenshot: "only-on-failure",
     locale: "de-CH",
   },
 
   projects: [
-    /* Auth setup — creates reusable session state */
-    {
-      name: "setup",
-      testMatch: /.*\.setup\.ts/,
-    },
-    /* Public pages — no auth needed */
     {
       name: "public",
       testMatch: /public\/.*/,
       use: { ...devices["Desktop Chrome"] },
     },
-    /* Authenticated tests — depend on setup */
-    {
-      name: "app",
-      testMatch: /app\/.*/,
-      dependencies: ["setup"],
-      use: {
-        ...devices["Desktop Chrome"],
-        storageState: "e2e/.auth/user.json",
-      },
-    },
-    /* Mobile viewport */
-    {
-      name: "mobile",
-      testMatch: /mobile\/.*/,
-      dependencies: ["setup"],
-      use: {
-        ...devices["iPhone 14"],
-        storageState: "e2e/.auth/user.json",
-      },
-    },
+    ...authProjects,
   ],
 
-  /* Dev server — starts automatically if not running */
   webServer: {
-    command: "npm run dev",
-    url: "http://localhost:3000",
+    command: `npm run dev -- --port ${port}`,
+    url: baseURL,
     reuseExistingServer: !process.env.CI,
-    timeout: 60_000,
+    timeout: 120_000,
+    env: {
+      ...process.env,
+      PORT: String(port),
+      // Public and login E2E tests do not call Supabase, but middleware creates
+      // a Supabase client for every request. These local placeholders keep
+      // unauthenticated browser smoke tests runnable before real credentials exist.
+      NEXT_PUBLIC_SUPABASE_URL:
+        process.env.NEXT_PUBLIC_SUPABASE_URL || "http://127.0.0.1:54321",
+      NEXT_PUBLIC_SUPABASE_ANON_KEY:
+        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "offertio-e2e-local-anon-key",
+      NEXT_PUBLIC_GOOGLE_AUTH_ENABLED:
+        process.env.NEXT_PUBLIC_GOOGLE_AUTH_ENABLED || "false",
+    },
   },
 });

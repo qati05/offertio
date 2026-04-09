@@ -15,11 +15,11 @@ test.describe("Login page", () => {
     await expect(page.getByRole("button", { name: /Konto erstellen/i })).toBeVisible();
 
     // Switch to login mode
-    await page.getByText("Bereits ein Konto?").click();
-    await expect(page.getByRole("button", { name: /Anmelden/i })).toBeVisible();
+    await page.getByRole("button", { name: "Anmelden" }).click();
+    await expect(page.locator("form").getByRole("button", { name: "Anmelden" })).toBeVisible();
 
     // Switch back to signup
-    await page.getByText("Noch kein Konto?").click();
+    await page.getByRole("button", { name: "Registrieren" }).click();
     await expect(page.getByRole("button", { name: /Konto erstellen/i })).toBeVisible();
   });
 
