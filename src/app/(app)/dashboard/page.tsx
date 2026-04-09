@@ -147,58 +147,37 @@ export default function DashboardPage() {
           </p>
         </motion.div>
 
-        {/* ── Open Amount Metric ───────────────────────── */}
+        {/* ── Quiet status hint ─────────────────────────── */}
         {!loading && openDocs.length > 0 && (
           <motion.div
-            initial={{ opacity: 0, y: 8 }}
+            initial={{ opacity: 0, y: 6 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.4, delay: 0.08, ease }}
             style={{
-              background: "var(--app-card)",
-              borderRadius: 20,
-              padding: "24px 28px",
               marginBottom: 16,
+              padding: "14px 18px",
+              borderRadius: 14,
+              background: "var(--app-card)",
+              border: "1px solid var(--app-border)",
               display: "flex",
-              justifyContent: "space-between",
-              alignItems: "flex-end",
-              backdropFilter: "blur(20px) saturate(160%)",
-              WebkitBackdropFilter: "blur(20px) saturate(160%)",
-              boxShadow: "0 1px 3px rgba(0,0,0,0.04), 0 8px 32px rgba(0,0,0,0.06), inset 0 1px 0 rgba(255,255,255,0.7)",
+              alignItems: "center",
+              gap: 12,
             }}
           >
-            <div>
-              <div style={kicker}>Offen</div>
-              <div style={{
-                fontSize: 64,
-                fontWeight: 700,
-                letterSpacing: "-0.05em",
-                color: "var(--app-text)",
-                fontFamily: "var(--font-display)",
-                lineHeight: 1,
-              }}>
-                {openDocs.length}
-              </div>
-              <p style={{
-                fontSize: 13, lineHeight: 1.6,
-                color: "var(--app-text-muted)",
-                margin: "6px 0 0",
-              }}>
-                {openDocs.length === 1 ? "Dokument wartet auf Vollendung." : "Dokumente warten auf Vollendung."}
-              </p>
-            </div>
-            <div style={{ textAlign: "right", paddingBottom: 4 }}>
-              <div style={kicker}>Gesamt</div>
-              <div style={{
-                fontSize: 32,
-                fontWeight: 700,
-                letterSpacing: "-0.04em",
-                color: "var(--app-text-muted)",
-                fontFamily: "var(--font-display)",
-                lineHeight: 1,
-              }}>
-                {history.length}
-              </div>
-            </div>
+            <div style={{
+              width: 8, height: 8, borderRadius: "50%",
+              background: "var(--color-primary)",
+              flexShrink: 0,
+            }} />
+            <p style={{
+              fontSize: 13, lineHeight: 1.5,
+              color: "var(--app-text-muted)",
+              margin: 0,
+            }}>
+              {openDocs.length === 1
+                ? "1 Dokument wartet auf Erledigung."
+                : `${openDocs.length} Dokumente warten auf Erledigung.`}
+            </p>
           </motion.div>
         )}
 

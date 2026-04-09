@@ -28,20 +28,18 @@ function statusOptionsFor(typ: "offerte" | "rechnung") {
   return ["entwurf", "gesendet", "bezahlt", "ueberfaellig"] as const;
 }
 
-type ViewMode = "history" | "customers" | "export";
-
 export default function DokumentePage() {
   const [loading, setLoading] = useState(true);
   const [history, setHistory] = useState<DokumentHistorie[]>([]);
   const [source, setSource] = useState<"cloud" | "local">("cloud");
   const [profile, setProfile] = useState<Profile | null>(null);
-  const [view, setView] = useState<ViewMode>("history");
-  const [customerQuery, setCustomerQuery] = useState("");
+  const [searchQuery, setSearchQuery] = useState("");
   const [expandedCustomer, setExpandedCustomer] = useState<string | null>(null);
+  const [updatingId, setUpdatingId] = useState<string | null>(null);
+  const [showExport, setShowExport] = useState(false);
   const [exportFrom, setExportFrom] = useState("");
   const [exportTo, setExportTo] = useState("");
   const [exportCustomer, setExportCustomer] = useState("");
-  const [updatingId, setUpdatingId] = useState<string | null>(null);
 
   useEffect(() => {
     void loadData();
@@ -138,7 +136,7 @@ export default function DokumentePage() {
     [history],
   );
   const filteredFolders = customerFolders.filter((folder) =>
-    folder.name.toLowerCase().includes(customerQuery.trim().toLowerCase()),
+    folder.name.toLowerCase().includes(searchQuery.trim().toLowerCase()),
   );
   const exportableDocs = history.filter((doc) => {
     const date = new Date(doc.datum).getTime();
@@ -266,205 +264,99 @@ export default function DokumentePage() {
             <div className="app-kicker">Dokumente</div>
             <h1 className="app-title-display mt-2">Deine Werke</h1>
             <p className="mt-3 max-w-2xl text-sm leading-6" style={{ color: "var(--app-text-muted)" }}>
-              Alle Offerten und Rechnungen an einem Ort.{" "}
-              {source === "local"
-                ? "Aktuell aus der lokalen Geräte-Historie."
-                : "Aktuell aus deiner Konto-Historie."}
+              Alle Offerten und Rechnungen an einem Ort.
             </p>
           </div>
-          <Link href="/dokument/neu" className="btn-premium btn-premium-primary shrink-0">
-            Neues Dokument
-          </Link>
+          <div className="flex shrink-0 items-center gap-3">
+            {/* Export icon button */}
+            <button
+              type="button"
+              onClick={() => setShowExport(!showExport)}
+              title="CSV Export"
+              style={{
+                width: 40, height: 40,
+                borderRadius: 12,
+                border: "1px solid var(--app-border)",
+                background: showExport ? "var(--app-card-muted)" : "transparent",
+                display: "flex", alignItems: "center", justifyContent: "center",
+                cursor: "pointer",
+                color: "var(--app-text-muted)",
+                transition: "all 0.15s ease",
+              }}
+            >
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4" />
+                <polyline points="7 10 12 15 17 10" />
+                <line x1="12" y1="15" x2="12" y2="3" />
+              </svg>
+            </button>
+            <Link href="/dokument/neu" className="btn-premium btn-premium-primary shrink-0">
+              Neues Dokument
+            </Link>
+          </div>
         </header>
 
-        {/* Tab bar */}
-        <div
-          className="mb-6 grid grid-cols-3 gap-2 rounded-[20px] border p-1.5"
-          style={{ borderColor: "var(--color-border)", background: "rgba(255,255,255,0.64)" }}
-        >
-          {[
-            { key: "history",   label: "Dokumente"    },
-            { key: "customers", label: "Kundenordner" },
-            { key: "export",    label: "Export"        },
-          ].map((tab) => {
-            const active = view === tab.key;
-            return (
+        {/* Export drawer — collapsible, not a tab */}
+        {showExport && (
+          <div
+            className="app-shell-panel mb-6 p-5"
+            style={{ borderColor: "rgba(200,121,61,0.15)" }}
+          >
+            <div className="flex items-center justify-between">
+              <div className="app-kicker">CSV Export</div>
               <button
-                key={tab.key}
                 type="button"
-                onClick={() => setView(tab.key as ViewMode)}
-                className="rounded-[14px] px-3 py-3 text-sm font-semibold transition"
+                onClick={() => setShowExport(false)}
                 style={{
-                  background: active ? "white" : "transparent",
-                  color: active ? "var(--color-text)" : "var(--color-text-muted)",
-                  boxShadow: active ? "var(--shadow-xs)" : "none",
+                  background: "none", border: "none", cursor: "pointer",
+                  fontSize: 18, color: "var(--app-text-muted)", lineHeight: 1,
                 }}
               >
-                {tab.label}
+                ×
               </button>
-            );
-          })}
-        </div>
-
-        {loading ? (
-          <div className="space-y-3">
-            {[...Array(5)].map((_, i) => (
-              <div key={i} className="app-shell-panel h-[88px]" />
-            ))}
-          </div>
-        ) : view === "history" ? (
-          history.length === 0 ? (
-            <div className="app-shell-panel flex flex-col items-center justify-center px-6 py-16 text-center">
-              <div className="text-lg font-semibold" style={{ color: "var(--app-text)" }}>
-                Noch keine Dokumente vorhanden
-              </div>
-              <p className="mt-2 max-w-md text-sm leading-6" style={{ color: "var(--app-text-muted)" }}>
-                Sobald du deine erste Offerte oder Rechnung erstellst, erscheint sie hier automatisch im Verlauf.
-              </p>
-              <Link href="/dokument/neu" className="btn-premium btn-premium-primary">
-                Erste Offerte erstellen
-              </Link>
             </div>
-          ) : (
-            <div className="space-y-3">
-              {history.map((doc, i) => (
-                <DocRow key={`${doc.id ?? doc.nummer}-${i}`} doc={doc} />
-              ))}
+            <div className="mt-4 grid gap-4 sm:grid-cols-3">
+              <div>
+                <label className="form-label">Von</label>
+                <input
+                  type="date"
+                  className="field"
+                  value={exportFrom}
+                  onChange={(e) => setExportFrom(e.target.value)}
+                />
+              </div>
+              <div>
+                <label className="form-label">Bis</label>
+                <input
+                  type="date"
+                  className="field"
+                  value={exportTo}
+                  onChange={(e) => setExportTo(e.target.value)}
+                />
+              </div>
+              <div>
+                <label className="form-label">Kunde</label>
+                <div className="select-wrap">
+                  <select
+                    value={exportCustomer}
+                    onChange={(e) => setExportCustomer(e.target.value)}
+                  >
+                    <option value="">Alle Kunden</option>
+                    {customerFolders.map((folder) => (
+                      <option key={folder.slug} value={folder.name}>
+                        {folder.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
             </div>
-          )
-        ) : view === "customers" ? (
-          <div className="space-y-4">
-            <div className="app-shell-panel p-5">
-              <div className="app-kicker">Kundensuche</div>
-              <input
-                className="field mt-4"
-                value={customerQuery}
-                onChange={(e) => setCustomerQuery(e.target.value)}
-                placeholder="Kundenordner suchen"
-              />
-            </div>
-
-            {filteredFolders.length === 0 ? (
-              <div className="app-shell-panel px-6 py-14 text-center">
-                <div className="text-lg font-semibold" style={{ color: "var(--app-text)" }}>
-                  Kein Kundenordner gefunden
-                </div>
-                <p className="mt-2 text-sm leading-6" style={{ color: "var(--app-text-muted)" }}>
-                  Kundenordner entstehen automatisch, sobald du Dokumente für einen Kunden erstellst.
-                </p>
-              </div>
-            ) : (
-              filteredFolders.map((folder) => {
-                const expanded = expandedCustomer === folder.slug;
-                // Compute total revenue for customer
-                const totalRevenue = folder.docs
-                  .filter((d) => d.typ === "rechnung" && d.status === "bezahlt")
-                  .reduce((sum, d) => sum + d.betrag, 0);
-
-                return (
-                  <div key={folder.slug} className="app-shell-panel overflow-hidden">
-                    <button
-                      type="button"
-                      className="flex w-full items-center justify-between gap-4 px-5 py-5 text-left"
-                      onClick={() => setExpandedCustomer(expanded ? null : folder.slug)}
-                    >
-                      <div>
-                        <div className="text-sm font-semibold" style={{ color: "var(--app-text)" }}>
-                          {folder.name}
-                        </div>
-                        <div className="mt-1 text-xs" style={{ color: "var(--app-text-muted)" }}>
-                          {folder.docs.length} {folder.docs.length === 1 ? "Dokument" : "Dokumente"}
-                          {" · "}zuletzt {new Date(folder.latestDate).toLocaleDateString("de-CH")}
-                          {totalRevenue > 0 && (
-                            <span className="ml-2 font-medium" style={{ color: "var(--color-primary-strong)" }}>
-                              · {currency} {totalRevenue.toLocaleString("de-CH", { minimumFractionDigits: 2 })} bezahlt
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                      <div className="text-sm font-semibold" style={{ color: "var(--color-primary-strong)" }}>
-                        {expanded ? "−" : "+"}
-                      </div>
-                    </button>
-
-                    {expanded && (
-                      <div className="border-t px-5 pb-5 pt-4" style={{ borderColor: "var(--app-border)" }}>
-                        <div className="space-y-3">
-                          {folder.docs.map((doc, idx) => (
-                            <DocRow
-                              key={`${doc.id ?? doc.nummer}-${idx}`}
-                              doc={computeDocumentStatus(doc, zahlungsfrist)}
-                              compact
-                            />
-                          ))}
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                );
-              })
-            )}
-          </div>
-        ) : (
-          <div className="space-y-4">
-            <div className="app-shell-panel p-6">
-              <div className="app-kicker">Buchhaltungs-Export</div>
-              <h2
-                className="mt-3 text-2xl font-bold tracking-[-0.03em]"
-                style={{ color: "var(--app-text)" }}
-              >
-                Dokumente für Buchhaltung vorbereiten
-              </h2>
-              <p className="mt-3 text-sm leading-6" style={{ color: "var(--app-text-muted)" }}>
-                Zeitraum wählen, optional nach Kunde filtern und dann alle passenden Dokumente als CSV exportieren.
-              </p>
-
-              <div className="mt-6 grid gap-4 sm:grid-cols-3">
-                <div>
-                  <label className="form-label">Von</label>
-                  <input
-                    type="date"
-                    className="field"
-                    value={exportFrom}
-                    onChange={(e) => setExportFrom(e.target.value)}
-                  />
-                </div>
-                <div>
-                  <label className="form-label">Bis</label>
-                  <input
-                    type="date"
-                    className="field"
-                    value={exportTo}
-                    onChange={(e) => setExportTo(e.target.value)}
-                  />
-                </div>
-                <div>
-                  <label className="form-label">Kunde</label>
-                  <div className="select-wrap">
-                    <select
-                      value={exportCustomer}
-                      onChange={(e) => setExportCustomer(e.target.value)}
-                    >
-                      <option value="">Alle Kunden</option>
-                      {customerFolders.map((folder) => (
-                        <option key={folder.slug} value={folder.name}>
-                          {folder.name}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                </div>
-              </div>
-
-              <div
-                className="mt-6 rounded-[18px] px-4 py-4 text-sm"
-                style={{ background: "var(--app-card-muted)", color: "var(--app-text-muted)" }}
-              >
-                {exportableDocs.length} Dokumente im aktuellen Export.
-              </div>
-
+            <div className="mt-4 flex items-center justify-between">
+              <span className="text-sm" style={{ color: "var(--app-text-muted)" }}>
+                {exportableDocs.length} Dokumente
+              </span>
               <button
-                className="btn-premium btn-premium-primary mt-6"
+                className="btn-premium btn-premium-primary"
                 onClick={downloadCsv}
                 disabled={exportableDocs.length === 0}
               >
@@ -473,7 +365,155 @@ export default function DokumentePage() {
             </div>
           </div>
         )}
+
+        {/* Search */}
+        {!loading && history.length > 0 && (
+          <div className="mb-6">
+            <input
+              className="field"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Kunde suchen…"
+              style={{ maxWidth: 360 }}
+            />
+          </div>
+        )}
+
+        {loading ? (
+          <div className="space-y-3">
+            {[...Array(5)].map((_, i) => (
+              <div key={i} className="app-shell-panel h-[88px]" />
+            ))}
+          </div>
+        ) : history.length === 0 ? (
+          <div className="app-shell-panel flex flex-col items-center justify-center px-6 py-16 text-center">
+            <div className="text-lg font-semibold" style={{ color: "var(--app-text)" }}>
+              Noch keine Dokumente vorhanden
+            </div>
+            <p className="mt-2 max-w-md text-sm leading-6" style={{ color: "var(--app-text-muted)" }}>
+              Sobald du deine erste Offerte oder Rechnung erstellst, erscheint sie hier automatisch.
+            </p>
+            <Link href="/dokument/neu" className="btn-premium btn-premium-primary mt-4">
+              Erste Offerte erstellen
+            </Link>
+          </div>
+        ) : searchQuery.trim() ? (
+          /* Search results — grouped by customer */
+          filteredFolders.length === 0 ? (
+            <div className="app-shell-panel px-6 py-14 text-center">
+              <div className="text-lg font-semibold" style={{ color: "var(--app-text)" }}>
+                Kein Kunde gefunden
+              </div>
+              <p className="mt-2 text-sm leading-6" style={{ color: "var(--app-text-muted)" }}>
+                Kundenordner entstehen automatisch aus deinen Dokumenten.
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {filteredFolders.map((folder) => (
+                <CustomerFolder
+                  key={folder.slug}
+                  folder={folder}
+                  expanded={expandedCustomer === folder.slug}
+                  onToggle={() => setExpandedCustomer(expandedCustomer === folder.slug ? null : folder.slug)}
+                  zahlungsfrist={zahlungsfrist}
+                  DocRow={DocRow}
+                  currency={currency}
+                />
+              ))}
+            </div>
+          )
+        ) : (
+          /* Default view — recent documents grouped by customer */
+          <div className="space-y-3">
+            {filteredFolders.map((folder) => (
+              <CustomerFolder
+                key={folder.slug}
+                folder={folder}
+                expanded={expandedCustomer === folder.slug}
+                onToggle={() => setExpandedCustomer(expandedCustomer === folder.slug ? null : folder.slug)}
+                zahlungsfrist={zahlungsfrist}
+                DocRow={DocRow}
+                currency={currency}
+              />
+            ))}
+          </div>
+        )}
       </div>
+    </div>
+  );
+}
+
+/* ── Customer Folder Card ──────────────────────────────── */
+
+function CustomerFolder({
+  folder,
+  expanded,
+  onToggle,
+  zahlungsfrist,
+  DocRow,
+  currency,
+}: {
+  folder: ReturnType<typeof groupDocumentsByCustomer>[number];
+  expanded: boolean;
+  onToggle: () => void;
+  zahlungsfrist: number;
+  DocRow: React.ComponentType<{ doc: DokumentHistorie; compact?: boolean }>;
+  currency: string;
+}) {
+  return (
+    <div className="app-shell-panel overflow-hidden">
+      <button
+        type="button"
+        className="flex w-full items-center justify-between gap-4 px-5 py-5 text-left"
+        onClick={onToggle}
+      >
+        <div>
+          <div className="text-sm font-semibold" style={{ color: "var(--app-text)" }}>
+            {folder.name}
+          </div>
+          <div className="mt-1 text-xs" style={{ color: "var(--app-text-muted)" }}>
+            {folder.docs.length} {folder.docs.length === 1 ? "Dokument" : "Dokumente"}
+            {" · "}zuletzt {new Date(folder.latestDate).toLocaleDateString("de-CH")}
+          </div>
+        </div>
+        <div className="flex items-center gap-3">
+          {/* Latest document status chip */}
+          {folder.docs[0] && (() => {
+            const st = STATUS_META[folder.docs[0].status] ?? STATUS_META.entwurf;
+            return (
+              <span
+                className="text-[11px] font-semibold uppercase tracking-[0.06em]"
+                style={{
+                  color: st.color,
+                  background: st.bg,
+                  padding: "2px 8px",
+                  borderRadius: 6,
+                }}
+              >
+                {st.label}
+              </span>
+            );
+          })()}
+          <span className="text-sm font-semibold" style={{ color: "var(--color-primary-strong)" }}>
+            {expanded ? "−" : "+"}
+          </span>
+        </div>
+      </button>
+
+      {expanded && (
+        <div className="border-t px-5 pb-5 pt-4" style={{ borderColor: "var(--app-border)" }}>
+          <div className="space-y-3">
+            {folder.docs.map((doc, idx) => (
+              <DocRow
+                key={`${doc.id ?? doc.nummer}-${idx}`}
+                doc={computeDocumentStatus(doc, zahlungsfrist)}
+                compact
+              />
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

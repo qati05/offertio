@@ -423,11 +423,24 @@ export default function DokumentNeuPage() {
     }
   }
 
-  function focusField(key: "kundeEmail" | "leistungsdatum") {
+  function focusField(key: "kundeEmail" | "leistungsdatum" | "profileRequirements") {
     const target =
-      key === "kundeEmail" ? emailInputRef.current : leistungsdatumInputRef.current;
-    target?.scrollIntoView({ behavior: "smooth", block: "center" });
-    target?.focus();
+      key === "kundeEmail"
+        ? emailInputRef.current
+        : key === "leistungsdatum"
+          ? leistungsdatumInputRef.current
+          : profileRequirementsRef.current;
+    if (!target) return;
+    // Smooth scroll with visual offset so field isn't cramped at viewport edge
+    const yOffset = -120;
+    const y = target.getBoundingClientRect().top + window.scrollY + yOffset;
+    window.scrollTo({ top: y, behavior: "smooth" });
+    // Focus the element after scroll animation completes
+    setTimeout(() => {
+      if ("focus" in target && typeof (target as HTMLElement).focus === "function") {
+        (target as HTMLElement).focus();
+      }
+    }, 400);
   }
 
   async function persistProfileIfNeeded() {
@@ -497,7 +510,7 @@ export default function DokumentNeuPage() {
         profil.land,
       );
       if (!regionCheck.valid) {
-        // Surface the most critical error
+        // Surface the most critical error with legal context
         const firstError = Object.values(regionCheck.errors)[0];
         showToast(firstError ?? "Rechtliche Pflichtangaben fehlen.");
         if (regionCheck.errors.leistungsdatum) {
@@ -505,15 +518,16 @@ export default function DokumentNeuPage() {
           setTouchedLeistungsdatum(true);
           focusField("leistungsdatum");
         } else {
-          profileRequirementsRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+          focusField("profileRequirements");
         }
         return;
       }
     }
 
     if (missingProfileFields.length > 0) {
-      showToast(`Bitte ergänze inline: ${missingProfileFields.map((field) => field.label).join(", ")}. Für ${typLabel.toLowerCase()} in ${dachConfig.name} ist das erforderlich.`);
-      profileRequirementsRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+      const fieldNames = missingProfileFields.map((field) => field.label).join(", ");
+      showToast(`${fieldNames} — erforderlich für ${typLabel} in ${dachConfig.name}.`);
+      focusField("profileRequirements");
       return;
     }
 
@@ -825,8 +839,9 @@ export default function DokumentNeuPage() {
     }
 
     if (missingProfileFields.length > 0) {
-      showToast(`Bitte ergänze inline: ${missingProfileFields.map((field) => field.label).join(", ")}. Für ${typLabel.toLowerCase()} in ${dachConfig.name} ist das erforderlich.`);
-      profileRequirementsRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+      const fieldNames = missingProfileFields.map((field) => field.label).join(", ");
+      showToast(`${fieldNames} — erforderlich für ${typLabel} in ${dachConfig.name}.`);
+      focusField("profileRequirements");
       return;
     }
 
@@ -1814,18 +1829,29 @@ export default function DokumentNeuPage() {
         </button>
       )}
 
-      {/* Bottom Bar */}
-      <div className="bottom-bar">
-        <button className="btn-secondary" style={{ flex: 1 }} onClick={saveDraft}>
-          Entwurf
-        </button>
+      {/* Bottom Bar — single dominant CTA */}
+      <div className="bottom-bar" style={{ flexDirection: "column", gap: 8, alignItems: "stretch" }}>
         <button
           className="btn-primary"
-          style={{ flex: 2 }}
+          style={{ width: "100%", padding: "14px 0", fontSize: 15 }}
           onClick={handleSend}
           disabled={sending || (!downloadPdf && !sharePdf) || serverAllowed === false}
         >
           {sending ? "Wird gesendet…" : sendBtnLabel}
+        </button>
+        <button
+          onClick={saveDraft}
+          style={{
+            background: "none",
+            border: "none",
+            cursor: "pointer",
+            fontSize: 13,
+            fontWeight: 500,
+            color: "var(--app-text-muted)",
+            padding: "4px 0",
+          }}
+        >
+          Als Entwurf speichern
         </button>
       </div>
 
