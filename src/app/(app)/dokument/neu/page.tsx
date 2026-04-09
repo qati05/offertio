@@ -2,7 +2,7 @@
 
 export const dynamic = "force-dynamic";
 
-import { useEffect, useState, useCallback, useRef } from "react";
+import { useEffect, useState, useCallback, useRef, useMemo } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { createSupabaseBrowser } from "@/lib/supabase-browser";
 import { peekNextNummer, commitNummer } from "@/lib/dokument-nummer";
@@ -33,6 +33,9 @@ export default function DokumentNeuPage() {
   const [fieldErrors, setFieldErrors] = useState<Record<string, boolean>>({});
   const [customerRecords, setCustomerRecords] = useState<CustomerRecord[]>([]);
   const [customerReuseHint, setCustomerReuseHint] = useState("");
+  const [showCustomerDropdown, setShowCustomerDropdown] = useState(false);
+  const [customerDropdownIdx, setCustomerDropdownIdx] = useState(-1);
+  const customerDropdownRef = useRef<HTMLDivElement | null>(null);
   const [sourceDocumentId, setSourceDocumentId] = useState<string | null>(null);
   const [sourceDocumentNumber, setSourceDocumentNumber] = useState<string | null>(null);
   // Cloud draft ID: set when we've already saved this draft to Supabase as "entwurf"
@@ -251,6 +254,33 @@ export default function DokumentNeuPage() {
       appliedReuseKeyRef.current = null;
     }
     setKunde((k) => ({ ...k, [key]: value }));
+  }
+
+  // ── Customer Autocomplete ──────────────────────────────
+  const customerQuery = (kunde.name || kunde.firma || "").toLowerCase().trim();
+  const filteredCustomers = useMemo(() => {
+    if (!customerQuery || customerQuery.length < 2) return [];
+    return customerRecords
+      .filter((c) => c.display_name.toLowerCase().includes(customerQuery))
+      .slice(0, 6);
+  }, [customerRecords, customerQuery]);
+
+  function selectCustomer(record: CustomerRecord) {
+    const { next, reusedFields } = mergeCustomerIntoDraft(
+      { ...kunde, name: record.display_name },
+      record,
+    );
+    // Set name explicitly since mergeCustomerIntoDraft only fills empty fields
+    next.name = record.display_name;
+    appliedReuseKeyRef.current = record.lookup_key;
+    setKunde(next);
+    setShowCustomerDropdown(false);
+    setCustomerDropdownIdx(-1);
+    setCustomerReuseHint(
+      reusedFields.length > 0
+        ? `Kundendaten für ${record.display_name} übernommen.`
+        : `${record.display_name} ausgewählt.`,
+    );
   }
 
   function updateProfilField(key: keyof Profile, value: string) {
@@ -1317,16 +1347,94 @@ export default function DokumentNeuPage() {
       {/* Kunde */}
       <div className="form-section" style={{ marginBottom: 20 }}>
         <div className="form-label">Kunde</div>
-        <input
-          className="input-field"
-          placeholder="Name / Firma"
-          value={kunde.name || kunde.firma}
-          onChange={(e) => {
-            updateKunde("name", e.target.value);
-          }}
-        />
+        <div style={{ position: "relative" }}>
+          <input
+            className="input-field"
+            placeholder="Name / Firma"
+            value={kunde.name || kunde.firma}
+            autoComplete="off"
+            onChange={(e) => {
+              updateKunde("name", e.target.value);
+              setShowCustomerDropdown(true);
+              setCustomerDropdownIdx(-1);
+            }}
+            onFocus={() => {
+              if (customerQuery.length >= 2) setShowCustomerDropdown(true);
+            }}
+            onBlur={() => {
+              // Delay so click on dropdown item registers first
+              setTimeout(() => setShowCustomerDropdown(false), 180);
+            }}
+            onKeyDown={(e) => {
+              if (!showCustomerDropdown || filteredCustomers.length === 0) return;
+              if (e.key === "ArrowDown") {
+                e.preventDefault();
+                setCustomerDropdownIdx((i) => Math.min(i + 1, filteredCustomers.length - 1));
+              } else if (e.key === "ArrowUp") {
+                e.preventDefault();
+                setCustomerDropdownIdx((i) => Math.max(i - 1, 0));
+              } else if (e.key === "Enter" && customerDropdownIdx >= 0) {
+                e.preventDefault();
+                selectCustomer(filteredCustomers[customerDropdownIdx]);
+              } else if (e.key === "Escape") {
+                setShowCustomerDropdown(false);
+              }
+            }}
+          />
+          {/* Autocomplete dropdown */}
+          {showCustomerDropdown && filteredCustomers.length > 0 && (
+            <div
+              ref={customerDropdownRef}
+              style={{
+                position: "absolute",
+                top: "100%",
+                left: 0,
+                right: 0,
+                zIndex: 20,
+                marginTop: 4,
+                borderRadius: 13,
+                border: "1px solid var(--app-border-strong)",
+                background: "var(--app-card)",
+                boxShadow: "var(--shadow-float)",
+                overflow: "hidden",
+                animation: "toast-in 0.18s var(--ease-out-expo) both",
+              }}
+            >
+              {filteredCustomers.map((record, i) => (
+                <button
+                  key={record.id}
+                  type="button"
+                  onMouseDown={(e) => e.preventDefault()}
+                  onClick={() => selectCustomer(record)}
+                  style={{
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: 2,
+                    width: "100%",
+                    padding: "10px 14px",
+                    border: "none",
+                    borderBottom: i < filteredCustomers.length - 1 ? "1px solid var(--app-border)" : "none",
+                    background: i === customerDropdownIdx ? "var(--color-primary-soft)" : "transparent",
+                    cursor: "pointer",
+                    textAlign: "left",
+                    transition: "background 0.1s ease",
+                  }}
+                >
+                  <span style={{ fontSize: 14, fontWeight: 600, color: "var(--app-text)" }}>
+                    {record.display_name}
+                  </span>
+                  {(record.email || record.ort) && (
+                    <span style={{ fontSize: 12, color: "var(--app-text-muted)" }}>
+                      {[record.email, record.ort].filter(Boolean).join(" · ")}
+                    </span>
+                  )}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
         {customerReuseHint && (
-          <div style={{ marginTop: 6, marginBottom: 8, fontSize: 12, color: "var(--color-text-muted)" }}>
+          <div style={{ marginTop: 6, marginBottom: 8, fontSize: 12, color: "var(--app-text-muted)" }}>
             {customerReuseHint}
           </div>
         )}

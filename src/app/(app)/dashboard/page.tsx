@@ -326,6 +326,16 @@ export default function DashboardPage() {
                       }}>
                         {doc.nummer}&nbsp;·&nbsp;
                         {new Date(doc.datum).toLocaleDateString("de-CH")}
+                        {doc.source_document_nummer && (
+                          <span style={{ color: "var(--color-primary-strong)" }}>
+                            &nbsp;· aus {doc.source_document_nummer}
+                          </span>
+                        )}
+                        {doc.converted_document_nummer && (
+                          <span style={{ color: "var(--color-primary-strong)" }}>
+                            &nbsp;→ {doc.converted_document_nummer}
+                          </span>
+                        )}
                       </div>
                     </div>
 
