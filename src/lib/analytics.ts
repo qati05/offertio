@@ -73,7 +73,7 @@ export function trackLoginPageView(referrer: string) {
 }
 
 /** Document creation events. */
-export function trackDocumentCreated(typ: "offerte" | "rechnung", method: "email" | "download" | "both") {
+export function trackDocumentCreated(typ: "offerte" | "rechnung", method: "email" | "download" | "share" | "both") {
   trackEvent("document_created", { typ, method });
 }
 

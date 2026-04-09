@@ -206,10 +206,19 @@ export default function DokumentNeuPage() {
     setLoading(false);
   }
 
+  // Ref to access latest kunde inside the effect without triggering re-runs.
+  const kundeRef = useRef(kunde);
+  kundeRef.current = kunde;
+
+  // Derive a stable key from identifying fields only — prevents re-fire when
+  // mergeCustomerIntoDraft updates non-identifying fields (adresse, plz, etc.).
+  const kundeIdentityKey = `${kunde.name}|${kunde.firma}|${kunde.email}`;
+
   useEffect(() => {
-    const reusableCustomer = findReusableCustomer(customerRecords, kunde);
+    const currentKunde = kundeRef.current;
+    const reusableCustomer = findReusableCustomer(customerRecords, currentKunde);
     if (!reusableCustomer) {
-      if (!kunde.email?.trim() && !kunde.name?.trim() && !kunde.firma?.trim()) {
+      if (!currentKunde.email?.trim() && !currentKunde.name?.trim() && !currentKunde.firma?.trim()) {
         appliedReuseKeyRef.current = null;
         setCustomerReuseHint("");
       }
@@ -220,7 +229,7 @@ export default function DokumentNeuPage() {
       return;
     }
 
-    const { next, reusedFields } = mergeCustomerIntoDraft(kunde, reusableCustomer);
+    const { next, reusedFields } = mergeCustomerIntoDraft(currentKunde, reusableCustomer);
     appliedReuseKeyRef.current = reusableCustomer.lookup_key;
     setKunde(next);
     setCustomerReuseHint(
@@ -228,7 +237,8 @@ export default function DokumentNeuPage() {
         ? `Gespeicherte Kundendaten für ${getCustomerDisplayName(reusableCustomer)} übernommen.`
         : `Kundendaten für ${getCustomerDisplayName(reusableCustomer)} erkannt.`,
     );
-  }, [customerRecords, kunde]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [customerRecords, kundeIdentityKey]);
 
   function updateKunde(key: keyof KundenInfo, value: string) {
     if (key === "email" && fieldErrors.kundeEmail) {
