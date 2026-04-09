@@ -26,8 +26,8 @@ const DOKUMENTE_STATUS: Record<string, { label: string; color: string; bg: strin
   gesendet:     { label: "Ausstehend", color: "#A8622E", bg: "rgba(200,121,61,0.07)" },
   bezahlt:      { label: "Erledigt",   color: "#15803d", bg: "rgba(21,128,61,0.07)" },
   angenommen:   { label: "Bestätigt",  color: "#15803d", bg: "rgba(21,128,61,0.07)" },
-  abgelaufen:   { label: "Abgelaufen", color: "#92400e", bg: "rgba(146,64,14,0.07)" },
-  ueberfaellig: { label: "Überfällig", color: "#92400e", bg: "rgba(146,64,14,0.07)" },
+  abgelaufen:   { label: "Abgelaufen", color: "var(--color-warning)", bg: "var(--color-warning-soft)" },
+  ueberfaellig: { label: "Überfällig", color: "var(--color-warning)", bg: "var(--color-warning-soft)" },
 };
 
 // All process-language labels that are allowed in the UI
@@ -124,12 +124,12 @@ describe("No-Money History Integrity", () => {
       }
     });
 
-    it("background colors are rgba CSS strings (not user-visible text)", () => {
+    it("background colors are valid CSS values (not user-visible text)", () => {
       for (const [key, cfg] of Object.entries(DOKUMENTE_STATUS)) {
-        // bg is a CSS color value — must be rgba() format, not a currency amount or label
+        // bg is a CSS color value — must be rgba() or var() format, not a currency amount or label
         expect(
-          cfg.bg.startsWith("rgba("),
-          `dokumente status "${key}" bg should be rgba, got: "${cfg.bg}"`,
+          cfg.bg.startsWith("rgba(") || cfg.bg.startsWith("var("),
+          `dokumente status "${key}" bg should be rgba or var, got: "${cfg.bg}"`,
         ).toBe(true);
         // bg must not contain currency symbols (CHF/EUR words)
         expect(cfg.bg).not.toMatch(/\b(CHF|EUR|USD|Fr\.)\b/);

@@ -16,8 +16,8 @@ const STATUS_META: Record<string, { label: string; color: string; bg: string }> 
   gesendet:     { label: "Ausstehend", color: "#A8622E", bg: "rgba(200,121,61,0.07)" },
   bezahlt:      { label: "Erledigt",   color: "#15803d", bg: "rgba(21,128,61,0.07)" },
   angenommen:   { label: "Bestätigt",  color: "#15803d", bg: "rgba(21,128,61,0.07)" },
-  abgelaufen:   { label: "Abgelaufen", color: "#92400e", bg: "rgba(146,64,14,0.07)" },
-  ueberfaellig: { label: "Überfällig", color: "#92400e", bg: "rgba(146,64,14,0.07)" },
+  abgelaufen:   { label: "Abgelaufen", color: "var(--color-warning)", bg: "var(--color-warning-soft)" },
+  ueberfaellig: { label: "Überfällig", color: "var(--color-warning)", bg: "var(--color-warning-soft)" },
 };
 
 /** Status options available per document type */

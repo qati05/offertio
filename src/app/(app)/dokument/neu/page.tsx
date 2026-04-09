@@ -948,7 +948,7 @@ export default function DokumentNeuPage() {
           gap: 8,
           marginBottom: 14,
           padding: "10px 14px",
-          borderRadius: 10,
+          borderRadius: 13,
           background: "rgba(200,121,61,0.08)",
           border: "1px solid rgba(200,121,61,0.2)",
           fontSize: 13,
@@ -1079,7 +1079,7 @@ export default function DokumentNeuPage() {
             className="form-section"
             style={{
               marginBottom: 20,
-              border: "1px solid var(--color-border, #ddd)",
+              border: "1px solid var(--app-border)",
               background: "transparent",
             }}
           >
@@ -1107,9 +1107,9 @@ export default function DokumentNeuPage() {
           display: "flex",
           gap: 0,
           marginBottom: 20,
-          borderRadius: 10,
+          borderRadius: 13,
           overflow: "hidden",
-          border: "1px solid var(--color-border, #ddd)",
+          border: "1px solid var(--app-border)",
         }}
       >
         <button
@@ -1136,7 +1136,7 @@ export default function DokumentNeuPage() {
             fontSize: 14,
             fontWeight: 600,
             border: "none",
-            borderLeft: "1px solid var(--color-border, #ddd)",
+            borderLeft: "1px solid var(--app-border)",
             cursor: "pointer",
             background: dokumentTyp === "rechnung" ? "var(--color-primary)" : "transparent",
             color: dokumentTyp === "rechnung" ? "#fff" : "var(--color-text-muted)",
@@ -1261,7 +1261,7 @@ export default function DokumentNeuPage() {
               style={{
                 background: "transparent",
                 border: (fieldErrors.leistungsdatum || (touchedLeistungsdatum && !leistungsdatum))
-                  ? "1px solid #b42318"
+                  ? "1px solid var(--color-error)"
                   : "none",
                 borderRadius: 4,
                 outline: "none",
@@ -1285,7 +1285,7 @@ export default function DokumentNeuPage() {
             <div style={{
               textAlign: "right",
               fontSize: 10,
-              color: "#b42318",
+              color: "var(--color-error)",
               marginTop: 3,
               lineHeight: 1.4,
             }}>
@@ -1371,7 +1371,7 @@ export default function DokumentNeuPage() {
           ref={emailInputRef}
           style={
             fieldErrors.kundeEmail
-              ? { borderColor: "#b42318", boxShadow: "0 0 0 4px rgba(180,35,24,0.08)" }
+              ? { borderColor: "var(--color-error)", boxShadow: "0 0 0 4px var(--color-error-soft)" }
               : undefined
           }
         />
@@ -1399,12 +1399,12 @@ export default function DokumentNeuPage() {
               style={{
                 marginBottom: 0,
                 borderColor: total >= 10_000 && !kunde.uid_mwst?.trim()
-                  ? "rgba(185,28,28,0.45)"
+                  ? "var(--color-error-border)"
                   : undefined,
               }}
             />
             {total >= 10_000 && !kunde.uid_mwst?.trim() && (
-              <div style={{ fontSize: 10, color: "#b42318", marginTop: 4, lineHeight: 1.4 }}>
+              <div style={{ fontSize: 10, color: "var(--color-error)", marginTop: 4, lineHeight: 1.4 }}>
                 ● Ab EUR 10.000 Pflicht nach §11 Abs. 1 Z 8 UStG
               </div>
             )}
@@ -1551,7 +1551,7 @@ export default function DokumentNeuPage() {
                 style={{
                   padding: "6px 10px",
                   fontSize: 12,
-                  border: "1px solid var(--color-border, #ddd)",
+                  border: "1px solid var(--app-border)",
                   borderRadius: 6,
                   background: rabatt.modus === "chf" ? "var(--color-primary)" : "transparent",
                   color: rabatt.modus === "chf" ? "#fff" : "inherit",
@@ -1565,7 +1565,7 @@ export default function DokumentNeuPage() {
                 style={{
                   padding: "6px 10px",
                   fontSize: 12,
-                  border: "1px solid var(--color-border, #ddd)",
+                  border: "1px solid var(--app-border)",
                   borderRadius: 6,
                   background: rabatt.modus === "prozent" ? "var(--color-primary)" : "transparent",
                   color: rabatt.modus === "prozent" ? "#fff" : "inherit",
@@ -1599,7 +1599,7 @@ export default function DokumentNeuPage() {
             gap: 0,
             borderRadius: 6,
             overflow: "hidden",
-            border: "1px solid var(--color-border, #ddd)",
+            border: "1px solid var(--app-border)",
           }}
         >
           <button
@@ -1624,7 +1624,7 @@ export default function DokumentNeuPage() {
               fontSize: 11,
               fontWeight: 600,
               border: "none",
-              borderLeft: "1px solid var(--color-border, #ddd)",
+              borderLeft: "1px solid var(--app-border)",
               cursor: "pointer",
               background: preisMode === "inkl" ? "var(--color-primary)" : "transparent",
               color: preisMode === "inkl" ? "#fff" : "var(--color-text-muted)",
@@ -1732,7 +1732,7 @@ export default function DokumentNeuPage() {
             color: "var(--app-text)",
           }}
         >
-          <strong style={{ color: "#b42318" }}>Pflichtangaben ab EUR 10.000</strong> (§11 Abs. 1 Z 8 UStG)
+          <strong style={{ color: "var(--color-error)" }}>Pflichtangaben ab EUR 10.000</strong> (§11 Abs. 1 Z 8 UStG)
           <ul style={{ margin: "6px 0 0 16px", padding: 0, color: "var(--app-text-muted)" }}>
             {!profil.uid_mwst?.trim() && (
               <li>Deine UID-Nummer fehlt im Profil</li>
@@ -1787,7 +1787,7 @@ export default function DokumentNeuPage() {
           justifyContent: "center",
           gap: 6,
           fontSize: 12,
-          color: freePlanRemaining <= 1 ? "#b42318" : "var(--app-text-muted)",
+          color: freePlanRemaining <= 1 ? "var(--color-error)" : "var(--app-text-muted)",
         }}>
           <span style={{
             display: "inline-block",
@@ -1818,7 +1818,7 @@ export default function DokumentNeuPage() {
             fontSize: 14,
             fontWeight: 600,
             border: "2px solid var(--color-primary)",
-            borderRadius: 10,
+            borderRadius: 13,
             background: "transparent",
             color: eRechnungLoading ? "var(--color-text-muted)" : "var(--color-primary)",
             cursor: eRechnungLoading ? "not-allowed" : "pointer",

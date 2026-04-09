@@ -50,9 +50,9 @@ export default function PlanExpiryBanner({ profile }: Props) {
       role="alert"
       className="flex items-center justify-between gap-4 px-5 py-3 text-sm"
       style={{
-        background: "rgba(185,28,28,0.07)",
-        borderBottom: "1px solid rgba(185,28,28,0.15)",
-        color: "#b91c1c",
+        background: "var(--color-error-soft)",
+        borderBottom: "1px solid var(--color-error-border)",
+        color: "var(--color-error)",
       }}
     >
       <span className="font-medium">{message}</span>
@@ -60,7 +60,7 @@ export default function PlanExpiryBanner({ profile }: Props) {
         <a
           href={renewUrl}
           className="shrink-0 rounded-lg px-3 py-1.5 text-xs font-semibold transition hover:opacity-80"
-          style={{ background: "#b91c1c", color: "white" }}
+          style={{ background: "var(--color-error)", color: "white" }}
         >
           Jetzt verlängern
         </a>
