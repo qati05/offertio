@@ -116,6 +116,17 @@
   --app-text-muted: #918A80;    /* secondary label dark */
   --app-text-soft: #6B6860;     /* tertiary / placeholder dark */
 
+  /* Semantic colors — lighter for dark backgrounds */
+  --color-error: #E85D47;
+  --color-error-soft: rgba(232, 93, 71, 0.10);
+  --color-error-border: rgba(232, 93, 71, 0.20);
+  --color-warning: #D4A335;
+  --color-warning-soft: rgba(212, 163, 53, 0.10);
+  --color-warning-border: rgba(212, 163, 53, 0.20);
+  --color-success: #4ABA6A;
+  --color-success-soft: rgba(74, 186, 106, 0.10);
+  --color-success-border: rgba(74, 186, 106, 0.20);
+
   --sidebar-bg: #0D0C0A;
   --sidebar-border: rgba(255, 255, 255, 0.07);
   --sidebar-text: #5A5550;
@@ -953,9 +964,9 @@ html { overflow-x: hidden; max-width: 100vw; }
     border-radius: 999px;
   }
   .pos-del:hover {
-    background: rgba(185, 61, 36, 0.08);
-    border-color: rgba(185, 61, 36, 0.18);
-    color: #b93d24;
+    background: var(--color-error-soft);
+    border-color: var(--color-error-border);
+    color: var(--color-error);
   }
 
   .add-pos-btn {
@@ -1375,16 +1386,16 @@ html { overflow-x: hidden; max-width: 100vw; }
     font-size: 0.8125rem;
     font-weight: 600;
     border-radius: var(--radius-md, 12px);
-    border: 1px solid rgba(185, 61, 36, 0.20);
-    background: rgba(185, 61, 36, 0.06);
-    color: #b93d24;
+    border: 1px solid var(--color-error-border);
+    background: var(--color-error-soft);
+    color: var(--color-error);
     cursor: pointer;
     transition: background 0.15s, border-color 0.15s;
   }
 
   .btn-danger:hover {
-    background: rgba(185, 61, 36, 0.12);
-    border-color: rgba(185, 61, 36, 0.35);
+    background: var(--color-error-soft);
+    border-color: var(--color-error);
   }
 
   /* ── Templates (Vorlagen) ─────────────────────────────── */
@@ -1464,8 +1475,8 @@ html { overflow-x: hidden; max-width: 100vw; }
   }
 
   .delete-row-btn:hover {
-    background: rgba(185, 61, 36, 0.08);
-    color: #b93d24;
+    background: var(--color-error-soft);
+    color: var(--color-error);
   }
 
   /* ── Auth Pages ──────────────────────────────────────── */
@@ -1680,13 +1691,13 @@ html { overflow-x: hidden; max-width: 100vw; }
   }
 
   .auth-alert-success {
-    background: rgba(26, 127, 66, 0.06);
-    color: #1A7F42;
+    background: var(--color-success-soft);
+    color: var(--color-success);
   }
 
   .auth-alert-error {
-    background: rgba(185, 61, 36, 0.06);
-    color: #9b3c24;
+    background: var(--color-error-soft);
+    color: var(--color-error);
   }
 
   .auth-link {
@@ -2010,7 +2021,7 @@ html { overflow-x: hidden; max-width: 100vw; }
     justify-content: center;
     border-radius: 50%;
     border: 2px solid var(--app-card);
-    background: #1A7F42;
+    background: var(--color-success);
     color: white;
   }
 
@@ -2050,9 +2061,9 @@ html { overflow-x: hidden; max-width: 100vw; }
     display: block;
     margin-top: 1.5rem;
     padding: 1.25rem;
-    border: 1.5px solid rgba(26, 127, 66, 0.14);
+    border: 1.5px solid var(--color-success-border);
     border-radius: 16px;
-    background: rgba(26, 127, 66, 0.03);
+    background: var(--color-success-soft);
     text-align: left;
     text-decoration: none;
     transition: background 0.15s, border-color 0.15s;
@@ -2061,5 +2072,10 @@ html { overflow-x: hidden; max-width: 100vw; }
   .success-convert-card:hover {
     background: rgba(26, 127, 66, 0.06);
     border-color: rgba(26, 127, 66, 0.24);
+  }
+
+  [data-theme="dark"] .success-convert-card:hover {
+    background: rgba(74, 186, 106, 0.08);
+    border-color: rgba(74, 186, 106, 0.28);
   }
 }

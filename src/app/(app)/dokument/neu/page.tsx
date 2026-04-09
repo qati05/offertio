@@ -194,6 +194,18 @@ export default function DokumentNeuPage() {
     if (vorlagenRes.data) setVorlagen(vorlagenRes.data as Vorlage[]);
     if (customersRes.data) setCustomerRecords(customersRes.data as CustomerRecord[]);
 
+    // Guard: warn if source offerte was already converted to a Rechnung
+    if (sourceDocumentId) {
+      const { data: sourceDoc } = await supabase
+        .from("dokumente")
+        .select("converted_document_id, converted_document_nummer")
+        .eq("id", sourceDocumentId)
+        .maybeSingle();
+      if (sourceDoc?.converted_document_id && sourceDoc.converted_document_id !== cloudDraftId) {
+        showToast(`Hinweis: Zu dieser Offerte existiert bereits Rechnung ${sourceDoc.converted_document_nummer || ""}.`);
+      }
+    }
+
     // Server is the source of truth for the document limit
     if (limitRes.ok) {
       const limitData = await limitRes.json();
