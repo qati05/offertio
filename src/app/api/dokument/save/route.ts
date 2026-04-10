@@ -3,6 +3,7 @@ import { createSupabaseServer } from "@/lib/supabase-server";
 import { getSupabaseAdmin } from "@/lib/supabase-admin";
 import { getCustomerDisplayName, makePrimaryCustomerLookupKey } from "@/lib/customers";
 import { isAllowedOrigin, isValidBase64, isSafeDocumentIdentifier, isValidUUID } from "@/lib/security";
+import { rateLimitAsync } from "@/lib/rate-limit";
 import { logger } from "@/lib/logger";
 import type { KundenInfo } from "@/lib/types";
 
@@ -29,6 +30,11 @@ export async function POST(request: NextRequest) {
 
   if (!user) {
     return json({ error: "Nicht angemeldet." }, 401);
+  }
+
+  const rl = await rateLimitAsync(`dokument-save:${user.id}`, 30, 60_000);
+  if (!rl.ok) {
+    return json({ error: "Zu viele Anfragen. Bitte warte kurz." }, 429);
   }
 
   // Content-Length guard — reject oversized requests before parsing JSON.
@@ -84,6 +90,40 @@ export async function POST(request: NextRequest) {
     // Prevent path traversal in nummer — it is used directly in Storage file path.
     if (!isSafeDocumentIdentifier(nummer, 80)) {
       return json({ error: "Ungültige Dokumentnummer." }, 400);
+    }
+
+    // Validate datum is a valid ISO date (YYYY-MM-DD)
+    if (typeof datum !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(datum) || isNaN(Date.parse(datum))) {
+      return json({ error: "Ungültiges Datum." }, 400);
+    }
+
+    // Validate leistungsdatum format when present
+    if (leistungsdatum && (typeof leistungsdatum !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(leistungsdatum) || isNaN(Date.parse(leistungsdatum)))) {
+      return json({ error: "Ungültiges Leistungsdatum." }, 400);
+    }
+
+    // Validate string field lengths to prevent oversized payloads reaching the DB
+    if (typeof kundenname !== "string" || kundenname.length > 500) {
+      return json({ error: "Kundenname ungültig oder zu lang." }, 400);
+    }
+    if (objekt !== undefined && objekt !== null && (typeof objekt !== "string" || objekt.length > 500)) {
+      return json({ error: "Objektbezeichnung zu lang." }, 400);
+    }
+
+    // DE/AT legal requirement: Rechnungen must include Leistungsdatum
+    if (typ === "rechnung" && !leistungsdatum) {
+      // Look up the user's country to enforce the rule
+      const { data: userProfile } = await supabase
+        .from("profiles")
+        .select("land")
+        .eq("id", user.id)
+        .maybeSingle();
+      const land = userProfile?.land || "CH";
+      if (land === "DE" || land === "AT") {
+        return json({
+          error: "Leistungsdatum ist für Rechnungen in DE/AT gesetzlich erforderlich.",
+        }, 400);
+      }
     }
 
     if (!isValidBase64(pdfBase64)) {

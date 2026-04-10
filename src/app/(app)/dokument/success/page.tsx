@@ -289,6 +289,31 @@ export default function DokumentSuccessPage() {
               </a>
             )}
 
+            {/* Email CTA — opens user's mail client */}
+            {info?.kunde?.email && delivery !== "email" && (
+              <a
+                href={`mailto:${encodeURIComponent(info.kunde.email)}?subject=${encodeURIComponent(
+                  `${typ === "offerte" ? "Offerte" : "Rechnung"} ${nummer}`
+                )}&body=${encodeURIComponent(
+                  `Guten Tag${info.kunde.name ? ` ${info.kunde.name}` : ""},\n\n` +
+                  `anbei erhalten Sie ${typ === "offerte" ? "unsere Offerte" : "unsere Rechnung"} ${nummer}.\n` +
+                  `Bitte finden Sie das PDF im Anhang.\n\nFreundliche Grüsse`
+                )}`}
+                className="auth-submit"
+                style={{
+                  textDecoration: "none",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  gap: 8,
+                  marginTop: 24,
+                }}
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+                Per E-Mail an {info.kunde.name || info.kunde.email} senden
+              </a>
+            )}
+
             <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:justify-center">
               <a
                 href="/dokument/neu"

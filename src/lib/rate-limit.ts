@@ -79,8 +79,12 @@ export async function rateLimitAsync(
       const limiter = getUpstashLimiter(limit, windowMs);
       const { success, remaining } = await limiter.limit(key);
       return { ok: success, remaining };
-    } catch (error) {
-      console.error("Rate limit fallback to memory:", error);
+    } catch {
+      // Redis unavailable — fall back to in-memory limiter.
+      // Log server-side so ops can detect Redis outages.
+      if (typeof process !== "undefined" && process.env.NODE_ENV === "production") {
+        console.warn(JSON.stringify({ level: "warn", context: "rate-limit", message: "Redis unavailable, falling back to in-memory limiter", key, ts: new Date().toISOString() }));
+      }
     }
   }
   return memRateLimit(key, limit, windowMs);

@@ -147,46 +147,56 @@ function AppLayoutInner({ children }: { children: React.ReactNode }) {
     const supabase = createSupabaseBrowser();
 
     async function bootstrap() {
-      const { data: { user: currentUser } } = await supabase.auth.getUser();
+      try {
+        const { data: { user: currentUser } } = await supabase.auth.getUser();
 
-      if (!currentUser) {
-        setLoading(false);
-        window.location.href = "/login";
-        return;
-      }
-
-      setUser(currentUser);
-
-      // Fetch profile only once on mount — avoids a DB query on every navigation.
-      if (!profileFetched.current) {
-        profileFetched.current = true;
-
-        const { data: profileData } = await supabase
-          .from("profiles")
-          .select("*")
-          .eq("id", currentUser.id)
-          .maybeSingle();
-
-        if (profileData) setProfile(profileData as Profile);
-
-        const onOnboarding = pathname === "/onboarding";
-
-        if (!profileData?.onboarding_complete && !onOnboarding) {
-          router.replace("/onboarding");
-        } else if (profileData?.onboarding_complete && onOnboarding) {
-          router.replace("/dashboard");
+        if (!currentUser) {
+          setLoading(false);
+          window.location.href = "/login";
+          return;
         }
-      }
 
-      setLoading(false);
+        setUser(currentUser);
+
+        // Fetch profile only once on mount — avoids a DB query on every navigation.
+        if (!profileFetched.current) {
+          profileFetched.current = true;
+
+          const { data: profileData } = await supabase
+            .from("profiles")
+            .select("*")
+            .eq("id", currentUser.id)
+            .maybeSingle();
+
+          if (profileData) setProfile(profileData as Profile);
+
+          const onOnboarding = pathname === "/onboarding";
+
+          if (!profileData?.onboarding_complete && !onOnboarding) {
+            router.replace("/onboarding");
+          } else if (profileData?.onboarding_complete && onOnboarding) {
+            router.replace("/dashboard");
+          }
+        }
+      } catch {
+        // Auth or profile fetch failed (network/Supabase outage).
+        // Fall through to clear loading — the app renders in a degraded state
+        // and OfflineBanner will inform the user about connectivity.
+      } finally {
+        setLoading(false);
+      }
     }
 
     bootstrap();
   }, [pathname, router]);
 
   async function handleLogout() {
-    const supabase = createSupabaseBrowser();
-    await supabase.auth.signOut();
+    try {
+      const supabase = createSupabaseBrowser();
+      await supabase.auth.signOut();
+    } catch {
+      // Sign-out failed — redirect to login anyway to clear client state
+    }
     router.replace("/login");
   }
 

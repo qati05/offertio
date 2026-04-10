@@ -54,6 +54,7 @@ export default function DokumentNeuPage() {
   // Send options
   const [downloadPdf, setDownloadPdf] = useState(false);
   const [sharePdf, setSharePdf] = useState(true);
+  const [emailPdf, setEmailPdf] = useState(false);
   const [eRechnungLoading, setERechnungLoading] = useState(false);
 
   // UI state
@@ -102,14 +103,17 @@ export default function DokumentNeuPage() {
   // Labels based on document type
   const typLabel = dokumentTyp === "offerte" ? "Offerte" : "Rechnung";
   const dateEndLabel = dokumentTyp === "offerte" ? "Gültig bis" : "Zahlbar bis";
+  const activeCount = [downloadPdf, sharePdf, emailPdf].filter(Boolean).length;
   const sendBtnLabel =
-    downloadPdf && sharePdf
-      ? `${typLabel} speichern & teilen`
+    activeCount > 1
+      ? `${typLabel} speichern & senden`
       : downloadPdf
         ? `${typLabel} herunterladen`
         : sharePdf
           ? `${typLabel} teilen`
-          : `${typLabel} weitergeben`;
+          : emailPdf
+            ? `${typLabel} per E-Mail senden`
+            : `${typLabel} weitergeben`;
   const missingProfileFields = getMissingProfileFieldsForDocument(profil, dokumentTyp, profil?.land);
 
   useEffect(() => {
@@ -176,7 +180,7 @@ export default function DokumentNeuPage() {
 
     const [profilRes, vorlagenRes, customersRes, limitRes] = await Promise.all([
       supabase.from("profiles").select("*").eq("id", user.id).maybeSingle(),
-      supabase.from("vorlagen").select("*").order("created_at"),
+      supabase.from("vorlagen").select("*").order("created_at", { ascending: false }).limit(500),
       supabase.from("customers").select("*").eq("user_id", user.id).order("updated_at", { ascending: false }).limit(200),
       fetch("/api/dokument/check-limit"),
     ]);
@@ -325,28 +329,33 @@ export default function DokumentNeuPage() {
     showToast(`Vorlage "${vorlage.name}" geladen.`);
   }
 
-  // Calculations
-  const grossSubtotal = positionen.reduce((sum, p) => sum + p.menge * p.preis, 0);
-  const rabattBetrag = rabatt.aktiv
-    ? rabatt.modus === "chf"
-      ? rabatt.wert
-      : grossSubtotal * (rabatt.wert / 100)
-    : 0;
-  const grossNachRabatt = grossSubtotal - rabattBetrag;
+  // Calculations — all intermediate values rounded to 2 decimals to prevent
+  // floating-point drift in VAT calculations (e.g. CHF 7.7% precision).
+  const r2 = (n: number) => Math.round(n * 100) / 100;
+
+  const grossSubtotal = r2(positionen.reduce((sum, p) => sum + p.menge * p.preis, 0));
+  const rabattBetrag = r2(
+    rabatt.aktiv
+      ? rabatt.modus === "chf"
+        ? rabatt.wert
+        : grossSubtotal * (rabatt.wert / 100)
+      : 0,
+  );
+  const grossNachRabatt = r2(grossSubtotal - rabattBetrag);
 
   // exkl. mode: prices are net, VAT added on top
   // inkl. mode: prices already include VAT, VAT is extracted
   const subtotal = preisMode === "exkl"
     ? grossSubtotal
-    : grossSubtotal / (1 + mwstSatz / 100); // net subtotal for display
+    : r2(grossSubtotal / (1 + mwstSatz / 100));
   const nettoNachRabatt = preisMode === "exkl"
     ? grossNachRabatt
-    : grossNachRabatt / (1 + mwstSatz / 100);
+    : r2(grossNachRabatt / (1 + mwstSatz / 100));
   const mwstBetrag = preisMode === "exkl"
-    ? nettoNachRabatt * (mwstSatz / 100)
-    : grossNachRabatt - nettoNachRabatt;
+    ? r2(nettoNachRabatt * (mwstSatz / 100))
+    : r2(grossNachRabatt - nettoNachRabatt);
   const total = preisMode === "exkl"
-    ? nettoNachRabatt + mwstBetrag
+    ? r2(nettoNachRabatt + mwstBetrag)
     : grossNachRabatt;
 
   function fmtAmt(n: number) {
@@ -410,7 +419,7 @@ export default function DokumentNeuPage() {
           reader.readAsDataURL(blob);
         });
       } catch (error) {
-        console.warn("Logo skipped during PDF generation:", error);
+        // Logo load failed — continue PDF generation without it
       }
     }
 
@@ -573,7 +582,7 @@ export default function DokumentNeuPage() {
       return;
     }
 
-    if (!downloadPdf && !sharePdf) return;
+    if (!downloadPdf && !sharePdf && !emailPdf) return;
 
     setSending(true);
 
@@ -592,7 +601,7 @@ export default function DokumentNeuPage() {
             return;
           }
         } catch (e) {
-          console.error("Limit check error:", e);
+          // Limit check failed — user sees toast below
           showToast("Verbindung zum Server fehlgeschlagen. Bitte versuche es erneut.");
           setSending(false);
           return;
@@ -603,11 +612,15 @@ export default function DokumentNeuPage() {
       try {
         blob = await generatePdfBlob();
       } catch (e) {
-        console.error("PDF generation error:", e);
+        // PDF generation failed — user sees toast below
         showToast("Fehler beim Erstellen des PDFs. Bitte überprüfe deine Daten.");
         setSending(false);
         return;
       }
+
+      // Commit the nummer immediately after PDF is generated — before download/share.
+      // This prevents the same number from being reused if the network save fails later.
+      commitNummer(dokumentTyp);
 
       const reader = new FileReader();
       const base64 = await new Promise<string>((resolve, reject) => {
@@ -620,7 +633,7 @@ export default function DokumentNeuPage() {
       });
 
       let downloadedResult = false;
-      let delivery: "download" | "share" = "share";
+      let delivery: "download" | "share" | "email" = "share";
       let cloudSaved = true;
       let savedCustomerId: string | null = null;
       let finalNummer = nummer;
@@ -643,6 +656,28 @@ export default function DokumentNeuPage() {
         } else {
           delivery = "share";
         }
+      }
+
+      if (emailPdf) {
+        // Download the PDF first so user can attach it
+        if (!downloadedResult) {
+          downloadBlob(blob, `${finalNummer}.pdf`);
+          downloadedResult = true;
+        }
+        // Open mailto: with pre-filled subject and body
+        const kundeEmail = kunde.email || "";
+        const subject = encodeURIComponent(
+          `${typLabel} ${finalNummer}${profil?.firmenname ? ` — ${profil.firmenname}` : ""}`
+        );
+        const body = encodeURIComponent(
+          `Guten Tag${kunde.name ? ` ${kunde.name}` : ""},\n\n` +
+          `anbei erhalten Sie ${typLabel === "Offerte" ? "unsere Offerte" : "unsere Rechnung"} ${finalNummer}.\n` +
+          `Bitte finden Sie das PDF im Anhang.\n\n` +
+          `Freundliche Grüsse\n${profil?.firmenname || profil?.vorname || ""}`
+        );
+        const mailto = `mailto:${encodeURIComponent(kundeEmail)}?subject=${subject}&body=${body}`;
+        window.open(mailto, "_self");
+        delivery = "email";
       }
 
       let savedDocumentId: string | null = null;
@@ -670,7 +705,7 @@ export default function DokumentNeuPage() {
 
         if (!saveRes.ok) {
           const saveData = await saveRes.json();
-          console.error("Save failed:", saveData.error);
+          // Save failed — falls through to cloudSaved=false handling
           cloudSaved = false;
         } else {
           const saveData = await saveRes.json();
@@ -684,7 +719,7 @@ export default function DokumentNeuPage() {
           }
         }
       } catch (e) {
-        console.error("Save error:", e);
+        // Network save error — PDF already downloaded locally
         cloudSaved = false;
       }
 
@@ -702,10 +737,9 @@ export default function DokumentNeuPage() {
           setServerAllowed(false);
         }
       } catch (e) {
-        console.error("Counter increment error:", e);
+        // Counter increment failed — non-blocking, document already saved
       }
 
-      commitNummer(dokumentTyp);
       trackDocumentCreated(dokumentTyp, delivery);
       localStorage.removeItem("dokument-draft");
 
@@ -778,7 +812,7 @@ export default function DokumentNeuPage() {
       }
       router.push(`/dokument/success?${successParams.toString()}`);
     } catch (err) {
-      console.error("General handleSend error:", err);
+      // Unexpected error — user sees toast below
       showToast("Ein unerwarteter Fehler ist aufgetreten.");
     } finally {
       setSending(false);
@@ -919,7 +953,6 @@ export default function DokumentNeuPage() {
       a.click();
       setTimeout(() => URL.revokeObjectURL(url), 5000);
     } catch (err) {
-      console.error(err);
       showToast("Fehler beim Erstellen der E-Rechnung.");
     } finally {
       setERechnungLoading(false);
@@ -1898,6 +1931,21 @@ export default function DokumentNeuPage() {
           </div>
           <div className="send-check">{sharePdf ? "✓" : ""}</div>
         </button>
+        <button
+          type="button"
+          className={`send-opt ${emailPdf ? "active" : ""}`}
+          onClick={() => setEmailPdf(!emailPdf)}
+          aria-pressed={emailPdf}
+        >
+          <div className="send-icon">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+          </div>
+          <div>
+            <div className="send-title">Per E-Mail senden</div>
+            <div className="send-sub">PDF herunterladen & Mail öffnen</div>
+          </div>
+          <div className="send-check">{emailPdf ? "✓" : ""}</div>
+        </button>
       </div>
 
       {/* Free plan document counter */}
@@ -1957,7 +2005,7 @@ export default function DokumentNeuPage() {
           className="btn-primary"
           style={{ width: "100%", padding: "14px 0", fontSize: 15 }}
           onClick={handleSend}
-          disabled={sending || (!downloadPdf && !sharePdf) || serverAllowed === false}
+          disabled={sending || (!downloadPdf && !sharePdf && !emailPdf) || serverAllowed === false}
         >
           {sending ? "Wird gesendet…" : sendBtnLabel}
         </button>

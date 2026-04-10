@@ -639,6 +639,51 @@ export default function ProfilPage() {
       </form>
 
       {!isOnboarding && (
+        <div className="app-card" style={{ maxWidth: 640, marginTop: 40 }}>
+          <div className="app-card-title">Daten exportieren</div>
+          <p style={{ fontSize: 12, color: "var(--color-text-muted)", marginBottom: 12 }}>
+            Lade alle deine Daten als JSON-Datei herunter (Profil, Dokumente, Kunden, Vorlagen).
+            Gemäss DSGVO Art. 20 (Recht auf Datenportabilität).
+          </p>
+          <button
+            type="button"
+            onClick={async () => {
+              try {
+                const res = await fetch("/api/account/export");
+                if (!res.ok) {
+                  setToast("Export fehlgeschlagen.");
+                  setTimeout(() => setToast(""), 4000);
+                  return;
+                }
+                const blob = await res.blob();
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement("a");
+                a.href = url;
+                a.download = `offertio-export-${new Date().toISOString().split("T")[0]}.json`;
+                a.click();
+                URL.revokeObjectURL(url);
+              } catch {
+                setToast("Export fehlgeschlagen.");
+                setTimeout(() => setToast(""), 4000);
+              }
+            }}
+            style={{
+              background: "var(--color-primary)",
+              color: "#fff",
+              border: "none",
+              borderRadius: 8,
+              padding: "10px 20px",
+              fontSize: 13,
+              fontWeight: 600,
+              cursor: "pointer",
+            }}
+          >
+            Daten herunterladen
+          </button>
+        </div>
+      )}
+
+      {!isOnboarding && (
         <div className="app-card" style={{ maxWidth: 640, marginTop: 40, borderColor: "var(--color-error-border)" }}>
           <div className="app-card-title" style={{ color: "var(--color-error)" }}>Gefahrenzone</div>
           <p style={{ fontSize: 12, color: "var(--color-text-muted)", marginBottom: 8 }}>

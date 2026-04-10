@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createSupabaseServer } from "@/lib/supabase-server";
 import { isAllowedOrigin, isValidUUID, sanitize } from "@/lib/security";
+import { rateLimitAsync } from "@/lib/rate-limit";
 import { logger } from "@/lib/logger";
 
 const VALID_STATUSES = new Set([
@@ -38,6 +39,11 @@ export async function PATCH(request: NextRequest) {
 
   if (authError || !user) {
     return json({ error: "Unauthorized" }, 401);
+  }
+
+  const rl = await rateLimitAsync(`update-status:${user.id}`, 30, 60_000);
+  if (!rl.ok) {
+    return json({ error: "Zu viele Anfragen." }, 429);
   }
 
   let body: unknown;

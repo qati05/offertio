@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { createSupabaseServer } from "@/lib/supabase-server";
 import { FREE_LIMIT, isPro } from "@/lib/payment";
 import { isAllowedOrigin } from "@/lib/security";
+import { rateLimitAsync } from "@/lib/rate-limit";
 import { logger } from "@/lib/logger";
 
 function getCurrentMonat(): string {
@@ -28,6 +29,11 @@ export async function GET() {
     } = await supabase.auth.getUser();
     if (!user) {
       return json({ error: "Nicht angemeldet" }, 401);
+    }
+
+    const rl = await rateLimitAsync(`check-limit:${user.id}`, 30, 60_000);
+    if (!rl.ok) {
+      return json({ error: "Zu viele Anfragen." }, 429);
     }
 
     const { data: profile } = await supabase

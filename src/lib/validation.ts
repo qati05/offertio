@@ -17,7 +17,7 @@ import type { Land } from "./types";
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
 const nonEmptyString = (msg: string) =>
-  z.string({ required_error: msg }).min(1, msg);
+  z.string({ error: msg }).min(1, msg);
 
 // ── Document input ─────────────────────────────────────────────────────────────
 

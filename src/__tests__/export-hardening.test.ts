@@ -103,7 +103,7 @@ describe("buildDokumentCsv — CSV injection prevention", () => {
   ];
 
   for (const payload of INJECTION_PAYLOADS) {
-    it(`wraps injection payload in quotes: "${payload}"`, () => {
+    it(`wraps injection payload in quotes with single-quote prefix: "${payload}"`, () => {
       const csv = buildDokumentCsv([makeDoc({ kundenname: payload })], "CHF");
       const row = csv.split("\n")[1];
       // The cell must start with a double-quote — verifies the cell is quoted
@@ -112,8 +112,23 @@ describe("buildDokumentCsv — CSV injection prevention", () => {
       const kundeCell = cells[3]; // Kunde is position 3
       expect(kundeCell.startsWith('"'), `Cell for "${payload}" must be quoted`).toBe(true);
       expect(kundeCell.endsWith('"'), `Cell for "${payload}" must end with quote`).toBe(true);
+      // Formula-injection payloads must have a leading single-quote inside the quotes
+      // to prevent spreadsheet formula execution.
+      expect(kundeCell.startsWith("\"'"), `Cell for "${payload}" must have single-quote prefix`).toBe(true);
     });
   }
+
+  it("strips tab characters from values (CSV injection vector)", () => {
+    const csv = buildDokumentCsv([makeDoc({ kundenname: "Foo\tBar" })], "CHF");
+    expect(csv).not.toContain("\t");
+    expect(csv).toContain("Foo Bar");
+  });
+
+  it("strips carriage return characters from values", () => {
+    const csv = buildDokumentCsv([makeDoc({ kundenname: "Foo\rBar" })], "CHF");
+    expect(csv).not.toContain("\r");
+    expect(csv).toContain("Foo Bar");
+  });
 
   it("escapes double-quotes inside values by doubling them", () => {
     const csv = buildDokumentCsv(
