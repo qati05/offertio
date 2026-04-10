@@ -329,28 +329,33 @@ export default function DokumentNeuPage() {
     showToast(`Vorlage "${vorlage.name}" geladen.`);
   }
 
-  // Calculations
-  const grossSubtotal = positionen.reduce((sum, p) => sum + p.menge * p.preis, 0);
-  const rabattBetrag = rabatt.aktiv
-    ? rabatt.modus === "chf"
-      ? rabatt.wert
-      : grossSubtotal * (rabatt.wert / 100)
-    : 0;
-  const grossNachRabatt = grossSubtotal - rabattBetrag;
+  // Calculations — all intermediate values rounded to 2 decimals to prevent
+  // floating-point drift in VAT calculations (e.g. CHF 7.7% precision).
+  const r2 = (n: number) => Math.round(n * 100) / 100;
+
+  const grossSubtotal = r2(positionen.reduce((sum, p) => sum + p.menge * p.preis, 0));
+  const rabattBetrag = r2(
+    rabatt.aktiv
+      ? rabatt.modus === "chf"
+        ? rabatt.wert
+        : grossSubtotal * (rabatt.wert / 100)
+      : 0,
+  );
+  const grossNachRabatt = r2(grossSubtotal - rabattBetrag);
 
   // exkl. mode: prices are net, VAT added on top
   // inkl. mode: prices already include VAT, VAT is extracted
   const subtotal = preisMode === "exkl"
     ? grossSubtotal
-    : grossSubtotal / (1 + mwstSatz / 100); // net subtotal for display
+    : r2(grossSubtotal / (1 + mwstSatz / 100));
   const nettoNachRabatt = preisMode === "exkl"
     ? grossNachRabatt
-    : grossNachRabatt / (1 + mwstSatz / 100);
+    : r2(grossNachRabatt / (1 + mwstSatz / 100));
   const mwstBetrag = preisMode === "exkl"
-    ? nettoNachRabatt * (mwstSatz / 100)
-    : grossNachRabatt - nettoNachRabatt;
+    ? r2(nettoNachRabatt * (mwstSatz / 100))
+    : r2(grossNachRabatt - nettoNachRabatt);
   const total = preisMode === "exkl"
-    ? nettoNachRabatt + mwstBetrag
+    ? r2(nettoNachRabatt + mwstBetrag)
     : grossNachRabatt;
 
   function fmtAmt(n: number) {
@@ -613,6 +618,10 @@ export default function DokumentNeuPage() {
         return;
       }
 
+      // Commit the nummer immediately after PDF is generated — before download/share.
+      // This prevents the same number from being reused if the network save fails later.
+      commitNummer(dokumentTyp);
+
       const reader = new FileReader();
       const base64 = await new Promise<string>((resolve, reject) => {
         reader.onloadend = () => {
@@ -731,7 +740,6 @@ export default function DokumentNeuPage() {
         // Counter increment failed — non-blocking, document already saved
       }
 
-      commitNummer(dokumentTyp);
       trackDocumentCreated(dokumentTyp, delivery);
       localStorage.removeItem("dokument-draft");
 

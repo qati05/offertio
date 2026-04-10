@@ -98,12 +98,13 @@ export default function PDFMinimal({
   objekt, mwstSatz, notiz, rabatt, qrCodeDataUrl, qrReference, logoDataUrl,
   dokumentTyp = "offerte", currency = "CHF", preisMode = "exkl",
 }: PDFTemplateProps) {
-  const grossSubtotal = positionen.reduce((acc, p) => acc + p.menge * p.preis, 0);
-  const rabattBetrag = rabatt?.aktiv ? (rabatt.modus === "chf" ? rabatt.wert : grossSubtotal * (rabatt.wert / 100)) : 0;
-  const grossNachRabatt = grossSubtotal - rabattBetrag;
-  const nettoNachRabatt = preisMode === "exkl" ? grossNachRabatt : grossNachRabatt / (1 + mwstSatz / 100);
-  const mwstBetrag = preisMode === "exkl" ? nettoNachRabatt * (mwstSatz / 100) : grossNachRabatt - nettoNachRabatt;
-  const total = preisMode === "exkl" ? nettoNachRabatt + mwstBetrag : grossNachRabatt;
+  const r2 = (n: number) => Math.round(n * 100) / 100;
+  const grossSubtotal = r2(positionen.reduce((acc, p) => acc + p.menge * p.preis, 0));
+  const rabattBetrag = r2(rabatt?.aktiv ? (rabatt.modus === "chf" ? rabatt.wert : grossSubtotal * (rabatt.wert / 100)) : 0);
+  const grossNachRabatt = r2(grossSubtotal - rabattBetrag);
+  const nettoNachRabatt = preisMode === "exkl" ? grossNachRabatt : r2(grossNachRabatt / (1 + mwstSatz / 100));
+  const mwstBetrag = preisMode === "exkl" ? r2(nettoNachRabatt * (mwstSatz / 100)) : r2(grossNachRabatt - nettoNachRabatt);
+  const total = preisMode === "exkl" ? r2(nettoNachRabatt + mwstBetrag) : grossNachRabatt;
 
   const fmtDate = (d: string) => new Date(d).toLocaleDateString("de-CH", { day: "2-digit", month: "2-digit", year: "numeric" });
   const datumF = fmtDate(datum);
