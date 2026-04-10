@@ -2,12 +2,17 @@ import type { DokumentHistorie } from "@/lib/types";
 
 function escapeCsv(value: string | number | undefined) {
   const stringValue = String(value ?? "");
+  // Strip tab and carriage-return characters that could be used for CSV injection.
+  const cleaned = stringValue.replace(/[\t\r]/g, " ");
   // Quote values that require it: contain commas/quotes/newlines,
   // OR start with formula-injection characters (=, +, -, @) per OWASP CSV injection guidance.
-  if (/[",\n]/.test(stringValue) || /^[=+\-@]/.test(stringValue)) {
-    return `"${stringValue.replace(/"/g, '""')}"`;
+  if (/[",\n]/.test(cleaned) || /^[=+\-@]/.test(cleaned)) {
+    // Prefix with a single quote inside quotes as belt-and-suspenders defense
+    // against spreadsheet formula execution (Excel, LibreOffice, Google Sheets).
+    const escaped = cleaned.replace(/"/g, '""');
+    return /^[=+\-@]/.test(cleaned) ? `"'${escaped}"` : `"${escaped}"`;
   }
-  return stringValue;
+  return cleaned;
 }
 
 export function buildDokumentCsv(
