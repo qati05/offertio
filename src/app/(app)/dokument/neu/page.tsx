@@ -54,6 +54,7 @@ export default function DokumentNeuPage() {
   // Send options
   const [downloadPdf, setDownloadPdf] = useState(false);
   const [sharePdf, setSharePdf] = useState(true);
+  const [emailPdf, setEmailPdf] = useState(false);
   const [eRechnungLoading, setERechnungLoading] = useState(false);
 
   // UI state
@@ -102,14 +103,17 @@ export default function DokumentNeuPage() {
   // Labels based on document type
   const typLabel = dokumentTyp === "offerte" ? "Offerte" : "Rechnung";
   const dateEndLabel = dokumentTyp === "offerte" ? "Gültig bis" : "Zahlbar bis";
+  const activeCount = [downloadPdf, sharePdf, emailPdf].filter(Boolean).length;
   const sendBtnLabel =
-    downloadPdf && sharePdf
-      ? `${typLabel} speichern & teilen`
+    activeCount > 1
+      ? `${typLabel} speichern & senden`
       : downloadPdf
         ? `${typLabel} herunterladen`
         : sharePdf
           ? `${typLabel} teilen`
-          : `${typLabel} weitergeben`;
+          : emailPdf
+            ? `${typLabel} per E-Mail senden`
+            : `${typLabel} weitergeben`;
   const missingProfileFields = getMissingProfileFieldsForDocument(profil, dokumentTyp, profil?.land);
 
   useEffect(() => {
@@ -573,7 +577,7 @@ export default function DokumentNeuPage() {
       return;
     }
 
-    if (!downloadPdf && !sharePdf) return;
+    if (!downloadPdf && !sharePdf && !emailPdf) return;
 
     setSending(true);
 
@@ -620,7 +624,7 @@ export default function DokumentNeuPage() {
       });
 
       let downloadedResult = false;
-      let delivery: "download" | "share" = "share";
+      let delivery: "download" | "share" | "email" = "share";
       let cloudSaved = true;
       let savedCustomerId: string | null = null;
       let finalNummer = nummer;
@@ -643,6 +647,28 @@ export default function DokumentNeuPage() {
         } else {
           delivery = "share";
         }
+      }
+
+      if (emailPdf) {
+        // Download the PDF first so user can attach it
+        if (!downloadedResult) {
+          downloadBlob(blob, `${finalNummer}.pdf`);
+          downloadedResult = true;
+        }
+        // Open mailto: with pre-filled subject and body
+        const kundeEmail = kunde.email || "";
+        const subject = encodeURIComponent(
+          `${typLabel} ${finalNummer}${profil?.firmenname ? ` — ${profil.firmenname}` : ""}`
+        );
+        const body = encodeURIComponent(
+          `Guten Tag${kunde.name ? ` ${kunde.name}` : ""},\n\n` +
+          `anbei erhalten Sie ${typLabel === "Offerte" ? "unsere Offerte" : "unsere Rechnung"} ${finalNummer}.\n` +
+          `Bitte finden Sie das PDF im Anhang.\n\n` +
+          `Freundliche Grüsse\n${profil?.firmenname || profil?.vorname || ""}`
+        );
+        const mailto = `mailto:${encodeURIComponent(kundeEmail)}?subject=${subject}&body=${body}`;
+        window.open(mailto, "_self");
+        delivery = "email";
       }
 
       let savedDocumentId: string | null = null;
@@ -1897,6 +1923,21 @@ export default function DokumentNeuPage() {
           </div>
           <div className="send-check">{sharePdf ? "✓" : ""}</div>
         </button>
+        <button
+          type="button"
+          className={`send-opt ${emailPdf ? "active" : ""}`}
+          onClick={() => setEmailPdf(!emailPdf)}
+          aria-pressed={emailPdf}
+        >
+          <div className="send-icon">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+          </div>
+          <div>
+            <div className="send-title">Per E-Mail senden</div>
+            <div className="send-sub">PDF herunterladen & Mail öffnen</div>
+          </div>
+          <div className="send-check">{emailPdf ? "✓" : ""}</div>
+        </button>
       </div>
 
       {/* Free plan document counter */}
@@ -1956,7 +1997,7 @@ export default function DokumentNeuPage() {
           className="btn-primary"
           style={{ width: "100%", padding: "14px 0", fontSize: 15 }}
           onClick={handleSend}
-          disabled={sending || (!downloadPdf && !sharePdf) || serverAllowed === false}
+          disabled={sending || (!downloadPdf && !sharePdf && !emailPdf) || serverAllowed === false}
         >
           {sending ? "Wird gesendet…" : sendBtnLabel}
         </button>
