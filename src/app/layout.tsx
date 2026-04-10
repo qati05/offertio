@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { headers } from "next/headers";
 import { Bricolage_Grotesque, DM_Sans } from "next/font/google";
+import CookieConsent from "@/components/CookieConsent";
 import "./globals.css";
 
 const bricolage = Bricolage_Grotesque({
@@ -97,27 +98,36 @@ export default async function RootLayout({
       </head>
       <body>
         {children}
+        <CookieConsent />
         <script nonce={nonce} suppressHydrationWarning defer src="/register-sw.js" />
         {process.env.NODE_ENV === "production" && (
           <script nonce={nonce} defer src="/_vercel/insights/script.js" />
         )}
         {process.env.NODE_ENV === "production" && process.env.NEXT_PUBLIC_GA4_MEASUREMENT_ID && (
           <>
-            <script
-              nonce={nonce}
-              async
-              src={`https://www.googletagmanager.com/gtag/js?id=${process.env.NEXT_PUBLIC_GA4_MEASUREMENT_ID}`}
-            />
+            {/* GA4 Consent Mode v2: default to denied, CookieConsent component updates on opt-in */}
             <script
               nonce={nonce}
               dangerouslySetInnerHTML={{
                 __html: `
                   window.dataLayer = window.dataLayer || [];
                   function gtag(){dataLayer.push(arguments);}
+                  gtag('consent', 'default', {
+                    analytics_storage: 'denied',
+                    ad_storage: 'denied',
+                    ad_user_data: 'denied',
+                    ad_personalization: 'denied',
+                    wait_for_update: 500
+                  });
                   gtag('js', new Date());
                   gtag('config', '${process.env.NEXT_PUBLIC_GA4_MEASUREMENT_ID}', { anonymize_ip: true });
                 `,
               }}
+            />
+            <script
+              nonce={nonce}
+              async
+              src={`https://www.googletagmanager.com/gtag/js?id=${process.env.NEXT_PUBLIC_GA4_MEASUREMENT_ID}`}
             />
           </>
         )}

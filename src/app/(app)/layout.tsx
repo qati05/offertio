@@ -191,8 +191,12 @@ function AppLayoutInner({ children }: { children: React.ReactNode }) {
   }, [pathname, router]);
 
   async function handleLogout() {
-    const supabase = createSupabaseBrowser();
-    await supabase.auth.signOut();
+    try {
+      const supabase = createSupabaseBrowser();
+      await supabase.auth.signOut();
+    } catch {
+      // Sign-out failed — redirect to login anyway to clear client state
+    }
     router.replace("/login");
   }
 

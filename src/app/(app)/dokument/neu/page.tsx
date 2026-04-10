@@ -180,7 +180,7 @@ export default function DokumentNeuPage() {
 
     const [profilRes, vorlagenRes, customersRes, limitRes] = await Promise.all([
       supabase.from("profiles").select("*").eq("id", user.id).maybeSingle(),
-      supabase.from("vorlagen").select("*").order("created_at"),
+      supabase.from("vorlagen").select("*").order("created_at", { ascending: false }).limit(500),
       supabase.from("customers").select("*").eq("user_id", user.id).order("updated_at", { ascending: false }).limit(200),
       fetch("/api/dokument/check-limit"),
     ]);

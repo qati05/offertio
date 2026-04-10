@@ -63,6 +63,7 @@ export default function DatenschutzPage() {
           </p>
           <ul style={{ paddingLeft: 20, marginTop: 8 }}>
             <li><strong>Supabase Inc.</strong> — Datenbank, Authentifizierung und Dateispeicherung (EU-Hosting)</li>
+            <li><strong>Google LLC</strong> — Google Analytics 4 (nur mit Ihrer Einwilligung, IP-Anonymisierung aktiv)</li>
           </ul>
 
           <h2 style={{ fontSize: 18, marginTop: 32, marginBottom: 12 }}>6. Dokument-Weitergabe</h2>
@@ -75,17 +76,30 @@ export default function DatenschutzPage() {
 
           <h2 style={{ fontSize: 18, marginTop: 32, marginBottom: 12 }}>7. Cookies & Tracking</h2>
           <p>
-            Offertio verwendet keine Marketing-Cookies oder Tracking-Dienste von Drittanbietern.
-            Es werden nur technisch notwendige Cookies für die Authentifizierung eingesetzt
-            (Supabase Auth Session).
+            <strong>Technisch notwendige Cookies:</strong> Offertio verwendet Cookies für die
+            Authentifizierung (Supabase Auth Session). Diese sind für den Betrieb der Anwendung
+            erforderlich und bedürfen keiner Einwilligung.
+          </p>
+          <p style={{ marginTop: 8 }}>
+            <strong>Analyse-Cookies (optional):</strong> Mit Ihrer ausdrücklichen Einwilligung
+            nutzen wir Google Analytics 4 zur Verbesserung unserer Dienste. Dabei wird Ihre
+            IP-Adresse anonymisiert (IP-Anonymisierung). Es werden keine Marketing-Cookies oder
+            Werbe-Tracker eingesetzt. Sie können Ihre Einwilligung jederzeit im Cookie-Banner
+            widerrufen, indem Sie den Eintrag «offertio-analytics-consent» in Ihrem
+            Browser-Speicher (localStorage) löschen.
           </p>
 
           <h2 style={{ fontSize: 18, marginTop: 32, marginBottom: 12 }}>8. Ihre Rechte</h2>
           <p>
-            Sie haben das Recht auf Auskunft, Berichtigung und Löschung Ihrer Daten (Art. 17 DSGVO / Art. 32 DSG).
-            Bitte beachten Sie: Die Löschung Ihres Kontos entfernt Ihre Profildaten und Vorlagen.
-            Dokumente, für die gesetzliche Aufbewahrungspflichten gelten, müssen Sie vor der Kontolöschung
-            selbst sichern. Sie können Ihr Konto jederzeit in den Einstellungen löschen.
+            Sie haben das Recht auf Auskunft, Berichtigung, Löschung und <strong>Datenportabilität</strong> (Art. 17 & 20 DSGVO / Art. 32 DSG).
+          </p>
+          <ul style={{ paddingLeft: 20, marginTop: 8 }}>
+            <li><strong>Datenexport:</strong> Sie können Ihre gesamten Daten (Profil, Dokumente, Kunden) in den Einstellungen als JSON-Datei herunterladen.</li>
+            <li><strong>Kontolöschung:</strong> Sie können Ihr Konto jederzeit in den Einstellungen löschen. Die Löschung entfernt Ihre Profildaten und Vorlagen.</li>
+          </ul>
+          <p style={{ marginTop: 8 }}>
+            Bitte beachten Sie: Dokumente, für die gesetzliche Aufbewahrungspflichten gelten, müssen Sie
+            vor der Kontolöschung selbst sichern.
           </p>
 
           <h2 style={{ fontSize: 18, marginTop: 32, marginBottom: 12 }}>9. Kontakt</h2>

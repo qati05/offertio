@@ -12,11 +12,11 @@ function buildCsp(nonce: string): string {
     // 'unsafe-eval' is required by @react-pdf/renderer for client-side font
     // subsetting via eval(). Removing it breaks PDF generation in the browser.
     // Tracked as a known limitation — replace when the library offers a strict-CSP mode.
-    `script-src 'self' 'nonce-${nonce}' 'unsafe-eval' https://va.vercel-scripts.com`,
+    `script-src 'self' 'nonce-${nonce}' 'unsafe-eval' https://va.vercel-scripts.com https://www.googletagmanager.com`,
     "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
     "font-src 'self' https://fonts.gstatic.com",
-    "img-src 'self' data: blob: https://*.supabase.co https://*.supabase.in",
-    "connect-src 'self' https://*.supabase.co https://*.supabase.in wss://*.supabase.co https://vitals.vercel-analytics.com",
+    "img-src 'self' data: blob: https://*.supabase.co https://*.supabase.in https://www.googletagmanager.com",
+    "connect-src 'self' https://*.supabase.co https://*.supabase.in wss://*.supabase.co https://vitals.vercel-analytics.com https://www.google-analytics.com https://*.analytics.google.com https://*.googletagmanager.com",
     "manifest-src 'self'",
     "worker-src 'self' blob:",
     "upgrade-insecure-requests",
@@ -66,6 +66,7 @@ export async function middleware(request: NextRequest) {
     path.startsWith("/agb") ||
     path.startsWith("/impressum") ||
     path.startsWith("/api/webhooks/") ||
+    path === "/api/health" ||
     path.startsWith("/_next/") ||
     path === "/sw.js" ||
     path === "/register-sw.js" ||
