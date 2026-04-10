@@ -3,6 +3,7 @@ import { createSupabaseServer } from "@/lib/supabase-server";
 import { getSupabaseAdmin } from "@/lib/supabase-admin";
 import { getCustomerDisplayName, makePrimaryCustomerLookupKey } from "@/lib/customers";
 import { isAllowedOrigin, isValidBase64, isSafeDocumentIdentifier, isValidUUID } from "@/lib/security";
+import { rateLimitAsync } from "@/lib/rate-limit";
 import { logger } from "@/lib/logger";
 import type { KundenInfo } from "@/lib/types";
 
@@ -29,6 +30,11 @@ export async function POST(request: NextRequest) {
 
   if (!user) {
     return json({ error: "Nicht angemeldet." }, 401);
+  }
+
+  const rl = await rateLimitAsync(`dokument-save:${user.id}`, 30, 60_000);
+  if (!rl.ok) {
+    return json({ error: "Zu viele Anfragen. Bitte warte kurz." }, 429);
   }
 
   // Content-Length guard — reject oversized requests before parsing JSON.

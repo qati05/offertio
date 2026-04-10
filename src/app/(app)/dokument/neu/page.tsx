@@ -410,7 +410,7 @@ export default function DokumentNeuPage() {
           reader.readAsDataURL(blob);
         });
       } catch (error) {
-        console.warn("Logo skipped during PDF generation:", error);
+        // Logo load failed — continue PDF generation without it
       }
     }
 
@@ -592,7 +592,7 @@ export default function DokumentNeuPage() {
             return;
           }
         } catch (e) {
-          console.error("Limit check error:", e);
+          // Limit check failed — user sees toast below
           showToast("Verbindung zum Server fehlgeschlagen. Bitte versuche es erneut.");
           setSending(false);
           return;
@@ -603,7 +603,7 @@ export default function DokumentNeuPage() {
       try {
         blob = await generatePdfBlob();
       } catch (e) {
-        console.error("PDF generation error:", e);
+        // PDF generation failed — user sees toast below
         showToast("Fehler beim Erstellen des PDFs. Bitte überprüfe deine Daten.");
         setSending(false);
         return;
@@ -670,7 +670,7 @@ export default function DokumentNeuPage() {
 
         if (!saveRes.ok) {
           const saveData = await saveRes.json();
-          console.error("Save failed:", saveData.error);
+          // Save failed — falls through to cloudSaved=false handling
           cloudSaved = false;
         } else {
           const saveData = await saveRes.json();
@@ -684,7 +684,7 @@ export default function DokumentNeuPage() {
           }
         }
       } catch (e) {
-        console.error("Save error:", e);
+        // Network save error — PDF already downloaded locally
         cloudSaved = false;
       }
 
@@ -702,7 +702,7 @@ export default function DokumentNeuPage() {
           setServerAllowed(false);
         }
       } catch (e) {
-        console.error("Counter increment error:", e);
+        // Counter increment failed — non-blocking, document already saved
       }
 
       commitNummer(dokumentTyp);
@@ -778,7 +778,7 @@ export default function DokumentNeuPage() {
       }
       router.push(`/dokument/success?${successParams.toString()}`);
     } catch (err) {
-      console.error("General handleSend error:", err);
+      // Unexpected error — user sees toast below
       showToast("Ein unerwarteter Fehler ist aufgetreten.");
     } finally {
       setSending(false);
@@ -919,7 +919,6 @@ export default function DokumentNeuPage() {
       a.click();
       setTimeout(() => URL.revokeObjectURL(url), 5000);
     } catch (err) {
-      console.error(err);
       showToast("Fehler beim Erstellen der E-Rechnung.");
     } finally {
       setERechnungLoading(false);

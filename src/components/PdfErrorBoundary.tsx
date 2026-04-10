@@ -20,8 +20,8 @@ export class PdfErrorBoundary extends React.Component<Props, State> {
     return { hasError: true };
   }
 
-  componentDidCatch(error: Error) {
-    console.error("PDF render error:", error);
+  componentDidCatch(_error: Error) {
+    // Error already captured via getDerivedStateFromError — fallback UI shown
   }
 
   render() {

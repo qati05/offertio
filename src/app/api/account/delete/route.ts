@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createSupabaseServer } from "@/lib/supabase-server";
 import { getSupabaseAdmin } from "@/lib/supabase-admin";
 import { isAllowedOrigin } from "@/lib/security";
+import { rateLimitAsync } from "@/lib/rate-limit";
 import { logger } from "@/lib/logger";
 
 function json(body: unknown, status = 200) {
@@ -24,6 +25,11 @@ export async function POST(request: NextRequest) {
 
     if (!user) {
       return json({ error: "Nicht angemeldet." }, 401);
+    }
+
+    const rl = await rateLimitAsync(`account-delete:${user.id}`, 5, 3_600_000);
+    if (!rl.ok) {
+      return json({ error: "Zu viele Anfragen. Bitte warte eine Stunde." }, 429);
     }
 
     const admin = getSupabaseAdmin();

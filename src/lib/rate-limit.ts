@@ -80,7 +80,7 @@ export async function rateLimitAsync(
       const { success, remaining } = await limiter.limit(key);
       return { ok: success, remaining };
     } catch (error) {
-      console.error("Rate limit fallback to memory:", error);
+      // Silently fall back to in-memory limiter when Redis is unavailable
     }
   }
   return memRateLimit(key, limit, windowMs);

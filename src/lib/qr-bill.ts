@@ -151,7 +151,7 @@ export async function generateQrBillData(
     if (err instanceof QrIbanError) {
       throw err;
     }
-    console.error("QR code generation failed:", err);
+    // QR code generation failed — return null so caller can handle gracefully
     return null;
   }
 }
