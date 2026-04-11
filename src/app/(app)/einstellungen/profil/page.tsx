@@ -662,6 +662,8 @@ export default function ProfilPage() {
                 a.download = `offertio-export-${new Date().toISOString().split("T")[0]}.json`;
                 a.click();
                 URL.revokeObjectURL(url);
+                setToast("Export heruntergeladen.");
+                setTimeout(() => setToast(""), 4000);
               } catch {
                 setToast("Export fehlgeschlagen.");
                 setTimeout(() => setToast(""), 4000);

@@ -73,10 +73,15 @@ Detailed documentation:
 
 ## Local Development
 
+> Recommended on Windows: work from a normal local directory such as
+> `C:\Users\resha\products\offertio`. Avoid running `node_modules` from
+> OneDrive-synced folders; Windows file locks and cloud placeholders can break
+> `npm ci`, native packages, and Playwright/Next build runs.
+
 ### 1. Install dependencies
 
 ```bash
-npm install
+npm ci
 ```
 
 ### 2. Configure environment variables
@@ -104,6 +109,12 @@ Open [http://localhost:3000](http://localhost:3000).
 - `npm run start` runs the production server locally
 - `npm test` runs the Vitest suite once
 - `npm run test:watch` runs tests in watch mode
+- `npm run test:e2e` runs Playwright browser smoke tests; authenticated app
+  projects are enabled when `E2E_USER_EMAIL` and `E2E_USER_PASSWORD` are set.
+- `npm run test:e2e:public` runs only unauthenticated public/browser smoke tests
+- `npm run test:e2e:auth` runs authenticated app/mobile E2E projects and requires
+  a completed Supabase test account:
+  `E2E_USER_EMAIL` and `E2E_USER_PASSWORD`
 
 ## Environment Variables
 
@@ -153,10 +164,14 @@ Security controls in the current codebase include:
 
 Current baseline:
 
-- `180` tests passing via Vitest
+- `489` tests passing via Vitest
+- public Playwright smoke suite passing locally
 - production build passing via `next build`
 
-The current test suite is strongest around domain logic and protected flows. Browser-level E2E coverage is a logical next step for future hardening.
+The current test suite is strongest around domain logic, security hardening,
+route-level behavior, and public browser flows. Authenticated E2E coverage
+requires a completed Supabase test user via `E2E_USER_EMAIL` and
+`E2E_USER_PASSWORD`.
 
 ## Exit-Oriented Notes
 
