@@ -4,28 +4,36 @@ import { motion } from "framer-motion";
 
 const featureGroups = [
   {
-    eyebrow: "Erfassung",
+    eyebrow: "Swiss QR-Rechnung",
     icon: (
-      <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M8 2a6 6 0 100 12A6 6 0 008 2zM5.5 8l2 2 3-3" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/></svg>
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><rect x="2" y="2" width="5" height="5" stroke="currentColor" strokeWidth="1.4"/><rect x="9" y="2" width="5" height="5" stroke="currentColor" strokeWidth="1.4"/><rect x="2" y="9" width="5" height="5" stroke="currentColor" strokeWidth="1.4"/><rect x="10.5" y="10.5" width="2" height="2" fill="currentColor"/></svg>
     ),
-    title: "Alles an einem Ort.",
-    desc: "Kundendaten, Leistung und Kontext — beisammen. Nicht in drei Apps und einem Kopf voller offener Punkte.",
+    title: "QR-Rechnung, die funktioniert.",
+    desc: "QR-IBAN, QRR-Referenz, Swiss-QR-Code — automatisch generiert nach ISO 20022. Kein Einzahlungsschein, kein Kopfzerbrechen. Dein Kunde scannt im E-Banking, fertig.",
   },
   {
-    eyebrow: "Auftritt",
+    eyebrow: "WhatsApp-Versand",
+    icon: (
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M2 14l1.1-2.5A6 6 0 1 1 5.5 13.5L2 14z" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/></svg>
+    ),
+    title: "Dort senden, wo dein Kunde liest.",
+    desc: "Ein Tap öffnet WhatsApp mit Nachricht und PDF-Link. Der Kunde bekommt die Offerte in dem Chat, in dem er dir die Anfrage geschickt hat — nicht in einem SPAM-Ordner.",
+  },
+  {
+    eyebrow: "ZUGFeRD · DACH",
     icon: (
       <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><rect x="2" y="2" width="12" height="12" rx="2.5" stroke="currentColor" strokeWidth="1.4"/><path d="M5 8h6M5 5.5h4M5 10.5h3" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/></svg>
     ),
-    title: "Professionell. Immer.",
-    desc: "Eigenes Branding, saubere PDF-Ausgabe. Ein Dokument, das nach Betrieb aussieht — nicht nach Notlösung.",
+    title: "CH, DE, AT — ein Profil.",
+    desc: "ZUGFeRD 2.3 BASIC (Factur-X) für DE E-Rechnung, Leistungsdatum-Pflicht, AT UID-Schwellen ab €400/€10.000 — automatisch geprüft. Rechtssicher, ohne dass du §14 UStG lesen musst.",
   },
   {
-    eyebrow: "Alltag",
+    eyebrow: "Mobile-first",
     icon: (
-      <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M3 8l4 4 6-6" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/></svg>
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><rect x="4" y="2" width="8" height="12" rx="1.5" stroke="currentColor" strokeWidth="1.4"/><path d="M7.5 12.5h1" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/></svg>
     ),
-    title: "Zeit zurückgewinnen.",
-    desc: "Direkter Versand, weniger Nachziehen. Spürbar jeden Abend.",
+    title: "Auf der Baustelle. Direkt.",
+    desc: "Als PWA auf dem Homescreen, offlinefähig, kein App-Store. Vom Kundentermin zur gesendeten Offerte — während der Kunde dich noch zur Tür bringt.",
   },
 ];
 

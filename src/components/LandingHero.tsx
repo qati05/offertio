@@ -6,9 +6,9 @@ import { useEffect, useState } from "react";
 import { trackCtaClick } from "@/lib/analytics";
 
 const proofPoints = [
-  "QR, SEPA & DACH-Standards",
-  "CH, DE, AT ready",
-  "In unter 3 Min. einsatzbereit",
+  "Swiss QR-Rechnung & ZUGFeRD",
+  "Per WhatsApp senden",
+  "14 Tage gratis testen",
 ];
 
 const DOCS = [
@@ -455,14 +455,15 @@ export default function LandingHero() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.7, delay: 0.35, ease: [0.16, 1, 0.3, 1] }}
-              className="mt-6 max-w-sm"
+              className="mt-6 max-w-md"
               style={{
                 fontSize: "1.0625rem",
                 lineHeight: 1.65,
                 color: "var(--color-text-muted)",
               }}
             >
-              Professionelle Offerten und Rechnungen. Direkt nach dem Termin — ohne Büroabend danach.
+              Offerten und Rechnungen direkt nach dem Termin. Mit Swiss QR-Rechnung,
+              ZUGFeRD und WhatsApp-Versand — kein Büroabend mehr.
             </motion.p>
 
             <motion.div
@@ -476,7 +477,7 @@ export default function LandingHero() {
                 className="cta-primary px-7"
                 onClick={() => trackCtaClick("hero_primary")}
               >
-                Jetzt kostenlos starten
+                14 Tage gratis testen
                 <svg width="14" height="14" viewBox="0 0 14 14" fill="none" className="ml-1">
                   <path d="M3 7h8m0 0L7.5 3.5M11 7l-3.5 3.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
                 </svg>
@@ -502,7 +503,7 @@ export default function LandingHero() {
                 }}
               >
                 <span className="h-1.5 w-1.5 rounded-full bg-[#1A7F42] animate-pulse inline-block" />
-                Kostenlos starten — keine Kreditkarte
+                14 Tage Pro gratis — keine Kreditkarte
               </div>
             </motion.div>
 

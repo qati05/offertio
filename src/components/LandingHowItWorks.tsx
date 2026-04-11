@@ -17,18 +17,18 @@ const steps = [
     icon: (
       <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><rect x="4" y="3" width="12" height="14" rx="2" stroke="currentColor" strokeWidth="1.5"/><path d="M7 7h6M7 10h4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/></svg>
     ),
-    title: "Sauber zusammenziehen",
-    copy: "Offertio ordnet alles in ein Dokument mit klarem Layout, korrektem Betrag und den richtigen Standards.",
-    detail: "Automatisch, professionell",
+    title: "Compliance im Hintergrund",
+    copy: "Swiss QR-Rechnung, ZUGFeRD, DE/AT-Pflichtfelder — Offertio setzt sie automatisch. Du siehst nur das fertige Dokument.",
+    detail: "CH · DE · AT",
   },
   {
     n: "03",
     icon: (
       <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M4 10l4 4L16 6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
     ),
-    title: "Direkt raus damit",
-    copy: "Per E-Mail oder als PDF weitergeben. Kein zweiter Büroabend, kein Medienbruch.",
-    detail: "Versand in Sekunden",
+    title: "Direkt per WhatsApp raus",
+    copy: "WhatsApp, E-Mail oder System-Share — dort, wo du mit deinen Kunden wirklich redest. Ein Tap, fertig.",
+    detail: "WhatsApp · E-Mail · Share",
   },
 ];
 

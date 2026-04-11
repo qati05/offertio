@@ -7,7 +7,10 @@ import {
   isCheckoutConfigured,
   PRO_FEATURES,
   FREE_LIMIT,
+  TRIAL_DAYS,
   getMonthlyDocCount,
+  isInTrial,
+  trialDaysRemaining,
 } from "@/lib/payment";
 import { trackUpgradeClick } from "@/lib/analytics";
 import type { Land } from "@/lib/types";
@@ -15,10 +18,12 @@ import type { Land } from "@/lib/types";
 interface UpgradeScreenProps {
   email?: string;
   land?: Land;
+  /** ISO timestamp when the user's trial ends (null if no trial). */
+  trialEndsAt?: string | null;
   onClose?: () => void;
 }
 
-export default function UpgradeScreen({ email, land, onClose }: UpgradeScreenProps) {
+export default function UpgradeScreen({ email, land, trialEndsAt, onClose }: UpgradeScreenProps) {
   const [billing, setBilling] = useState<"monthly" | "yearly">("yearly");
   const [offlineHint, setOfflineHint] = useState(false);
   const { currency, prices } = getPricing(land);
@@ -32,26 +37,40 @@ export default function UpgradeScreen({ email, land, onClose }: UpgradeScreenPro
   const checkoutType = billing === "yearly" ? "pro_yearly" : "pro_monthly";
   const checkoutReady = isCheckoutConfigured(checkoutType);
   const remaining = Math.max(0, FREE_LIMIT - docCount);
+  const inTrial = isInTrial(trialEndsAt ?? null);
+  const daysLeft = trialDaysRemaining(trialEndsAt ?? null);
+
+  const title = inTrial
+    ? `Dein Test läuft in ${daysLeft} ${daysLeft === 1 ? "Tag" : "Tagen"} ab.`
+    : "Dein Free-Kontingent ist fast aufgebraucht.";
+
+  const description = inTrial
+    ? `Du testest Offertio gerade mit vollem Zugriff (${TRIAL_DAYS} Tage). Upgrade jetzt, dann läuft alles nahtlos weiter — ohne dass du deine Vorlagen oder Kunden neu einrichten musst.`
+    : `Du hast ${docCount}/${FREE_LIMIT} Dokumente genutzt. Mit Pro erstellst du unbegrenzt Offerten und Rechnungen — ohne Monatsgrenze.`;
 
   return (
     <div className="mx-auto w-full max-w-[460px]">
       <div className="upgrade-card">
-        <div className="app-kicker" style={{ color: "var(--color-primary-strong)" }}>Offertio Pro</div>
+        <div className="app-kicker" style={{ color: "var(--color-primary-strong)" }}>
+          {inTrial ? `Test aktiv · noch ${daysLeft} ${daysLeft === 1 ? "Tag" : "Tage"}` : "Offertio Pro"}
+        </div>
         <h2 className="upgrade-title">
-          Dein Free-Kontingent ist fast aufgebraucht.
+          {title}
         </h2>
         <p className="upgrade-desc">
-          Du hast {docCount}/{FREE_LIMIT} Dokumente genutzt. Mit Pro erstellst du unbegrenzt Offerten und Rechnungen — ohne Monatsgrenze.
+          {description}
         </p>
 
         <div className="upgrade-remaining-box">
           <div className="flex items-start justify-between gap-4">
             <div>
               <div className="text-[11px] font-semibold uppercase tracking-[0.14em]" style={{ color: "var(--app-text-soft)" }}>
-                Verbleibend
+                {inTrial ? "Im Test" : "Verbleibend"}
               </div>
               <div className="mt-2 text-2xl font-bold tracking-[-0.03em]" style={{ color: "var(--app-text)" }}>
-                {remaining} Dokumente
+                {inTrial
+                  ? `${daysLeft} ${daysLeft === 1 ? "Tag" : "Tage"}`
+                  : `${remaining} Dokumente`}
               </div>
             </div>
             <div className="rounded-full px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.12em]" style={{ background: "var(--color-primary-soft)", color: "var(--color-primary-strong)" }}>

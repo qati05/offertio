@@ -5,31 +5,31 @@ import { motion } from "framer-motion";
 const trustItems = [
   {
     icon: (
-      <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><rect x="2" y="4" width="14" height="10" rx="2" stroke="currentColor" strokeWidth="1.5"/><path d="M6 11l2 2 4-4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
+      <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><rect x="2.5" y="2.5" width="5" height="5" stroke="currentColor" strokeWidth="1.5"/><rect x="10.5" y="2.5" width="5" height="5" stroke="currentColor" strokeWidth="1.5"/><rect x="2.5" y="10.5" width="5" height="5" stroke="currentColor" strokeWidth="1.5"/><rect x="12" y="12" width="2.5" height="2.5" fill="currentColor"/></svg>
+    ),
+    title: "Swiss QR-Rechnung",
+    detail: "QR-IBAN, QRR-Referenz, ISO 20022 — automatisch im PDF.",
+  },
+  {
+    icon: (
+      <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><path d="M2.5 15.5l1.2-2.8A6.5 6.5 0 1 1 6.3 15l-3.8 0.5z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
+    ),
+    title: "WhatsApp-Versand",
+    detail: "Ein Tap: Nachricht + PDF-Link im Kunden-Chat.",
+  },
+  {
+    icon: (
+      <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><rect x="2.5" y="2.5" width="13" height="13" rx="2.5" stroke="currentColor" strokeWidth="1.5"/><path d="M5.5 9h7M5.5 6h5M5.5 12h4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/></svg>
+    ),
+    title: "ZUGFeRD · DACH",
+    detail: "Factur-X, §14 UStG, AT UID — ohne dass du es liest.",
+  },
+  {
+    icon: (
+      <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><rect x="5" y="2" width="8" height="14" rx="1.5" stroke="currentColor" strokeWidth="1.5"/><path d="M8.5 13.5h1" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/></svg>
     ),
     title: "Mobile-first",
-    detail: "Gebaut für unterwegs, nicht fürs Büro-Backoffice.",
-  },
-  {
-    icon: (
-      <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><circle cx="9" cy="9" r="6.5" stroke="currentColor" strokeWidth="1.5"/><path d="M6 9h6M9 6v6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/></svg>
-    ),
-    title: "CH, DE, AT",
-    detail: "Währung, Steuer und Zahlung passen sich automatisch an.",
-  },
-  {
-    icon: (
-      <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><path d="M3 9l5 5 7-7" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
-    ),
-    title: "QR, SEPA, ZUGFeRD",
-    detail: "Echte Standards im Produkt, nicht nur auf der Webseite.",
-  },
-  {
-    icon: (
-      <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><path d="M4 13l3-8h4l3 8M6 9h6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
-    ),
-    title: "Direkt weitergeben",
-    detail: "PDF oder E-Mail. Kein zweiter Büroabend nötig.",
+    detail: "PWA, offlinefähig, kein App-Store. Vom Einsatz direkt raus.",
   },
 ];
 

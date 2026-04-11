@@ -7,19 +7,20 @@ import { trackCtaClick } from "@/lib/analytics";
 
 const freeFeatures = [
   "5 Dokumente pro Monat",
-  "Offerten & Rechnungen",
+  "Swiss QR-Rechnung (CH)",
+  "ZUGFeRD Factur-X (DE)",
+  "WhatsApp-Versand",
   "PDF-Export",
-  "Grundlayout",
 ];
 
 const proFeatures = [
-  "Unbegrenzte Dokumente",
-  "Swiss QR-Rechnung",
-  "ZUGFeRD für Deutschland",
-  "E-Mail & PDF Versand",
+  "Alles aus Free — unbegrenzt",
+  "14 Tage gratis testen",
   "Eigenes Logo & Branding",
-  "Offline-Modus",
+  "E-Mail-Versand aus der App",
   "Vorlagen-Bibliothek",
+  "Offline-Modus (PWA)",
+  "Priorisierter Support",
 ];
 
 export default function LandingPricing() {
@@ -39,11 +40,11 @@ export default function LandingPricing() {
         >
           <div className="section-kicker">Preise</div>
           <h2 className="section-title mt-5">
-            Starte kostenlos.{" "}
-            <span style={{ color: "var(--color-primary)" }}>Wachse mit Pro.</span>
+            14 Tage alles testen.{" "}
+            <span style={{ color: "var(--color-primary)" }}>Danach du entscheidest.</span>
           </h2>
           <p className="section-copy mt-5">
-            Erst testen, dann entscheiden. Kein Risiko, keine Kreditkarte.
+            Zwei Wochen lang alle Pro-Funktionen. Ohne Kreditkarte. Danach automatisch Free — oder Pro, wenn du magst.
           </p>
 
           {/* Toggle */}

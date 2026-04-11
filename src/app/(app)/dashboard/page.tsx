@@ -6,7 +6,13 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { createSupabaseBrowser } from "@/lib/supabase-browser";
-import { isPro, getCheckoutUrl } from "@/lib/payment";
+import {
+  isPro,
+  getCheckoutUrl,
+  isInTrial,
+  trialDaysRemaining,
+  TRIAL_DAYS,
+} from "@/lib/payment";
 import { trackUpgradeClick } from "@/lib/analytics";
 import { computeDocumentStatus, countOpenActions, getStatus, statusBadgeVariants } from "@/lib/dokument-status";
 import type { Profile, DokumentHistorie } from "@/lib/types";
@@ -90,7 +96,10 @@ export default function DashboardPage() {
   }
 
   const proUser = isPro(profil?.plan);
-  const remaining = proUser ? Infinity : (serverRemaining ?? 5);
+  const trialEndsAt = profil?.trial_ends_at ?? null;
+  const userInTrial = isInTrial(trialEndsAt);
+  const trialDaysLeft = trialDaysRemaining(trialEndsAt);
+  const remaining = proUser || userInTrial ? Infinity : (serverRemaining ?? 5);
   const companyName = profil?.firmenname || profil?.vorname || "Offertio";
   const reminderCount = countOpenActions(history, profil?.zahlungsfrist ?? 30);
   const totalDocs = history.length;
@@ -178,6 +187,68 @@ export default function DashboardPage() {
                 ? "1 Dokument wartet auf Erledigung."
                 : `${openDocs.length} Dokumente warten auf Erledigung.`}
             </p>
+          </motion.div>
+        )}
+
+        {/* ── Trial banner ─────────────────────────────── */}
+        {!loading && !proUser && userInTrial && (
+          <motion.div
+            initial={{ opacity: 0, y: 6 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4, delay: 0.1, ease }}
+            style={{
+              marginBottom: 16,
+              padding: "14px 18px",
+              borderRadius: 14,
+              background: "var(--color-primary-soft, rgba(200,121,61,0.08))",
+              border: "1px solid var(--color-primary, #c8793d)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              gap: 12,
+              flexWrap: "wrap",
+            }}
+          >
+            <div>
+              <div style={{
+                fontSize: 11,
+                fontWeight: 700,
+                letterSpacing: "0.12em",
+                textTransform: "uppercase",
+                color: "var(--color-primary-strong, #a8622e)",
+                marginBottom: 4,
+              }}>
+                {TRIAL_DAYS}-Tage-Test · Vollzugriff
+              </div>
+              <div style={{
+                fontSize: 14,
+                lineHeight: 1.5,
+                color: "var(--app-text)",
+                margin: 0,
+              }}>
+                {trialDaysLeft === 1
+                  ? "Dein Test läuft morgen ab."
+                  : trialDaysLeft === 0
+                    ? "Dein Test endet heute."
+                    : `Noch ${trialDaysLeft} Tage mit allen Features.`}
+              </div>
+            </div>
+            <Link
+              href="/einstellungen/abonnement"
+              onClick={() => trackUpgradeClick("dashboard-trial-banner")}
+              style={{
+                padding: "8px 14px",
+                borderRadius: 10,
+                background: "var(--color-primary)",
+                color: "#fff",
+                fontSize: 13,
+                fontWeight: 600,
+                textDecoration: "none",
+                whiteSpace: "nowrap",
+              }}
+            >
+              Auf Pro wechseln
+            </Link>
           </motion.div>
         )}
 

@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { FREE_LIMIT, isPro } from "@/lib/payment";
+import { FREE_LIMIT, hasActiveAccess, isPro } from "@/lib/payment";
 
 /**
  * Unit tests for the check-limit business logic.
@@ -24,8 +24,12 @@ describe("check-limit logic", () => {
   });
 
   describe("remaining calculation", () => {
-    function calcRemaining(plan: string, used: number): number | typeof Infinity {
-      if (isPro(plan)) return Infinity;
+    function calcRemaining(
+      plan: string,
+      used: number,
+      trialEndsAt: string | null = null,
+    ): number | typeof Infinity {
+      if (hasActiveAccess(plan, trialEndsAt)) return Infinity;
       return Math.max(0, FREE_LIMIT - used);
     }
 
@@ -48,11 +52,25 @@ describe("check-limit logic", () => {
     it("is 0 exactly at the limit", () => {
       expect(calcRemaining("free", FREE_LIMIT)).toBe(0);
     });
+
+    it("returns Infinity for free user with active trial", () => {
+      const future = new Date(Date.now() + 1000 * 60 * 60 * 24 * 3).toISOString();
+      expect(calcRemaining("free", FREE_LIMIT + 20, future)).toBe(Infinity);
+    });
+
+    it("falls back to FREE_LIMIT arithmetic once trial has expired", () => {
+      const past = new Date(Date.now() - 1000).toISOString();
+      expect(calcRemaining("free", 2, past)).toBe(FREE_LIMIT - 2);
+    });
   });
 
   describe("allowed gate", () => {
-    function isAllowed(plan: string, used: number): boolean {
-      if (isPro(plan)) return true;
+    function isAllowed(
+      plan: string,
+      used: number,
+      trialEndsAt: string | null = null,
+    ): boolean {
+      if (hasActiveAccess(plan, trialEndsAt)) return true;
       return used < FREE_LIMIT;
     }
 
@@ -70,6 +88,16 @@ describe("check-limit logic", () => {
 
     it("blocks free user over limit", () => {
       expect(isAllowed("free", FREE_LIMIT + 5)).toBe(false);
+    });
+
+    it("allows free user past the limit while trial is active", () => {
+      const future = new Date(Date.now() + 1000 * 60 * 60).toISOString();
+      expect(isAllowed("free", FREE_LIMIT + 2, future)).toBe(true);
+    });
+
+    it("blocks free user past the limit once trial has expired", () => {
+      const past = new Date(Date.now() - 1000).toISOString();
+      expect(isAllowed("free", FREE_LIMIT + 1, past)).toBe(false);
     });
   });
 });

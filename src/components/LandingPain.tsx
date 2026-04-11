@@ -19,7 +19,7 @@ const painMoments = [
     time: "Nächster Tag",
     label: "Am Morgen",
     title: "Der Kunde wartet. Das Dokument noch nicht.",
-    copy: "Je länger ein Angebot herumliegt, desto kleiner die Wirkung. Tempo schlägt Perfektion.",
+    copy: "Der Kunde schreibt auf WhatsApp. Die Offerte hängt in der E-Mail-Kette fest. Je länger sie liegt, desto kleiner die Wirkung.",
   },
 ];
 

@@ -54,6 +54,7 @@ export default function DokumentNeuPage() {
   // Send options
   const [downloadPdf, setDownloadPdf] = useState(false);
   const [sharePdf, setSharePdf] = useState(true);
+  const [whatsappPdf, setWhatsappPdf] = useState(false);
   const [emailPdf, setEmailPdf] = useState(false);
   const [eRechnungLoading, setERechnungLoading] = useState(false);
 
@@ -103,7 +104,7 @@ export default function DokumentNeuPage() {
   // Labels based on document type
   const typLabel = dokumentTyp === "offerte" ? "Offerte" : "Rechnung";
   const dateEndLabel = dokumentTyp === "offerte" ? "Gültig bis" : "Zahlbar bis";
-  const activeCount = [downloadPdf, sharePdf, emailPdf].filter(Boolean).length;
+  const activeCount = [downloadPdf, sharePdf, whatsappPdf, emailPdf].filter(Boolean).length;
   const sendBtnLabel =
     activeCount > 1
       ? `${typLabel} speichern & senden`
@@ -111,9 +112,11 @@ export default function DokumentNeuPage() {
         ? `${typLabel} herunterladen`
         : sharePdf
           ? `${typLabel} teilen`
-          : emailPdf
-            ? `${typLabel} per E-Mail senden`
-            : `${typLabel} weitergeben`;
+          : whatsappPdf
+            ? `${typLabel} per WhatsApp senden`
+            : emailPdf
+              ? `${typLabel} per E-Mail senden`
+              : `${typLabel} weitergeben`;
   const missingProfileFields = getMissingProfileFieldsForDocument(profil, dokumentTyp, profil?.land);
 
   useEffect(() => {
@@ -582,9 +585,22 @@ export default function DokumentNeuPage() {
       return;
     }
 
-    if (!downloadPdf && !sharePdf && !emailPdf) return;
+    if (!downloadPdf && !sharePdf && !whatsappPdf && !emailPdf) return;
 
     setSending(true);
+
+    // Pre-open a WhatsApp tab now, while we still have the user gesture.
+    // Modern popup blockers reject window.open() after several awaits,
+    // so we open a blank tab synchronously and navigate it once the
+    // signed URL is ready. If the save fails, we close it again.
+    let waWindow: Window | null = null;
+    if (whatsappPdf && typeof window !== "undefined") {
+      try {
+        waWindow = window.open("about:blank", "_blank");
+      } catch {
+        waWindow = null;
+      }
+    }
 
     try {
       await persistProfileIfNeeded();
@@ -598,12 +614,14 @@ export default function DokumentNeuPage() {
           if (!limitData.allowed) {
             showToast("Monatslimit erreicht — bitte auf Pro upgraden.");
             setSending(false);
+            waWindow?.close();
             return;
           }
         } catch (e) {
           // Limit check failed — user sees toast below
           showToast("Verbindung zum Server fehlgeschlagen. Bitte versuche es erneut.");
           setSending(false);
+          waWindow?.close();
           return;
         }
       }
@@ -615,6 +633,7 @@ export default function DokumentNeuPage() {
         // PDF generation failed — user sees toast below
         showToast("Fehler beim Erstellen des PDFs. Bitte überprüfe deine Daten.");
         setSending(false);
+        waWindow?.close();
         return;
       }
 
@@ -633,7 +652,7 @@ export default function DokumentNeuPage() {
       });
 
       let downloadedResult = false;
-      let delivery: "download" | "share" | "email" = "share";
+      let delivery: "download" | "share" | "whatsapp" | "email" = "share";
       let cloudSaved = true;
       let savedCustomerId: string | null = null;
       let finalNummer = nummer;
@@ -656,6 +675,14 @@ export default function DokumentNeuPage() {
         } else {
           delivery = "share";
         }
+      }
+
+      if (whatsappPdf && !downloadedResult) {
+        // Safety-net download: if the WhatsApp signed-URL flow fails below
+        // (save rejected, storage not reachable), the user still has the
+        // file on their device and can attach it manually.
+        downloadBlob(blob, `${finalNummer}.pdf`);
+        downloadedResult = true;
       }
 
       if (emailPdf) {
@@ -721,6 +748,76 @@ export default function DokumentNeuPage() {
       } catch (e) {
         // Network save error — PDF already downloaded locally
         cloudSaved = false;
+      }
+
+      // WhatsApp send: request a signed URL and open wa.me with a prefilled
+      // message. Ordering matters — we need savedDocumentId from the save
+      // call above, but we also pre-opened waWindow synchronously so the
+      // user's click gesture still counts toward popup-blocker policy.
+      if (whatsappPdf) {
+        const firmaSignatur = profil?.firmenname || profil?.vorname || "";
+        const greeting = kunde.name ? ` ${kunde.name}` : "";
+        const typDescription =
+          typLabel === "Offerte" ? "unsere Offerte" : "unsere Rechnung";
+
+        let signedUrl: string | null = null;
+        if (cloudSaved && savedDocumentId) {
+          try {
+            const shareRes = await fetch("/api/dokument/share", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ id: savedDocumentId }),
+            });
+            if (shareRes.ok) {
+              const shareData = await shareRes.json();
+              if (typeof shareData?.url === "string") {
+                signedUrl = shareData.url;
+                if (typeof shareData?.nummer === "string" && shareData.nummer) {
+                  finalNummer = shareData.nummer;
+                }
+              }
+            }
+          } catch {
+            // Fall through — we'll send the message without a link.
+          }
+        }
+
+        const messageLines = [
+          `Guten Tag${greeting},`,
+          "",
+          `anbei ${typDescription} ${finalNummer}.`,
+        ];
+        if (signedUrl) {
+          messageLines.push(signedUrl);
+        } else {
+          messageLines.push(
+            "Das PDF liegt auf meinem Gerät bereit — ich hänge es direkt in WhatsApp an.",
+          );
+        }
+        messageLines.push("", "Freundliche Grüsse", firmaSignatur);
+
+        const waText = encodeURIComponent(messageLines.join("\n"));
+        const waUrl = `https://wa.me/?text=${waText}`;
+
+        if (waWindow && !waWindow.closed) {
+          try {
+            waWindow.location.href = waUrl;
+          } catch {
+            // Cross-origin navigation restrictions — fall back to opening
+            // a fresh tab. May be blocked by the browser, but we tried.
+            window.open(waUrl, "_blank");
+          }
+        } else {
+          window.open(waUrl, "_blank");
+        }
+
+        delivery = "whatsapp";
+
+        if (!signedUrl) {
+          showToast(
+            "WhatsApp geöffnet. Das PDF liegt auf deinem Gerät — bitte manuell anhängen.",
+          );
+        }
       }
 
       // Increment counters only after the server confirms the increment.
@@ -814,6 +911,7 @@ export default function DokumentNeuPage() {
     } catch (err) {
       // Unexpected error — user sees toast below
       showToast("Ein unerwarteter Fehler ist aufgetreten.");
+      waWindow?.close();
     } finally {
       setSending(false);
     }
@@ -1010,6 +1108,7 @@ export default function DokumentNeuPage() {
         <UpgradeScreen
           email={profil.email}
           land={profil.land}
+          trialEndsAt={profil.trial_ends_at ?? null}
         />
       )}
 
@@ -1926,10 +2025,25 @@ export default function DokumentNeuPage() {
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
           </div>
           <div>
-            <div className="send-title">Teilen / WhatsApp</div>
-            <div className="send-sub">Via Handy direkt weitergeben</div>
+            <div className="send-title">Teilen (Handy)</div>
+            <div className="send-sub">Öffnet System-Share — PDF direkt anhängen</div>
           </div>
           <div className="send-check">{sharePdf ? "✓" : ""}</div>
+        </button>
+        <button
+          type="button"
+          className={`send-opt ${whatsappPdf ? "active" : ""}`}
+          onClick={() => setWhatsappPdf(!whatsappPdf)}
+          aria-pressed={whatsappPdf}
+        >
+          <div className="send-icon">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M3 21l1.65-3.8a9 9 0 1 1 3.4 3.4L3 21"/><path d="M9 10a1 1 0 0 0 1 1 1 1 0 0 0 1-1V9a1 1 0 0 0-1-1h-1"/><path d="M13 13a1 1 0 0 0 1 1 1 1 0 0 0 1-1v-1a1 1 0 0 0-1-1"/></svg>
+          </div>
+          <div>
+            <div className="send-title">Per WhatsApp senden</div>
+            <div className="send-sub">Öffnet WhatsApp mit Link zum PDF</div>
+          </div>
+          <div className="send-check">{whatsappPdf ? "✓" : ""}</div>
         </button>
         <button
           type="button"
@@ -2005,7 +2119,7 @@ export default function DokumentNeuPage() {
           className="btn-primary"
           style={{ width: "100%", padding: "14px 0", fontSize: 15 }}
           onClick={handleSend}
-          disabled={sending || (!downloadPdf && !sharePdf && !emailPdf) || serverAllowed === false}
+          disabled={sending || (!downloadPdf && !sharePdf && !whatsappPdf && !emailPdf) || serverAllowed === false}
         >
           {sending ? "Wird gesendet…" : sendBtnLabel}
         </button>
