@@ -1,0 +1,754 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Offertio - Repository Zusammenfassung</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background: white;
+            padding: 40px;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            color: #1a1a1a;
+            border-bottom: 3px solid #0066cc;
+            padding-bottom: 15px;
+        }
+
+        .subtitle {
+            font-size: 1.1em;
+            color: #666;
+            margin-bottom: 30px;
+            font-style: italic;
+        }
+
+        h2 {
+            font-size: 1.8em;
+            margin-top: 35px;
+            margin-bottom: 15px;
+            color: #0066cc;
+            page-break-after: avoid;
+        }
+
+        h3 {
+            font-size: 1.3em;
+            margin-top: 20px;
+            margin-bottom: 10px;
+            color: #0066cc;
+            page-break-after: avoid;
+        }
+
+        p {
+            margin-bottom: 12px;
+            text-align: justify;
+        }
+
+        ul, ol {
+            margin: 15px 0 15px 30px;
+        }
+
+        li {
+            margin-bottom: 8px;
+        }
+
+        .section {
+            page-break-inside: avoid;
+            margin-bottom: 25px;
+        }
+
+        .tech-stack {
+            background: #f5f5f5;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 15px 0;
+            border-left: 4px solid #0066cc;
+        }
+
+        .feature-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin: 15px 0;
+        }
+
+        .feature-box {
+            background: #f9f9f9;
+            padding: 15px;
+            border-radius: 6px;
+            border: 1px solid #e0e0e0;
+        }
+
+        .feature-box h4 {
+            color: #0066cc;
+            margin-bottom: 8px;
+        }
+
+        .warning {
+            background: #fff3cd;
+            border-left: 4px solid #ff9800;
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 4px;
+        }
+
+        .code-block {
+            background: #2d2d2d;
+            color: #f8f8f2;
+            padding: 15px;
+            border-radius: 6px;
+            overflow-x: auto;
+            margin: 15px 0;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+        }
+
+        .repo-structure {
+            background: #f5f5f5;
+            padding: 15px;
+            border-radius: 6px;
+            font-family: 'Courier New', monospace;
+            margin: 15px 0;
+            overflow-x: auto;
+        }
+
+        .highlight {
+            background: #fffacd;
+            padding: 2px 6px;
+            border-radius: 3px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 15px 0;
+        }
+
+        th, td {
+            border: 1px solid #ddd;
+            padding: 12px;
+            text-align: left;
+        }
+
+        th {
+            background: #f5f5f5;
+            font-weight: bold;
+        }
+
+        .page-break {
+            page-break-before: always;
+            margin-top: 40px;
+        }
+
+        footer {
+            margin-top: 40px;
+            padding-top: 20px;
+            border-top: 1px solid #ddd;
+            color: #999;
+            font-size: 0.9em;
+        }
+
+        @media print {
+            body {
+                padding: 0;
+            }
+            .container {
+                max-width: 100%;
+            }
+            h2 {
+                page-break-after: avoid;
+            }
+            .section {
+                page-break-inside: avoid;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎯 Offertio</h1>
+        <p class="subtitle">DACH-fokussierte Quoting & Invoicing SaaS für Handwerksbetriebe und kleine Serviceunternehmen</p>
+
+        <p style="text-align: center; color: #666; margin-bottom: 30px;">Zusammenfassung des Repositories für Claude AI</p>
+
+        <!-- ÜBERBLICK -->
+        <div class="section">
+            <h2>📋 Überblick</h2>
+            <p><strong>Offertio</strong> ist eine moderne SaaS-Anwendung, die es Handwerksbetrieben und kleinen Serviceunternehmen in Deutschland, Österreich und der Schweiz ermöglicht, professionelle Angebote und Rechnungen schnell und einfach zu erstellen, zu verwalten und zu versenden.</p>
+
+            <p>Die Lösung konzentriert sich auf <strong>Benutzerfreundlichkeit</strong>, <strong>mobile-first Design</strong>, und <strong>lokale Compliance</strong> (DACH-spezifische Anforderungen wie Schweizer QR-Rechnungen und deutsche ZUGFeRD e-Invoices).</p>
+
+            <div class="warning">
+                <strong>Kernversprechen:</strong> Schnell onboarden → Sofort Angebote/Rechnungen erstellen → Professionelle PDFs versenden → Dokumenthistorie pro Kunde verwalten
+            </div>
+        </div>
+
+        <!-- PRODUKTBEREICH -->
+        <div class="section">
+            <h2>✨ Produktbereich</h2>
+            <p>Offertio deckt folgende Funktionalitäten ab:</p>
+
+            <div class="feature-grid">
+                <div class="feature-box">
+                    <h4>🔐 Authentifizierung & Onboarding</h4>
+                    <p>Email-basierte Authentifizierung mit Supabase, Benutzerprofile und schneller Onboarding-Flow</p>
+                </div>
+                <div class="feature-box">
+                    <h4>📄 Dokument-Verwaltung</h4>
+                    <p>Erstellung und Verwaltung von Angeboten (Offerten) und Rechnungen</p>
+                </div>
+                <div class="feature-box">
+                    <h4>📁 Kundenordner</h4>
+                    <p>Gruppierte Dokumenthistorie pro Kunde, zur besseren Verwaltung</p>
+                </div>
+                <div class="feature-box">
+                    <h4>🎨 PDF-Generierung</h4>
+                    <p>Professionelle PDF-Generierung mit Firmenlogo und Branding</p>
+                </div>
+                <div class="feature-box">
+                    <h4>🇨🇭 Schweizer QR-Rechnungen</h4>
+                    <p>QR-Code-Unterstützung für Schweizer Rechnungen</p>
+                </div>
+                <div class="feature-box">
+                    <h4>🇩🇪 Deutsche ZUGFeRD e-Invoices</h4>
+                    <p>XML-Embedding für Compliance in Deutschland</p>
+                </div>
+                <div class="feature-box">
+                    <h4>📊 Vorlage-Verwaltung</h4>
+                    <p>Wiederverwendbare Vorlagen für häufige Positionen</p>
+                </div>
+                <div class="feature-box">
+                    <h4>📥 CSV Export</h4>
+                    <p>Export für Buchhaltungssoftware und Handoff</p>
+                </div>
+                <div class="feature-box">
+                    <h4>💳 Pricing & Upgrades</h4>
+                    <p>Free-Plan mit Dokumentlimitierungen, Upgrade zu bezahlten Plänen</p>
+                </div>
+                <div class="feature-box">
+                    <h4>🗑️ Konten-Management</h4>
+                    <p>Kontolöschung und DSGVO-Compliance</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- WAS OFFERTIO NICHT IST -->
+        <div class="section">
+            <h2>❌ Was Offertio NICHT ist</h2>
+            <ul>
+                <li><strong>Kein vollständiges CRM</strong> – Keine Pipeline-Verwaltung oder umfassende Lead-Verwaltung</li>
+                <li><strong>Keine Buchhaltungssoftware</strong> – Keine Geldverwaltung oder Tracking</li>
+                <li><strong>Keine Backoffice-Lösung</strong> – Eher lean und fokussiert</li>
+                <li><strong>Keine komplexe ERP-Software</strong> – Verzichtet auf unnötige Features für Handwerker</li>
+            </ul>
+        </div>
+
+        <!-- TECH STACK -->
+        <div class="section">
+            <h2>⚙️ Technischer Stack</h2>
+
+            <div class="tech-stack">
+                <h3 style="margin-top: 0;">Frontend & Framework</h3>
+                <ul>
+                    <li><strong>Next.js 15</strong> mit App Router für moderne Server-Side Rendering</li>
+                    <li><strong>React 19</strong> für UI-Komponenten</li>
+                    <li><strong>TypeScript</strong> für Typsicherheit</li>
+                    <li><strong>Tailwind CSS</strong> für Styling</li>
+                    <li><strong>Framer Motion</strong> für Animationen</li>
+                </ul>
+            </div>
+
+            <div class="tech-stack">
+                <h3 style="margin-top: 0;">Backend & Datenbanken</h3>
+                <ul>
+                    <li><strong>Supabase</strong> für Authentifizierung, PostgreSQL-Datenbank, und Row-Level Security (RLS)</li>
+                    <li><strong>Supabase Storage</strong> für Logo-Uploads</li>
+                    <li><strong>SQL Migrations</strong> für versionierte Schema-Evolution</li>
+                </ul>
+            </div>
+
+            <div class="tech-stack">
+                <h3 style="margin-top: 0;">PDF & Dokumenten-Generierung</h3>
+                <ul>
+                    <li><strong>@react-pdf/renderer</strong> für React-basierte PDF-Generierung</li>
+                    <li><strong>pdf-lib</strong> für Post-Processing und ZUGFeRD-Embedding</li>
+                    <li><strong>swissqrbill</strong> für Schweizer QR-Code-Generierung</li>
+                    <li><strong>xmlbuilder2</strong> für ZUGFeRD XML-Generierung</li>
+                </ul>
+            </div>
+
+            <div class="tech-stack">
+                <h3 style="margin-top: 0;">Externe Services & Integrationen</h3>
+                <ul>
+                    <li><strong>Upstash Redis</strong> für Rate Limiting in Production</li>
+                    <li><strong>Resend</strong> für Email-Versand</li>
+                    <li><strong>Lemon Squeezy</strong> für Subscription-Checkout und Webhooks</li>
+                    <li><strong>Vercel Analytics</strong>, <strong>Google Analytics 4</strong>, <strong>Meta Pixel</strong> (optional)</li>
+                </ul>
+            </div>
+
+            <div class="tech-stack">
+                <h3 style="margin-top: 0;">Testing & Development</h3>
+                <ul>
+                    <li><strong>Vitest</strong> + <strong>Testing Library</strong> für Unit/Integration Tests</li>
+                    <li><strong>Playwright</strong> für E2E-Tests</li>
+                    <li><strong>Zod</strong> für Validierung und Type-Safety</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- REPOSITORY STRUKTUR -->
+        <div class="section">
+            <h2>📁 Repository-Struktur</h2>
+
+            <div class="repo-structure">
+<pre>offertio/
+├── src/
+│   ├── app/                    # Next.js App Router Routes
+│   │   ├── (auth)/             # Öffentliche Auth & Legal Pages
+│   │   ├── (app)/              # Geschützte App-Routes
+│   │   ├── api/                # Server-Side API Endpoints
+│   │   └── middleware.ts       # Zentrale Auth & Security
+│   ├── components/             # Reusable React Komponenten
+│   │   ├── Landing             # Marketing-Seite
+│   │   ├── App                 # Protected Product UI
+│   │   ├── PDF                 # PDF-Rendering Komponente
+│   │   └── Utility Components
+│   ├── lib/                    # Domain Logic & Infrastructure
+│   │   ├── dach.ts             # DACH-spezifische Logik
+│   │   ├── payment.ts          # Pricing & Checkout
+│   │   ├── security.ts         # Validierung & Origin-Checks
+│   │   ├── rate-limit.ts       # Rate Limiting
+│   │   ├── qr-bill.ts          # Schweizer QR-Codes
+│   │   ├── zugferd-*.ts        # ZUGFeRD XML & Embedding
+│   │   └── supabase-*.ts       # Supabase Clients
+│   └── __tests__/              # Vitest Test Suite
+├── supabase/
+│   └── migrations/             # SQL Schema Migrations
+├── public/                     # Statische Assets
+├── docs/                       # Dokumentation
+└── e2e/                        # End-to-End Tests</pre>
+            </div>
+        </div>
+
+        <!-- CORE ARCHITEKTUR -->
+        <div class="section">
+            <h2>🏗️ Core Architektur</h2>
+
+            <h3>Anfrage-Flow</h3>
+            <ol>
+                <li>Public Traffic landet auf <span class="highlight">/</span> (Marketing-Seite)</li>
+                <li>Benutzer authentifizieren sich via <span class="highlight">/login</span></li>
+                <li><span class="highlight">src/middleware.ts</span> enforced Supabase Sessions</li>
+                <li>Benutzer müssen Onboarding abschließen</li>
+                <li>Geschützte Routes ermöglichen Dokumenterstellung, PDF-Generierung und Versand</li>
+                <li>API Endpoints erzwingen Origin-Checks, Auth-Checks, Payload-Limits und Rate Limits</li>
+            </ol>
+
+            <h3>Sicherheitsebenen</h3>
+            <ul>
+                <li><strong>Browser & Transport:</strong> CSP mit Nonce, strenge Response Headers, Frame Denial</li>
+                <li><strong>Request Validation:</strong> Origin-Checks, Payload Size Limits, Input Normalisierung</li>
+                <li><strong>Abuse Controls:</strong> Upstash Rate Limiting, In-Memory Fallback für Dev</li>
+                <li><strong>Data Access:</strong> Row-Level Security (RLS), Service-Role Client Isolation, HMAC-Validierung</li>
+            </ul>
+        </div>
+
+        <!-- DOKUMENTEN-WORKFLOW -->
+        <div class="section">
+            <h2>📊 Dokumenten-Workflow</h2>
+
+            <p>Der zentrale Product-Workflow folgt diesem Pattern:</p>
+
+            <ol>
+                <li><strong>Erstellung:</strong> Benutzer wählt "Offerte" oder "Rechnung"</li>
+                <li><strong>Erfassung:</strong> Eingabe von Kundendaten, Positionen, Preisen</li>
+                <li><strong>Validierung:</strong> Client-seitige Vorschau, Server-seitige Limit-Checks</li>
+                <li><strong>PDF-Generierung:</strong> React-PDF-Component mit Branding & Logos</li>
+                <li><strong>Post-Processing:</strong>
+                    <ul>
+                        <li>Schweizer Rechnungen: QR-Code-Embedding</li>
+                        <li>Deutsche Rechnungen: ZUGFeRD XML-Embedding</li>
+                    </ul>
+                </li>
+                <li><strong>Versand/Export:</strong> Email via Resend oder Download als PDF</li>
+                <li><strong>Persistierung:</strong> Dokumentzähler inkrementieren (Free-Plan Limit), State speichern</li>
+            </ol>
+
+            <p><strong>Besonderheit:</strong> Entwürfe werden Client-seitig persistent gemacht für UX-Kontinuität.</p>
+        </div>
+
+        <!-- DACH LOGIK -->
+        <div class="section">
+            <h2>🌍 DACH-Spezifische Logik</h2>
+
+            <p>Eine der wichtigsten Designentscheidungen ist die <span class="highlight">src/lib/dach.ts</span> Abstraktion, die Land-spezifische Anforderungen zentralisiert:</p>
+
+            <table>
+                <tr>
+                    <th>Land</th>
+                    <th>Besonderheiten</th>
+                    <th>Spezifische Features</th>
+                </tr>
+                <tr>
+                    <td><strong>Schweiz (CH)</strong></td>
+                    <td>QR-Rechnungen, SEPA-Zahlungen</td>
+                    <td>QR-Code-Generierung in Rechnungen</td>
+                </tr>
+                <tr>
+                    <td><strong>Deutschland (DE)</strong></td>
+                    <td>Extensive e-Invoice Anforderungen</td>
+                    <td>ZUGFeRD XML-Embedding in PDFs</td>
+                </tr>
+                <tr>
+                    <td><strong>Österreich (AT)</strong></td>
+                    <td>EU-Standard E-Invoicing</td>
+                    <td>ZUGFeRD XML-Support (optional)</td>
+                </tr>
+            </table>
+
+            <p>Die DACH-Logik umfasst auch:</p>
+            <ul>
+                <li>Land-spezifische MwSt. Labels und Sätze</li>
+                <li>Erforderliche Steuer- und Firmenfelder pro Land</li>
+                <li>Postleitzahl-Länge-Validierung</li>
+                <li>Anforderungen für Leistungsdatum</li>
+            </ul>
+        </div>
+
+        <!-- DATENBANK -->
+        <div class="section">
+            <h2>💾 Datenbank-Modell</h2>
+
+            <p>Die wichtigsten Tabellen:</p>
+
+            <h3>profiles</h3>
+            <ul>
+                <li>Auth-verlinkte Benutzer-Identität</li>
+                <li>Geschäftsdetails (Firmennname, Adresse)</li>
+                <li>Steuernummern und Identifikatoren</li>
+                <li>Land und Sprache</li>
+                <li>Plan-Status (Free/Paid)</li>
+                <li>Onboarding-Status</li>
+                <li>Logo URL</li>
+            </ul>
+
+            <h3>dokumente</h3>
+            <ul>
+                <li>Angebote und Rechnungen</li>
+                <li>Verlinkt zu Profil und Kundenordner</li>
+                <li>Vollständige Dokument-Metadaten</li>
+            </ul>
+
+            <h3>kundenordner</h3>
+            <ul>
+                <li>Kundengruppen unter einem Profil</li>
+                <li>Dokumenthistorie pro Kunde</li>
+            </ul>
+
+            <h3>vorlagen</h3>
+            <ul>
+                <li>Wiederverwendbare Positionen-Templates</li>
+                <li>Verlinkt zu Profil</li>
+            </ul>
+
+            <h3>dokument_counter</h3>
+            <ul>
+                <li>Server-seitige monatliche Dokumentzählung</li>
+                <li>Enforces Free-Plan Limit sicher</li>
+            </ul>
+
+            <h3>Weitere Tabellen</h3>
+            <ul>
+                <li><strong>waitlist</strong> – Historische Lead-Erfassung (nicht mehr primärer Funnel)</li>
+                <li><strong>Storage (logos bucket)</strong> – Hochgeladene Firmenlogos mit RLS-Policies</li>
+            </ul>
+        </div>
+
+        <div class="page-break"></div>
+
+        <!-- SICHERHEIT -->
+        <div class="section">
+            <h2>🔒 Sicherheitsfeatures</h2>
+
+            <p>Sicherheit ist in mehreren Schichten implementiert:</p>
+
+            <h3>Transport & Browser</h3>
+            <ul>
+                <li>Strikte Response Headers in <span class="highlight">next.config.ts</span></li>
+                <li>Nonce-basiertes CSP (Content Security Policy)</li>
+                <li>Strict-Transport-Security (HSTS)</li>
+                <li>Frame-Denial (X-Frame-Options)</li>
+            </ul>
+
+            <h3>Request Validation</h3>
+            <ul>
+                <li>Origin-Validierung für sensitive APIs</li>
+                <li>Payload-Size-Limits</li>
+                <li>Input-Normalisierung mit Zod</li>
+                <li>Sichere Document IDs und Base64 Guards</li>
+            </ul>
+
+            <h3>Authentifizierung & Authorization</h3>
+            <ul>
+                <li>Supabase Auth mit Sessions</li>
+                <li>Row-Level Security (RLS) in PostgreSQL</li>
+                <li>Service-Role Client nur in Server-Code</li>
+            </ul>
+
+            <h3>Abuse Prevention</h3>
+            <ul>
+                <li>Upstash-basiertes Rate Limiting in Production</li>
+                <li>In-Memory Fallback für Local Development</li>
+                <li>HMAC-Validierung für Lemon Squeezy Webhooks</li>
+            </ul>
+        </div>
+
+        <!-- TESTING -->
+        <div class="section">
+            <h2>✅ Testing & Qualität</h2>
+
+            <p><strong>Status:</strong> 180+ Tests via Vitest, Production Build erfolgreich</p>
+
+            <h3>Testabdeckung</h3>
+            <ul>
+                <li><strong>Domain Logic:</strong> DACH-Logik, Profile, Payment, Rate Limiting</li>
+                <li><strong>Route Logic:</strong> Protected Flows, Email Delivery, Success Flows</li>
+                <li><strong>Rendering:</strong> PDF-Rendering, Landing Page Brand Consistency</li>
+                <li><strong>Integrations:</strong> Webhooks, Exports, Customer Folders</li>
+            </ul>
+
+            <h3>Nächste Schritte</h3>
+            <ul>
+                <li>Browser-Level E2E Suite via Playwright (Foundation gelegt)</li>
+                <li>Performance & Load Testing</li>
+            </ul>
+        </div>
+
+        <!-- ENVIRONMENT VARIABLEN -->
+        <div class="section">
+            <h2>🔧 Environment & Konfiguration</h2>
+
+            <p>Offertio ist so designt, dass viele Services optional sind:</p>
+
+            <div class="feature-grid">
+                <div class="feature-box">
+                    <h4>Ohne Resend</h4>
+                    <p>Fallback auf Client-seitige Share/Download statt Server Email</p>
+                </div>
+                <div class="feature-box">
+                    <h4>Ohne Lemon Squeezy</h4>
+                    <p>Upgrade UI sichtbar, Checkout nicht live</p>
+                </div>
+                <div class="feature-box">
+                    <h4>Ohne Upstash</h4>
+                    <p>In-Memory Rate-Limit für Development</p>
+                </div>
+                <div class="feature-box">
+                    <h4>Ohne Analytics</h4>
+                    <p>GA4/Meta Pixel bleiben No-Ops</p>
+                </div>
+            </div>
+
+            <p>Vollständiger Environment-Matrix in <span class="highlight">docs/OPERATIONS.md</span></p>
+        </div>
+
+        <!-- API ENDPOINTS -->
+        <div class="section">
+            <h2>🔗 Wichtige API Endpoints</h2>
+
+            <h3>Public Routes</h3>
+            <ul>
+                <li><span class="highlight">GET /</span> – Marketing-Seite</li>
+                <li><span class="highlight">GET /login</span> – Auth Entry Point</li>
+                <li><span class="highlight">GET /callback</span> – OAuth Redirect Handler</li>
+                <li><span class="highlight">GET /datenschutz, /agb, /impressum</span> – Legal Pages</li>
+            </ul>
+
+            <h3>Protected Routes</h3>
+            <ul>
+                <li><span class="highlight">GET /onboarding</span> – Onboarding Flow</li>
+                <li><span class="highlight">GET /dashboard</span> – Workspace / Übersicht</li>
+                <li><span class="highlight">GET /dokument/neu</span> – Dokumenten-Editor</li>
+                <li><span class="highlight">GET /dokument/success</span> – Success Page</li>
+                <li><span class="highlight">GET /einstellungen/profil</span> – Profile Settings</li>
+                <li><span class="highlight">GET /einstellungen/vorlagen</span> – Template Management</li>
+            </ul>
+
+            <h3>API Endpoints</h3>
+            <ul>
+                <li><span class="highlight">POST /api/dokument/check-limit</span> – Free-Plan Limit Check</li>
+                <li><span class="highlight">POST /api/send-offerte</span> – Email Versand</li>
+                <li><span class="highlight">POST /api/e-rechnung/generate</span> – ZUGFeRD XML</li>
+                <li><span class="highlight">POST /api/account/delete</span> – Account Löschung</li>
+                <li><span class="highlight">POST /api/webhooks/lemon-squeezy</span> – Subscription Webhooks</li>
+            </ul>
+        </div>
+
+        <!-- DEVELOPMENT SETUP -->
+        <div class="section">
+            <h2>🚀 Local Development Setup</h2>
+
+            <div class="code-block">
+# 1. Dependencies installieren
+npm install
+
+# 2. Environment-Variablen konfigurieren
+cp .env.local.example .env.local
+
+# 3. Dev Server starten
+npm run dev
+
+# 4. Browser öffnen
+http://localhost:3000</div>
+
+            <h3>Verfügbare Scripts</h3>
+            <ul>
+                <li><span class="highlight">npm run dev</span> – Local Dev Server</li>
+                <li><span class="highlight">npm run build</span> – Production Build</li>
+                <li><span class="highlight">npm run start</span> – Production Server Lokal</li>
+                <li><span class="highlight">npm test</span> – Vitest einmalig</li>
+                <li><span class="highlight">npm run test:watch</span> – Vitest Watch Mode</li>
+                <li><span class="highlight">npm run test:e2e</span> – Playwright Tests</li>
+            </ul>
+        </div>
+
+        <!-- ARCHITEKTUR STÄRKEN -->
+        <div class="section">
+            <h2>💪 Architektur-Stärken</h2>
+
+            <ul>
+                <li><strong>Klare Route-Separation:</strong> Public → Protected → API ist sehr sauber</li>
+                <li><strong>Zentralisierte DACH-Logik:</strong> Keine verstreu Compliance-Regeln</li>
+                <li><strong>Migration-backed Schema:</strong> Versionierte SQL Migrations</li>
+                <li><strong>Starke Sicherheit:</strong> Gut für ein Early-Stage SaaS</li>
+                <li><strong>Gute Client-Separation:</strong> Browser, Server, Admin Supabase Clients</li>
+                <li><strong>Optionale Integrationen:</strong> Services sind graceful fallback</li>
+            </ul>
+        </div>
+
+        <!-- ARCHITEKTUR GRENZEN -->
+        <div class="section">
+            <h2>📝 Bekannte Architektur-Grenzen</h2>
+
+            <ul>
+                <li><strong>Kein Browser-Level E2E:</strong> Noch keine umfassende Playwright Suite (Foundation gelegt)</li>
+                <li><strong>Premium Flows:</strong> Mehrere Flows hängen von externen Service-Konfiguration ab</li>
+                <li><strong>Client-Side State:</strong> Editor-State nutzt Client-seitige Draft-Persistence für UX</li>
+            </ul>
+
+            <p style="margin-top: 15px;"><strong>Bewertung:</strong> Dies sind normale Limitierungen für ein Early-Stage Produkt und sollten mit Wachstum adressiert werden.</p>
+        </div>
+
+        <!-- KEY FEATURES DEEP DIVE -->
+        <div class="section">
+            <h2>🎯 Key Features – Tiefere Einblicke</h2>
+
+            <h3>Onboarding Flow</h3>
+            <p>Der Onboarding-Flow ist bewusst kurz gestaltet:</p>
+            <ol>
+                <li>Benutzer authentifiziert sich</li>
+                <li>Grunddaten (Land, Firmennname, Steuernummer) erfassen</li>
+                <li>Logo hochladen (optional)</li>
+                <li>Zu Dashboard weiterleiten</li>
+                <li>Compliance-Check: Benutzer mit unvollständigen Profilen werden zu Einstellungen umgeleitet</li>
+            </ol>
+
+            <h3>Free vs. Paid Plans</h3>
+            <ul>
+                <li><strong>Free Plan:</strong> Limitierter Dokumentenzähler (z.B. 5 Dokumente/Monat)</li>
+                <li><strong>Paid Plans:</strong> Unbegrenzte Dokumente, erweiterte Features</li>
+                <li><strong>Enforcement:</strong> Server-seitig via <span class="highlight">dokument_counter</span> Table</li>
+                <li><strong>Checkout:</strong> Lemon Squeezy Integration für Zahlungen</li>
+            </ul>
+
+            <h3>Logo Upload & Branding</h3>
+            <ul>
+                <li>Logos werden in Supabase Storage gepuffert</li>
+                <li>RLS-Policies schützen gegen Unbefugte Zugriffe</li>
+                <li>PDFs rendern Logos in Dokumenten-Header</li>
+            </ul>
+        </div>
+
+        <!-- GESCHÄFTSMODELL -->
+        <div class="section">
+            <h2>💰 Geschäftsmodell & Monetisierung</h2>
+
+            <ul>
+                <li><strong>Free Plan:</strong> Limited monthly documents, basic features</li>
+                <li><strong>Pro Plan:</strong> Unlimited documents, advanced templates, priority support</li>
+                <li><strong>Checkout Flow:</strong> Lemon Squeezy-powered subscriptions</li>
+                <li><strong>Webhook Validation:</strong> HMAC-signed webhook validation von Lemon Squeezy</li>
+                <li><strong>Analytics:</strong> GA4, Meta Pixel optional für Conversion Tracking</li>
+            </ul>
+        </div>
+
+        <!-- DOKUMENTATION -->
+        <div class="section">
+            <h2>📚 Dokumentation & Research</h2>
+
+            <p>Das Repository enthält umfassende Dokumentation:</p>
+
+            <h3>Kern-Dokumentation</h3>
+            <ul>
+                <li><span class="highlight">docs/ARCHITECTURE.md</span> – Technische Übersicht</li>
+                <li><span class="highlight">docs/OPERATIONS.md</span> – Betrieb und Deployment</li>
+                <li><span class="highlight">docs/DUE_DILIGENCE.md</span> – Compliance & Sicherheit</li>
+            </ul>
+
+            <h3>Produkt-Dokumentation</h3>
+            <ul>
+                <li><span class="highlight">docs/product/OFFERTIO_PRODUCT_LOGIC.md</span> – Produktphilosophie</li>
+                <li><span class="highlight">docs/product/OFFERTIO_PRODUCT_DOCTRINE.md</span> – Design Prinzipien</li>
+                <li><span class="highlight">docs/product/OFFERTIO_IMPLEMENTATION_SPEC.md</span> – Implementierungs-Details</li>
+            </ul>
+
+            <h3>GTM & Launch</h3>
+            <ul>
+                <li><span class="highlight">docs/go-to-market/</span> – Marketing Pläne & Strategien</li>
+                <li><span class="highlight">docs/launch/</span> – Launch Checklisten & Memos</li>
+                <li><span class="highlight">docs/exit/</span> – Exit-Vorbereitung & Diligence</li>
+            </ul>
+        </div>
+
+        <!-- ZUSAMMENFASSUNG -->
+        <div class="section">
+            <h2>🎬 Zusammenfassung</h2>
+
+            <p><strong>Offertio</strong> ist ein gut-engineertes, DACH-fokussiertes SaaS für Angebots- und Rechnungserstellung mit folgenden Highlights:</p>
+
+            <ul>
+                <li>✅ <strong>Modern Tech Stack:</strong> Next.js 15, React 19, TypeScript, Supabase</li>
+                <li>✅ <strong>Compliance-First:</strong> Schweizer QR-Rechnungen, deutsche ZUGFeRD, Mehrwert-Steuer-Handling</li>
+                <li>✅ <strong>Mobile-First:</strong> Responsive Design für On-the-Go Nutzung</li>
+                <li>✅ <strong>Strong Security:</strong> CSP, RLS, Origin Checks, Rate Limiting</li>
+                <li>✅ <strong>Well Tested:</strong> 180+ Tests, Production-ready</li>
+                <li>✅ <strong>Well Documented:</strong> Umfassende Docs für Entwicklung, Betrieb und Produkt</li>
+                <li>✅ <strong>Graceful Fallbacks:</strong> Services sind optional, anstatt Required</li>
+            </ul>
+
+            <p style="margin-top: 20px;"><strong>Ideal für:</strong> Handwerksbetriebe und kleine Serviceunternehmen in DACH-Region, die schnell professionelle Dokumente erstellen müssen.</p>
+        </div>
+
+        <footer>
+            <p>Offertio Repository Summary | Generiert: 11. April 2026 | Quelle: https://github.com/qati05/offertio</p>
+        </footer>
+    </div>
+</body>
+</html>
