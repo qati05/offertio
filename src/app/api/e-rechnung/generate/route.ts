@@ -16,7 +16,7 @@ import { isAllowedOrigin, isValidBase64 } from "@/lib/security";
 import { rateLimitAsync } from "@/lib/rate-limit";
 import { buildZugferdXml } from "@/lib/zugferd-xml";
 import { embedZugferdXml } from "@/lib/zugferd-embedder";
-import type { OfferteData } from "@/lib/types";
+import type { OfferteData, Profile } from "@/lib/types";
 
 const MAX_BODY_BYTES = 12 * 1024 * 1024; // 12 MB
 
@@ -25,6 +25,59 @@ function json(body: unknown, status = 200) {
     status,
     headers: { "Cache-Control": "no-store" },
   });
+}
+
+type ServerProfile = Pick<
+  Profile,
+  | "firmenname"
+  | "vorname"
+  | "nachname"
+  | "adresse"
+  | "plz"
+  | "ort"
+  | "telefon"
+  | "iban"
+  | "bic"
+  | "uid_mwst"
+  | "steuernummer"
+  | "fn_nr"
+  | "logo_url"
+  | "land"
+  | "sprache"
+  | "beruf"
+  | "zahlungsfrist"
+  | "plan"
+  | "kleinunternehmer"
+  | "pdf_template"
+  | "created_at"
+> & { email?: string | null };
+
+function profileFromServer(user: { id: string; email?: string | null }, profile: ServerProfile): Profile {
+  return {
+    id: user.id,
+    email: user.email ?? profile.email ?? "",
+    firmenname: profile.firmenname ?? "",
+    vorname: profile.vorname ?? "",
+    nachname: profile.nachname ?? "",
+    adresse: profile.adresse ?? "",
+    plz: profile.plz ?? "",
+    ort: profile.ort ?? "",
+    telefon: profile.telefon ?? "",
+    iban: profile.iban ?? "",
+    bic: profile.bic ?? "",
+    uid_mwst: profile.uid_mwst ?? "",
+    steuernummer: profile.steuernummer ?? "",
+    fn_nr: profile.fn_nr ?? "",
+    logo_url: profile.logo_url ?? "",
+    land: profile.land,
+    sprache: profile.sprache ?? "de",
+    beruf: profile.beruf ?? "",
+    zahlungsfrist: profile.zahlungsfrist ?? 30,
+    plan: profile.plan ?? "free",
+    kleinunternehmer: profile.kleinunternehmer ?? false,
+    pdf_template: profile.pdf_template,
+    created_at: profile.created_at ?? new Date(0).toISOString(),
+  };
 }
 
 export async function POST(request: NextRequest) {
@@ -85,10 +138,54 @@ export async function POST(request: NextRequest) {
     return json({ error: "invoiceData.positionen darf nicht leer sein." }, 400);
   }
 
+  const { data: serverProfile, error: profileError } = await supabase
+    .from("profiles")
+    .select(
+      [
+        "email",
+        "firmenname",
+        "vorname",
+        "nachname",
+        "adresse",
+        "plz",
+        "ort",
+        "telefon",
+        "iban",
+        "bic",
+        "uid_mwst",
+        "steuernummer",
+        "fn_nr",
+        "logo_url",
+        "land",
+        "sprache",
+        "beruf",
+        "zahlungsfrist",
+        "plan",
+        "kleinunternehmer",
+        "pdf_template",
+        "created_at",
+      ].join(","),
+    )
+    .eq("id", user.id)
+    .maybeSingle<ServerProfile>();
+
+  if (profileError || !serverProfile) {
+    return json({ error: "Profil konnte nicht geladen werden." }, 400);
+  }
+
+  if (serverProfile.land !== "DE") {
+    return json({ error: "E-Rechnungen im ZUGFeRD-Format sind nur fuer deutsche Profile verfuegbar." }, 400);
+  }
+
+  const serverAuthoritativeInvoiceData: OfferteData = {
+    ...invoiceData,
+    profil: profileFromServer(user, serverProfile),
+  };
+
   // Generate ZUGFeRD XML
   let xmlString: string;
   try {
-    xmlString = buildZugferdXml(invoiceData, leistungsdatum);
+    xmlString = buildZugferdXml(serverAuthoritativeInvoiceData, leistungsdatum);
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
     return json({ error: `XML-Generierung fehlgeschlagen: ${msg}` }, 500);

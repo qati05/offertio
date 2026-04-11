@@ -5,6 +5,9 @@ const deleteUserMock = vi.fn();
 const removeMock = vi.fn();
 const uploadMock = vi.fn();
 const rateLimitMock = vi.fn();
+const serverProfileMock = vi.fn();
+const buildZugferdXmlMock = vi.fn();
+const embedZugferdXmlMock = vi.fn();
 
 vi.mock("server-only", () => ({}));
 
@@ -12,6 +15,18 @@ vi.mock("@/lib/supabase-server", () => ({
   createSupabaseServer: vi.fn(async () => ({
     auth: {
       getUser: getUserMock,
+    },
+    from: (table: string) => {
+      if (table !== "profiles") {
+        throw new Error(`Unexpected server table in test: ${table}`);
+      }
+      return {
+        select: vi.fn(() => ({
+          eq: vi.fn(() => ({
+            maybeSingle: serverProfileMock,
+          })),
+        })),
+      };
     },
   })),
 }));
@@ -26,6 +41,14 @@ vi.mock("@/lib/logger", () => ({
     info: vi.fn(),
     warn: vi.fn(),
   },
+}));
+
+vi.mock("@/lib/zugferd-xml", () => ({
+  buildZugferdXml: buildZugferdXmlMock,
+}));
+
+vi.mock("@/lib/zugferd-embedder", () => ({
+  embedZugferdXml: embedZugferdXmlMock,
 }));
 
 function makeAdminMock() {
@@ -119,6 +142,35 @@ beforeEach(() => {
   uploadMock.mockResolvedValue({ error: null });
   removeMock.mockResolvedValue({ error: null });
   rateLimitMock.mockResolvedValue({ ok: true });
+  serverProfileMock.mockResolvedValue({
+    data: {
+      email: "owner@server.test",
+      firmenname: "Server GmbH",
+      vorname: "Server",
+      nachname: "Owner",
+      adresse: "Serverstrasse 1",
+      plz: "10115",
+      ort: "Berlin",
+      telefon: "+49 30 123",
+      iban: "DE89370400440532013000",
+      bic: "COBADEFFXXX",
+      uid_mwst: "DE123456789",
+      steuernummer: "13/123/12345",
+      fn_nr: "",
+      logo_url: "",
+      land: "DE",
+      sprache: "de",
+      beruf: "Beratung",
+      zahlungsfrist: 14,
+      plan: "free",
+      kleinunternehmer: false,
+      pdf_template: "classic",
+      created_at: "2026-01-01T00:00:00.000Z",
+    },
+    error: null,
+  });
+  buildZugferdXmlMock.mockReturnValue("<xml />");
+  embedZugferdXmlMock.mockResolvedValue(Buffer.from("%PDF-hardened\n"));
 });
 
 describe("account delete hardening", () => {
@@ -166,5 +218,96 @@ describe("document save hardening", () => {
     expect(uploadMock).toHaveBeenCalledOnce();
     expect(removeMock).toHaveBeenCalledOnce();
     expect(removeMock.mock.calls[0][0][0]).toMatch(/^user-1\/OF-2026-001_\d+\.pdf$/);
+  });
+});
+
+describe("e-rechnung generation hardening", () => {
+  const baseInvoiceData = {
+    nummer: "RG-2026-001",
+    datum: "2026-04-11",
+    kunde: {
+      name: "Kunde AG",
+      firma: "Kunde AG",
+      adresse: "Kundenstrasse 2",
+      adresse2: "",
+      plz: "8000",
+      ort: "Zürich",
+      email: "kunde@example.com",
+      uid_mwst: "DE987654321",
+    },
+    positionen: [{ bezeichnung: "Service", einheit: "Std", menge: 1, preis: 100 }],
+    mwstSatz: 19,
+    notiz: "",
+    profil: {
+      id: "attacker-profile",
+      email: "attacker@example.com",
+      firmenname: "Client Spoof GmbH",
+      vorname: "Client",
+      nachname: "Spoof",
+      adresse: "Spoofstrasse 9",
+      plz: "99999",
+      ort: "Spoofstadt",
+      telefon: "",
+      iban: "DE00111111111111111111",
+      uid_mwst: "DE000000000",
+      steuernummer: "spoof-tax",
+      logo_url: "",
+      land: "DE",
+      sprache: "de",
+      beruf: "Spoofing",
+      zahlungsfrist: 99,
+      plan: "free",
+      created_at: "2026-01-01T00:00:00.000Z",
+    },
+  };
+
+  it("uses the server-side profile instead of client-provided seller profile data", async () => {
+    const { POST } = await import("@/app/api/e-rechnung/generate/route");
+
+    const response = await POST(
+      sameOriginPost("/api/e-rechnung/generate", {
+        pdfBase64: Buffer.from("%PDF-1.4\n").toString("base64"),
+        invoiceData: baseInvoiceData,
+        leistungsdatum: "2026-04-11",
+      }),
+    );
+
+    expect(response.status).toBe(200);
+    expect(buildZugferdXmlMock).toHaveBeenCalledOnce();
+    const hardenedInvoiceData = buildZugferdXmlMock.mock.calls[0][0];
+    expect(hardenedInvoiceData.profil).toMatchObject({
+      id: "user-1",
+      email: "test@example.com",
+      firmenname: "Server GmbH",
+      adresse: "Serverstrasse 1",
+      steuernummer: "13/123/12345",
+      uid_mwst: "DE123456789",
+      zahlungsfrist: 14,
+    });
+    expect(hardenedInvoiceData.profil.firmenname).not.toBe("Client Spoof GmbH");
+  });
+
+  it("rejects ZUGFeRD generation when the authenticated server profile is not German", async () => {
+    serverProfileMock.mockResolvedValueOnce({
+      data: {
+        land: "CH",
+        firmenname: "Schweizer GmbH",
+        zahlungsfrist: 30,
+        plan: "free",
+        created_at: "2026-01-01T00:00:00.000Z",
+      },
+      error: null,
+    });
+    const { POST } = await import("@/app/api/e-rechnung/generate/route");
+
+    const response = await POST(
+      sameOriginPost("/api/e-rechnung/generate", {
+        pdfBase64: Buffer.from("%PDF-1.4\n").toString("base64"),
+        invoiceData: baseInvoiceData,
+      }),
+    );
+
+    expect(response.status).toBe(400);
+    expect(buildZugferdXmlMock).not.toHaveBeenCalled();
   });
 });
