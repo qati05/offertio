@@ -24,7 +24,7 @@ describe("landing funnel messaging", () => {
     render(createElement(LandingHero));
 
     expect(screen.getByText(/offerten und rechnungen/i)).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: /kostenlos starten/i })).toHaveAttribute("href", "/login");
+    expect(screen.getByRole("link", { name: /14 tage gratis testen/i })).toHaveAttribute("href", "/login");
     expect(screen.queryByText(/60 sekunden/i)).not.toBeInTheDocument();
     expect(screen.queryByText(/direkt per e-mail versenden/i)).not.toBeInTheDocument();
     expect(screen.queryByText(/ein klick reicht/i)).not.toBeInTheDocument();

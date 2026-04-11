@@ -32,6 +32,12 @@ export interface Profile {
   plan_expires_at?: string | null;
   /** Set when subscription is cancelled but still in grace period */
   plan_cancelled_at?: string | null;
+  /**
+   * Full-access trial expiry timestamp. While now() < trial_ends_at the
+   * user is treated as pro for feature gating (unlimited documents, all
+   * layouts). NULL means no trial.
+   */
+  trial_ends_at?: string | null;
   onboarding_complete?: boolean;
   pdf_template?: "classic" | "modern" | "minimal" | "professionell";
   /**

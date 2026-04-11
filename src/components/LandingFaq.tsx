@@ -5,24 +5,28 @@ import { motion, AnimatePresence } from "framer-motion";
 
 const items = [
   {
+    q: "Kann ich Offerten wirklich per WhatsApp senden?",
+    a: "Ja. Ein Tap öffnet WhatsApp mit einer fertigen Nachricht und einem sicheren Link zum PDF. Der Kunde bekommt die Offerte in demselben Chat, in dem er dich kontaktiert hat — nicht im SPAM-Ordner. Der Link ist 7 Tage gültig, genug für die typische Rückmeldung.",
+  },
+  {
+    q: "Wird die Swiss QR-Rechnung richtig erkannt?",
+    a: "Ja. Offertio erzeugt den Swiss QR-Code nach ISO 20022 mit QR-IBAN und QRR-Referenz — also genau so, wie ihn alle Schweizer Banken im E-Banking scannen. Kein Einzahlungsschein, kein manuelles Tippen der Referenz.",
+  },
+  {
+    q: "Funktioniert das auch für Deutschland und Österreich?",
+    a: "Ja. Für DE erzeugen wir ZUGFeRD 2.3 BASIC (Factur-X) als hybride PDF mit eingebettetem XML — pflichtkonform für die E-Rechnungspflicht. Für AT setzen wir die UID-Schwellen (€400/€10.000) und Pflichtfelder nach §11 öUStG automatisch. Du arbeitest mit einem Profil für alle drei Länder.",
+  },
+  {
+    q: "Was kostet der 14-Tage-Test?",
+    a: "Nichts. Keine Kreditkarte, keine automatische Verlängerung. 14 Tage lang alle Pro-Funktionen — danach automatisch Free (5 Dokumente/Monat) oder Upgrade. Du entscheidest, wenn du es real erlebt hast.",
+  },
+  {
     q: "Brauche ich technisches Wissen?",
-    a: "Nein. Offertio ist für Menschen, die ein Geschäft führen, nicht noch ein Tool lernen möchten. Wenn du eine WhatsApp-Nachricht schreiben kannst, kannst du Offertio bedienen.",
-  },
-  {
-    q: "Warum Mobile-first?",
-    a: "Weil kleine Betriebe selten dort arbeiten, wo ein Schreibtisch steht. Offertio passt dort, wo Kundengespräche und Einsätze wirklich passieren.",
-  },
-  {
-    q: "Kann ich professionell auftreten, ohne viel Zeit zu investieren?",
-    a: "Genau das ist die Idee: weniger Nacharbeit, saubere Dokumente und ein glaubwürdiger Auftritt. Die meisten Betriebe erstellen ihre erste Offerte in unter drei Minuten.",
-  },
-  {
-    q: "Ist Offertio nur für die Schweiz?",
-    a: "Nein. Offertio ist für CH, DE und AT gedacht. Währung, Steuerlogik und Zahlungsstandards passen sich automatisch an: Swiss QR in der Schweiz, SEPA in DE/AT und ZUGFeRD für Deutschland.",
+    a: "Nein. Wenn du eine WhatsApp-Nachricht schreiben kannst, kannst du Offertio bedienen. Als PWA läuft es direkt im Browser — kein App-Store, keine Installation, kein Training.",
   },
   {
     q: "Muss ich sofort Pro kaufen?",
-    a: "Nein. Starte kostenlos und nutze Offertio real. Pro ergibt erst Sinn, wenn es fester Teil deines Betriebs wird. Das merkst du selbst.",
+    a: "Nein. Nach dem 14-Tage-Test kannst du kostenlos weiter mit 5 Dokumenten/Monat arbeiten. Pro ergibt erst Sinn, wenn es fester Teil deines Betriebs wird — das merkst du selbst.",
   },
 ];
 

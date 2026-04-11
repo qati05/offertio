@@ -1,8 +1,12 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
 import {
   FREE_LIMIT,
+  TRIAL_DAYS,
   getPricing,
   isPro,
+  isInTrial,
+  trialDaysRemaining,
+  hasActiveAccess,
   getMonthlyDocCount,
   incrementMonthlyDocCount,
   canCreateDocument,
@@ -122,6 +126,18 @@ describe("payment.ts", () => {
       for (let i = 0; i < FREE_LIMIT; i++) incrementMonthlyDocCount();
       expect(canCreateDocument(undefined)).toBe(false);
     });
+
+    it("true for free user in active trial even past FREE_LIMIT", () => {
+      for (let i = 0; i < FREE_LIMIT + 10; i++) incrementMonthlyDocCount();
+      const futureDate = new Date(Date.now() + 1000 * 60 * 60 * 24 * 5).toISOString();
+      expect(canCreateDocument("free", futureDate)).toBe(true);
+    });
+
+    it("false for free user whose trial has expired and who is at limit", () => {
+      for (let i = 0; i < FREE_LIMIT; i++) incrementMonthlyDocCount();
+      const pastDate = new Date(Date.now() - 1000 * 60).toISOString();
+      expect(canCreateDocument("free", pastDate)).toBe(false);
+    });
   });
 
   // ── remainingFreeDocuments ──
@@ -143,6 +159,76 @@ describe("payment.ts", () => {
     it("never goes below 0", () => {
       for (let i = 0; i < FREE_LIMIT + 5; i++) incrementMonthlyDocCount();
       expect(remainingFreeDocuments("free")).toBe(0);
+    });
+
+    it("returns Infinity for a free user with an active trial", () => {
+      const futureDate = new Date(Date.now() + 1000 * 60 * 60 * 24 * 3).toISOString();
+      expect(remainingFreeDocuments("free", futureDate)).toBe(Infinity);
+    });
+  });
+
+  // ── isInTrial / trialDaysRemaining / hasActiveAccess ──
+  describe("trial helpers", () => {
+    it("TRIAL_DAYS is a positive integer", () => {
+      expect(TRIAL_DAYS).toBeGreaterThan(0);
+      expect(Number.isInteger(TRIAL_DAYS)).toBe(true);
+    });
+
+    it("isInTrial returns false for null/undefined", () => {
+      expect(isInTrial(null)).toBe(false);
+      expect(isInTrial(undefined)).toBe(false);
+    });
+
+    it("isInTrial returns false for an expired trial", () => {
+      const past = new Date(Date.now() - 1000).toISOString();
+      expect(isInTrial(past)).toBe(false);
+    });
+
+    it("isInTrial returns true for a future trial end", () => {
+      const future = new Date(Date.now() + 1000 * 60 * 60).toISOString();
+      expect(isInTrial(future)).toBe(true);
+    });
+
+    it("isInTrial returns false for an invalid date string", () => {
+      expect(isInTrial("not-a-date")).toBe(false);
+    });
+
+    it("trialDaysRemaining returns 0 for null", () => {
+      expect(trialDaysRemaining(null)).toBe(0);
+    });
+
+    it("trialDaysRemaining returns 0 for expired trial", () => {
+      const past = new Date(Date.now() - 1000).toISOString();
+      expect(trialDaysRemaining(past)).toBe(0);
+    });
+
+    it("trialDaysRemaining rounds up partial days", () => {
+      // 23 hours from now should read as 1 day left
+      const almostOneDay = new Date(Date.now() + 1000 * 60 * 60 * 23).toISOString();
+      expect(trialDaysRemaining(almostOneDay)).toBe(1);
+    });
+
+    it("trialDaysRemaining returns 14 for fresh 14-day trial", () => {
+      // 14 days minus a tiny buffer so ceil() still returns 14
+      const fresh = new Date(
+        Date.now() + 1000 * 60 * 60 * 24 * 14 - 1000,
+      ).toISOString();
+      expect(trialDaysRemaining(fresh)).toBe(14);
+    });
+
+    it("hasActiveAccess true when plan is pro even without trial", () => {
+      expect(hasActiveAccess("pro_monthly", null)).toBe(true);
+      expect(hasActiveAccess("pro_yearly", null)).toBe(true);
+    });
+
+    it("hasActiveAccess true when plan is free but trial is active", () => {
+      const future = new Date(Date.now() + 1000 * 60).toISOString();
+      expect(hasActiveAccess("free", future)).toBe(true);
+    });
+
+    it("hasActiveAccess false when plan is free and trial has ended", () => {
+      const past = new Date(Date.now() - 1000).toISOString();
+      expect(hasActiveAccess("free", past)).toBe(false);
     });
   });
 

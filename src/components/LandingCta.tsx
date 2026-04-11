@@ -38,21 +38,21 @@ export default function LandingCta() {
                 className="mt-5 leading-[1.06] tracking-[-0.03em] font-bold"
                 style={{ fontSize: "clamp(1.75rem, 3.5vw, 2.8rem)", color: "var(--color-text)", fontFamily: "var(--font-display)" }}
               >
-                Weniger Bürozeit klingt gut?{" "}
+                14 Tage Pro gratis.{" "}
                 <span style={{ color: "var(--color-primary)" }}>
-                  Dann leg los.
+                  Ohne Kreditkarte.
                 </span>
               </h2>
               <p className="section-copy mt-4 max-w-lg">
-                Starte mit einem Werkzeug, das im Alltag ruhig wirkt, professionell aussieht
-                und dich nicht erst durch Menüs zwingt.
+                Swiss QR-Rechnung, ZUGFeRD und WhatsApp-Versand — zwei Wochen lang
+                im echten Alltag testen. Danach automatisch Free, wenn du nicht upgradest.
               </p>
 
               {/* Proof */}
               <div className="mt-6 flex flex-wrap gap-4">
                 {[
                   "Keine Kreditkarte",
-                  "5 Dokumente kostenlos",
+                  "14 Tage alles drin",
                   "In 2 Min. bereit",
                 ].map((point) => (
                   <div
@@ -73,7 +73,7 @@ export default function LandingCta() {
                 className="cta-primary px-7 py-3.5 text-sm"
                 onClick={() => trackCtaClick("final_cta_primary")}
               >
-                Jetzt ausprobieren
+                14 Tage gratis testen
                 <svg width="14" height="14" viewBox="0 0 14 14" fill="none" className="ml-1">
                   <path d="M3 7h8m0 0L7.5 3.5M11 7l-3.5 3.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
                 </svg>

@@ -34,6 +34,46 @@ export function isPro(plan?: string): boolean {
   return plan === "pro_monthly" || plan === "pro_yearly" || plan === "pro";
 }
 
+/**
+ * Returns true when the user is currently inside their 14-day full-access
+ * trial window. Accepts either an ISO timestamp string or a Date.
+ */
+export function isInTrial(trialEndsAt?: string | Date | null): boolean {
+  if (!trialEndsAt) return false;
+  const endsAt =
+    trialEndsAt instanceof Date ? trialEndsAt : new Date(trialEndsAt);
+  if (Number.isNaN(endsAt.getTime())) return false;
+  return endsAt.getTime() > Date.now();
+}
+
+/**
+ * Returns the number of whole days left in the trial. 0 once the trial
+ * has ended. Rounded UP so "23 hours left" still reads as "1 day left"
+ * in banners.
+ */
+export function trialDaysRemaining(trialEndsAt?: string | Date | null): number {
+  if (!trialEndsAt) return 0;
+  const endsAt =
+    trialEndsAt instanceof Date ? trialEndsAt : new Date(trialEndsAt);
+  if (Number.isNaN(endsAt.getTime())) return 0;
+  const ms = endsAt.getTime() - Date.now();
+  if (ms <= 0) return 0;
+  return Math.ceil(ms / (1000 * 60 * 60 * 24));
+}
+
+/**
+ * A user has full access when they are on a Pro plan OR still inside their
+ * trial window. This is the one function feature gates should rely on.
+ */
+export function hasActiveAccess(
+  plan?: string,
+  trialEndsAt?: string | Date | null,
+): boolean {
+  return isPro(plan) || isInTrial(trialEndsAt);
+}
+
+export const TRIAL_DAYS = 14;
+
 export function getMonthlyDocCount(): number {
   if (typeof window === "undefined") return 0;
   const key = getMonthKey();
@@ -47,13 +87,19 @@ export function incrementMonthlyDocCount(): void {
   localStorage.setItem(key, String(current + 1));
 }
 
-export function canCreateDocument(plan?: string): boolean {
-  if (isPro(plan)) return true;
+export function canCreateDocument(
+  plan?: string,
+  trialEndsAt?: string | Date | null,
+): boolean {
+  if (hasActiveAccess(plan, trialEndsAt)) return true;
   return getMonthlyDocCount() < FREE_LIMIT;
 }
 
-export function remainingFreeDocuments(plan?: string): number {
-  if (isPro(plan)) return Infinity;
+export function remainingFreeDocuments(
+  plan?: string,
+  trialEndsAt?: string | Date | null,
+): number {
+  if (hasActiveAccess(plan, trialEndsAt)) return Infinity;
   return Math.max(0, FREE_LIMIT - getMonthlyDocCount());
 }
 

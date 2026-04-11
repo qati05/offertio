@@ -1,6 +1,11 @@
 import { NextResponse } from "next/server";
 import { createSupabaseServer } from "@/lib/supabase-server";
-import { FREE_LIMIT, isPro } from "@/lib/payment";
+import {
+  FREE_LIMIT,
+  hasActiveAccess,
+  isInTrial,
+  trialDaysRemaining,
+} from "@/lib/payment";
 import { isAllowedOrigin } from "@/lib/security";
 import { rateLimitAsync } from "@/lib/rate-limit";
 import { logger } from "@/lib/logger";
@@ -38,14 +43,24 @@ export async function GET() {
 
     const { data: profile } = await supabase
       .from("profiles")
-      .select("plan")
+      .select("plan, trial_ends_at")
       .eq("id", user.id)
       .maybeSingle();
 
     const plan = profile?.plan || "free";
+    const trialEndsAt = profile?.trial_ends_at || null;
+    const inTrial = isInTrial(trialEndsAt);
+    const daysLeft = trialDaysRemaining(trialEndsAt);
 
-    if (isPro(plan)) {
-      return json({ allowed: true, remaining: Infinity, plan });
+    if (hasActiveAccess(plan, trialEndsAt)) {
+      return json({
+        allowed: true,
+        remaining: Infinity,
+        plan,
+        inTrial,
+        trialEndsAt,
+        daysLeft,
+      });
     }
 
     const monat = getCurrentMonat();
@@ -64,6 +79,9 @@ export async function GET() {
       remaining,
       plan,
       used: anzahl,
+      inTrial,
+      trialEndsAt,
+      daysLeft,
     });
   } catch (err) {
     logger.error("check-limit:GET", err);
@@ -87,15 +105,17 @@ export async function POST(request: Request) {
 
     const { data: profile } = await supabase
       .from("profiles")
-      .select("plan")
+      .select("plan, trial_ends_at")
       .eq("id", user.id)
       .maybeSingle();
 
     const plan = profile?.plan || "free";
+    const trialEndsAt = profile?.trial_ends_at || null;
+    const hasAccess = hasActiveAccess(plan, trialEndsAt);
     const monat = getCurrentMonat();
 
-    // Pre-flight check for free users to avoid incrementing a blocked counter.
-    if (!isPro(plan)) {
+    // Pre-flight check for non-access users to avoid incrementing a blocked counter.
+    if (!hasAccess) {
       const { data: counter } = await supabase
         .from("dokument_counter")
         .select("anzahl")
@@ -121,14 +141,19 @@ export async function POST(request: Request) {
 
     // Post-increment guard: the SQL function increments unconditionally,
     // so verify the returned count is still within the free-tier limit.
-    if (!isPro(plan) && (newAnzahl as number) > FREE_LIMIT) {
+    if (!hasAccess && (newAnzahl as number) > FREE_LIMIT) {
       return json({ error: "Monatslimit erreicht", remaining: 0 }, 403);
     }
 
     return json({
       ok: true,
       used: newAnzahl,
-      remaining: isPro(plan) ? Infinity : Math.max(0, FREE_LIMIT - (newAnzahl as number)),
+      remaining: hasAccess
+        ? Infinity
+        : Math.max(0, FREE_LIMIT - (newAnzahl as number)),
+      inTrial: isInTrial(trialEndsAt),
+      trialEndsAt,
+      daysLeft: trialDaysRemaining(trialEndsAt),
     });
   } catch (err) {
     logger.error("check-limit:POST", err);
