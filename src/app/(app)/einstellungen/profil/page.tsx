@@ -719,6 +719,7 @@ export default function ProfilPage() {
                 const res = await fetch("/api/account/delete", {
                   method: "POST",
                   headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({ confirm: "DELETE_OFFERTIO_ACCOUNT" }),
                 });
 
                 if (!res.ok) {

@@ -27,6 +27,11 @@ export async function POST(request: NextRequest) {
       return json({ error: "Nicht angemeldet." }, 401);
     }
 
+    const body = await request.json().catch(() => ({}));
+    if (body?.confirm !== "DELETE_OFFERTIO_ACCOUNT") {
+      return json({ error: "Bestätigung erforderlich." }, 400);
+    }
+
     const rl = await rateLimitAsync(`account-delete:${user.id}`, 5, 3_600_000);
     if (!rl.ok) {
       return json({ error: "Zu viele Anfragen. Bitte warte eine Stunde." }, 429);

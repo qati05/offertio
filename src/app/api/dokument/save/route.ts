@@ -18,6 +18,17 @@ function json(body: unknown, status = 200) {
   });
 }
 
+async function removeUploadedPdf(
+  admin: ReturnType<typeof getSupabaseAdmin>,
+  fileName: string,
+  reason: string,
+) {
+  const { error } = await admin.storage.from("pdfs").remove([fileName]);
+  if (error) {
+    logger.error("pdf-cleanup", error, { fileName, reason });
+  }
+}
+
 export async function POST(request: NextRequest) {
   if (!isAllowedOrigin(request.url, request.headers.get("origin"))) {
     return json({ error: "Ungueltige Herkunft der Anfrage." }, 403);
@@ -294,12 +305,12 @@ export async function POST(request: NextRequest) {
 
       if (legacyError) {
         logger.error(existingDocumentId ? "db-update-dokument-legacy" : "db-insert-dokument-legacy", legacyError);
+        await removeUploadedPdf(admin, fileName, "metadata-write-failed");
         return json({
-          success: true,
-          path: fileName,
+          success: false,
           metadataStored: false,
-          warning: "PDF gespeichert, aber Dokument-Metadaten konnten nicht in Supabase geschrieben werden.",
-        });
+          error: "Dokument konnte nicht gespeichert werden.",
+        }, 500);
       }
 
       return json({

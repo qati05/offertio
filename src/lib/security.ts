@@ -94,7 +94,7 @@ export function isSafeDocumentIdentifier(value: unknown, maxLength = 50): value 
     typeof value === "string" &&
     value.length > 0 &&
     value.length <= maxLength &&
-    /^[A-Za-z0-9._\-/]+$/.test(value) &&
+    /^[A-Za-z0-9._-]+$/.test(value) &&
     !value.includes("..") &&
     !value.startsWith("/")
   );

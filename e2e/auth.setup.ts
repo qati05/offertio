@@ -37,7 +37,7 @@ setup("authenticate", async ({ page }) => {
   await page.fill("input[type='password']", password);
 
   // Submit
-  await page.getByRole("button", { name: "Anmelden" }).click();
+  await page.locator("form").getByRole("button", { name: "Anmelden" }).click();
 
   // Wait for redirect to dashboard (onboarding must be complete)
   await page.waitForURL("**/dashboard", { timeout: 15_000 });

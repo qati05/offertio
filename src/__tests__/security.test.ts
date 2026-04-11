@@ -123,11 +123,12 @@ describe("security.ts", () => {
   describe("isSafeDocumentIdentifier", () => {
     it("accepts safe identifiers", () => {
       expect(isSafeDocumentIdentifier("OFF-2026-001")).toBe(true);
-      expect(isSafeDocumentIdentifier("rechnung/2026.01")).toBe(true);
+      expect(isSafeDocumentIdentifier("rechnung-2026.01")).toBe(true);
     });
 
     it("rejects unsafe identifiers", () => {
       expect(isSafeDocumentIdentifier("../../secret")).toBe(false);
+      expect(isSafeDocumentIdentifier("rechnung/2026.01")).toBe(false);
       expect(isSafeDocumentIdentifier("bad name")).toBe(false);
     });
   });

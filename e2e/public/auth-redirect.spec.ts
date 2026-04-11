@@ -22,14 +22,24 @@ test.describe("Auth redirects (unauthenticated)", () => {
     await page.waitForURL("**/login");
   });
 
-  test("does NOT redirect public pages", async ({ page }) => {
-    await page.goto("/");
-    await expect(page).toHaveURL("/");
-
-    await page.goto("/agb");
-    await expect(page).toHaveURL("/agb");
-
-    await page.goto("/impressum");
-    await expect(page).toHaveURL("/impressum");
+  test("does NOT redirect public pages", async ({ request }) => {
+    for (const path of [
+      "/",
+      "/agb",
+      "/impressum",
+      "/blog",
+      "/blog/e-rechnung-deutschland-2026",
+      "/blog/qr-rechnung-schweiz-2026",
+      "/branchen/handwerker",
+      "/branchen/reinigung",
+      "/vergleich/offertio-vs-bexio",
+      "/vergleich/offertio-vs-sevdesk",
+      "/robots.txt",
+      "/sitemap.xml",
+    ]) {
+      const response = await request.get(path, { maxRedirects: 0 });
+      expect(response.status(), `${path} should be publicly reachable`).toBeLessThan(400);
+      expect(response.headers().location, `${path} should not redirect to login`).toBeUndefined();
+    }
   });
 });

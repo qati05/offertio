@@ -24,6 +24,7 @@ function buildCsp(nonce: string): string {
 }
 
 export async function middleware(request: NextRequest) {
+  const path = request.nextUrl.pathname;
   const nonce = Buffer.from(crypto.randomUUID()).toString("base64");
   const csp = buildCsp(nonce);
 
@@ -32,6 +33,29 @@ export async function middleware(request: NextRequest) {
 
   let supabaseResponse = NextResponse.next({ request: { headers: requestHeaders } });
   supabaseResponse.headers.set("Content-Security-Policy", csp);
+
+  if (
+    path === "/" ||
+    path.startsWith("/login") ||
+    path.startsWith("/confirm") ||
+    path.startsWith("/callback") ||
+    path.startsWith("/datenschutz") ||
+    path.startsWith("/agb") ||
+    path.startsWith("/impressum") ||
+    path.startsWith("/blog") ||
+    path.startsWith("/branchen") ||
+    path.startsWith("/vergleich") ||
+    path.startsWith("/api/webhooks/") ||
+    path === "/api/health" ||
+    path.startsWith("/_next/") ||
+    path === "/sw.js" ||
+    path === "/register-sw.js" ||
+    path === "/manifest.json" ||
+    path === "/robots.txt" ||
+    path === "/sitemap.xml"
+  ) {
+    return supabaseResponse;
+  }
 
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -54,26 +78,6 @@ export async function middleware(request: NextRequest) {
   const {
     data: { user },
   } = await supabase.auth.getUser();
-
-  const path = request.nextUrl.pathname;
-
-  if (
-    path === "/" ||
-    path.startsWith("/login") ||
-    path.startsWith("/confirm") ||
-    path.startsWith("/callback") ||
-    path.startsWith("/datenschutz") ||
-    path.startsWith("/agb") ||
-    path.startsWith("/impressum") ||
-    path.startsWith("/api/webhooks/") ||
-    path === "/api/health" ||
-    path.startsWith("/_next/") ||
-    path === "/sw.js" ||
-    path === "/register-sw.js" ||
-    path === "/manifest.json"
-  ) {
-    return supabaseResponse;
-  }
 
   if (!user) {
     const url = request.nextUrl.clone();
@@ -101,6 +105,6 @@ export async function middleware(request: NextRequest) {
 
 export const config = {
   matcher: [
-    "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp|js|css|woff|woff2|ico|json)$).*)",
+    "/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp|js|css|woff|woff2|ico|json|xml|txt)$).*)",
   ],
 };
