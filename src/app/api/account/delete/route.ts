@@ -18,6 +18,11 @@ export async function POST(request: NextRequest) {
   }
 
   try {
+    const body = await request.json().catch(() => ({}));
+    if (body?.confirm !== "DELETE_OFFERTIO_ACCOUNT") {
+      return json({ error: "BestÃ¤tigung fÃ¼r KontolÃ¶schung fehlt." }, 400);
+    }
+
     const supabase = await createSupabaseServer();
     const {
       data: { user },

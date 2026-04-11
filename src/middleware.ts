@@ -23,18 +23,8 @@ function buildCsp(nonce: string): string {
   ].join("; ");
 }
 
-export async function middleware(request: NextRequest) {
-  const path = request.nextUrl.pathname;
-  const nonce = Buffer.from(crypto.randomUUID()).toString("base64");
-  const csp = buildCsp(nonce);
-
-  const requestHeaders = new Headers(request.headers);
-  requestHeaders.set("x-nonce", nonce);
-
-  let supabaseResponse = NextResponse.next({ request: { headers: requestHeaders } });
-  supabaseResponse.headers.set("Content-Security-Policy", csp);
-
-  if (
+function isPublicPath(path: string): boolean {
+  return (
     path === "/" ||
     path.startsWith("/login") ||
     path.startsWith("/confirm") ||
@@ -53,7 +43,21 @@ export async function middleware(request: NextRequest) {
     path === "/manifest.json" ||
     path === "/robots.txt" ||
     path === "/sitemap.xml"
-  ) {
+  );
+}
+
+export async function middleware(request: NextRequest) {
+  const path = request.nextUrl.pathname;
+  const nonce = Buffer.from(crypto.randomUUID()).toString("base64");
+  const csp = buildCsp(nonce);
+
+  const requestHeaders = new Headers(request.headers);
+  requestHeaders.set("x-nonce", nonce);
+
+  let supabaseResponse = NextResponse.next({ request: { headers: requestHeaders } });
+  supabaseResponse.headers.set("Content-Security-Policy", csp);
+
+  if (isPublicPath(path)) {
     return supabaseResponse;
   }
 

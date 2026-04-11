@@ -1,6 +1,11 @@
 import { test, expect } from "@playwright/test";
 
 test.describe("Auth redirects (unauthenticated)", () => {
+  async function expectPublicPath(page: import("@playwright/test").Page, path: string) {
+    await page.goto(path, { waitUntil: "commit" });
+    await expect(page).toHaveURL(path);
+  }
+
   test("redirects /dashboard to /login", async ({ page }) => {
     await page.goto("/dashboard");
     await page.waitForURL("**/login");
