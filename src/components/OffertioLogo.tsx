@@ -1,19 +1,34 @@
 "use client";
 
 interface OffertioLogoProps {
-  /** Icon + Wordmark (default) | "icon" = only icon | "wordmark" = only text */
+  /** "full" = icon + wordmark (default) | "icon" = only icon | "wordmark" = only text */
   variant?: "full" | "icon" | "wordmark";
   size?: number;
   className?: string;
   href?: string;
+  /** "dark" = on dark bg (default, amber arc) | "light" = on light bg (dark arc) */
+  theme?: "dark" | "light";
 }
 
 /**
- * The Arc O — 315° of a precise circle, clockwise from 12 to 10:30.
- * Two amber terminals mark origin (12 o'clock) and completion (10:30).
- * Reads as precision, flow, and the letter O simultaneously.
+ * The Arc-O mark.
+ * 315° amber arc, clockwise from 12 o'clock to 10:30.
+ * Cream origin-dot at 12 anchors the eye; amber endpoint at 10:30 marks completion.
+ * Reads as precision, momentum, and the letter O simultaneously.
  */
-export function OffertioIcon({ size = 32 }: { size?: number }) {
+export function OffertioIcon({
+  size = 32,
+  theme = "dark",
+}: {
+  size?: number;
+  theme?: "dark" | "light";
+}) {
+  const bg = theme === "light" ? "#F5F2EE" : "#0F0D0B";
+  const arcStart = theme === "light" ? "#B86A28" : "#E8945A";
+  const arcEnd = theme === "light" ? "#8A4E1A" : "#C8793D";
+  const originDot = theme === "light" ? "#1A1916" : "#F5F1EB";
+  const endDot = "#C8793D";
+
   return (
     <svg
       width={size}
@@ -23,27 +38,35 @@ export function OffertioIcon({ size = 32 }: { size?: number }) {
       xmlns="http://www.w3.org/2000/svg"
       aria-hidden="true"
     >
-      {/* Background — warm obsidian, slightly rounded square */}
-      <rect width="100" height="100" rx="26" fill="#1A1916" />
+      <defs>
+        <linearGradient id="arcGrad" x1="0.65" y1="0" x2="0.35" y2="1">
+          <stop offset="0%" stopColor={arcStart} />
+          <stop offset="100%" stopColor={arcEnd} />
+        </linearGradient>
+      </defs>
+
+      {/* Background — warm near-black, iOS-style rounded square */}
+      <rect width="100" height="100" rx="26" fill={bg} />
 
       {/*
         Arc: 315° clockwise from 12 o'clock (50, 23) to 10:30 (30.9, 30.9).
-        The 45° gap sits in the upper-left — a deliberate opening, not a flaw.
-        large-arc-flag=1, sweep-flag=1 (clockwise through 3 → 6 → 9 → 10:30)
+        The deliberate 45° gap in the upper-left reads as openness — an offer
+        extended, not yet closed.
+        large-arc-flag=1 (long path), sweep-flag=1 (clockwise)
       */}
       <path
         d="M 50 23 A 27 27 0 1 1 30.9 30.9"
-        stroke="#E8E3DC"
-        strokeWidth="8.5"
+        stroke="url(#arcGrad)"
+        strokeWidth="11"
         strokeLinecap="round"
         fill="none"
       />
 
-      {/* Origin — 12 o'clock, larger amber dot anchors the eye */}
-      <circle cx="50" cy="23" r="7" fill="#C8793D" />
+      {/* Origin — 12 o'clock: cream dot, bright focal point */}
+      <circle cx="50" cy="23" r="7" fill={originDot} />
 
-      {/* Completion — 10:30, smaller amber dot marks arrival */}
-      <circle cx="30.9" cy="30.9" r="5" fill="#C8793D" />
+      {/* Completion — 10:30: amber dot marks where the arc arrives */}
+      <circle cx="30.9" cy="30.9" r="5" fill={endDot} />
     </svg>
   );
 }
@@ -53,19 +76,22 @@ export default function OffertioLogo({
   size = 32,
   className = "",
   href = "/",
+  theme = "dark",
 }: OffertioLogoProps) {
+  const textColor = theme === "dark" ? "var(--color-text, #F0EDE8)" : "var(--app-text, #1A1916)";
+
   const content = (
     <span
       className={`offertio-logo ${className}`}
       style={{
         display: "inline-flex",
         alignItems: "center",
-        gap: size * 0.3,
+        gap: size * 0.28,
         textDecoration: "none",
         userSelect: "none",
       }}
     >
-      {variant !== "wordmark" && <OffertioIcon size={size} />}
+      {variant !== "wordmark" && <OffertioIcon size={size} theme={theme} />}
 
       {variant !== "icon" && (
         <span
@@ -74,7 +100,7 @@ export default function OffertioLogo({
             fontSize: size * 0.6,
             fontWeight: 600,
             letterSpacing: "-0.03em",
-            color: "var(--color-text)",
+            color: textColor,
             lineHeight: 1,
           }}
         >
@@ -83,7 +109,7 @@ export default function OffertioLogo({
             style={{
               fontStyle: "italic",
               fontWeight: 400,
-              color: "var(--color-primary)",
+              color: "var(--color-primary, #C8793D)",
             }}
           >
             io

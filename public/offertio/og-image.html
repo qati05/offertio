@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { width: 1200px; height: 630px; overflow: hidden; }
+
+  body {
+    width: 1200px;
+    height: 630px;
+    background: #0A0908;
+    font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', Arial, sans-serif;
+    color: #F0EDE8;
+    position: relative;
+  }
+
+  /* Ambient background glows */
+  .glow-1 {
+    position: absolute;
+    width: 700px; height: 500px;
+    background: radial-gradient(ellipse, rgba(200,121,61,0.14) 0%, transparent 70%);
+    top: -100px; left: -100px;
+    pointer-events: none;
+  }
+  .glow-2 {
+    position: absolute;
+    width: 500px; height: 400px;
+    background: radial-gradient(ellipse, rgba(200,121,61,0.07) 0%, transparent 70%);
+    bottom: -50px; right: 200px;
+    pointer-events: none;
+  }
+
+  /* Subtle grid texture */
+  .grid {
+    position: absolute;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(200,121,61,0.04) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(200,121,61,0.04) 1px, transparent 1px);
+    background-size: 60px 60px;
+  }
+
+  /* Main content */
+  .content {
+    position: relative;
+    z-index: 10;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    padding: 0 90px;
+    gap: 80px;
+  }
+
+  /* Left: logo + text */
+  .left {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 32px;
+  }
+
+  .logo-row {
+    display: flex;
+    align-items: center;
+    gap: 18px;
+  }
+
+  .wordmark {
+    font-size: 38px;
+    font-weight: 600;
+    letter-spacing: -0.04em;
+    color: #F0EDE8;
+    line-height: 1;
+  }
+  .wordmark em {
+    font-style: italic;
+    font-weight: 400;
+    color: #C8793D;
+  }
+
+  .headline {
+    font-size: 52px;
+    font-weight: 700;
+    line-height: 1.1;
+    letter-spacing: -0.03em;
+    color: #F0EDE8;
+  }
+  .headline span {
+    color: #C8793D;
+  }
+
+  .sub {
+    font-size: 22px;
+    color: rgba(240,237,232,0.55);
+    line-height: 1.5;
+    font-weight: 400;
+    max-width: 520px;
+  }
+
+  .badges {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    margin-top: 4px;
+  }
+  .badge {
+    background: rgba(200,121,61,0.12);
+    border: 1px solid rgba(200,121,61,0.25);
+    border-radius: 999px;
+    padding: 8px 18px;
+    font-size: 14px;
+    font-weight: 500;
+    color: rgba(240,237,232,0.8);
+    letter-spacing: 0.01em;
+  }
+
+  /* Right: mockup card */
+  .right {
+    width: 340px;
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .card {
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(200,121,61,0.18);
+    border-radius: 16px;
+    padding: 24px 28px;
+  }
+  .card-label {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: #C8793D;
+    margin-bottom: 12px;
+  }
+  .card-title {
+    font-size: 17px;
+    font-weight: 600;
+    color: #F0EDE8;
+    margin-bottom: 6px;
+  }
+  .card-sub {
+    font-size: 13px;
+    color: rgba(240,237,232,0.45);
+  }
+  .card-amount {
+    font-size: 28px;
+    font-weight: 700;
+    color: #F0EDE8;
+    letter-spacing: -0.02em;
+    margin-top: 12px;
+  }
+  .card-amount span {
+    font-size: 14px;
+    font-weight: 400;
+    color: rgba(240,237,232,0.4);
+    margin-left: 4px;
+  }
+
+  /* QR placeholder */
+  .qr-card {
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(200,121,61,0.12);
+    border-radius: 16px;
+    padding: 20px 28px;
+    display: flex;
+    align-items: center;
+    gap: 18px;
+  }
+  .qr-box {
+    width: 56px;
+    height: 56px;
+    background: #FFFFFF;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+  .qr-info {}
+  .qr-label {
+    font-size: 11px;
+    color: #C8793D;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    margin-bottom: 4px;
+  }
+  .qr-text {
+    font-size: 13px;
+    color: rgba(240,237,232,0.5);
+  }
+
+  /* URL bar at bottom */
+  .url-bar {
+    position: absolute;
+    bottom: 36px;
+    left: 90px;
+    font-size: 13px;
+    color: rgba(240,237,232,0.25);
+    letter-spacing: 0.02em;
+  }
+
+  /* Free badge */
+  .free-badge {
+    position: absolute;
+    top: 36px;
+    right: 48px;
+    background: rgba(26,127,66,0.15);
+    border: 1px solid rgba(26,127,66,0.3);
+    border-radius: 999px;
+    padding: 8px 20px;
+    font-size: 13px;
+    font-weight: 600;
+    color: #4ade80;
+    letter-spacing: 0.02em;
+  }
+</style>
+</head>
+<body>
+
+<div class="glow-1"></div>
+<div class="glow-2"></div>
+<div class="grid"></div>
+
+<div class="free-badge">✦ Kostenlos starten</div>
+
+<div class="content">
+  <!-- LEFT -->
+  <div class="left">
+
+    <div class="logo-row">
+      <!-- Arc-O icon -->
+      <svg width="48" height="48" viewBox="0 0 100 100" fill="none">
+        <defs>
+          <linearGradient id="ag" x1="0.65" y1="0" x2="0.35" y2="1">
+            <stop offset="0%" stop-color="#E8945A"/>
+            <stop offset="100%" stop-color="#C8793D"/>
+          </linearGradient>
+        </defs>
+        <rect width="100" height="100" rx="26" fill="#0F0D0B"/>
+        <path d="M 50 23 A 27 27 0 1 1 30.9 30.9" stroke="url(#ag)" stroke-width="11" stroke-linecap="round"/>
+        <circle cx="50" cy="23" r="7" fill="#F5F1EB"/>
+        <circle cx="30.9" cy="30.9" r="5" fill="#C8793D"/>
+      </svg>
+      <span class="wordmark">offert<em>io</em></span>
+    </div>
+
+    <div>
+      <div class="headline">
+        Offerten &amp; Rechnungen.<br>
+        <span>In 60 Sekunden.</span>
+      </div>
+    </div>
+
+    <div class="sub">
+      Für Handwerker und Kleinbetriebe in CH, DE und AT.
+      Direkt vom Handy — mit Swiss QR-Rechnung.
+    </div>
+
+    <div class="badges">
+      <div class="badge">🇨🇭 Swiss QR-Rechnung</div>
+      <div class="badge">🇩🇪 ZUGFeRD E-Rechnung</div>
+      <div class="badge">📱 Offline-fähig</div>
+    </div>
+
+  </div>
+
+  <!-- RIGHT: mockup cards -->
+  <div class="right">
+
+    <div class="card">
+      <div class="card-label">Neue Offerte</div>
+      <div class="card-title">Sanitärinstallation Küche</div>
+      <div class="card-sub">Müller AG · Zürich</div>
+      <div class="card-amount">CHF 2'450.00 <span>inkl. MwSt.</span></div>
+    </div>
+
+    <div class="qr-card">
+      <!-- Tiny QR pattern SVG -->
+      <div class="qr-box">
+        <svg width="40" height="40" viewBox="0 0 40 40">
+          <!-- Simplified QR code visual -->
+          <rect x="2" y="2" width="16" height="16" rx="2" fill="#1A1916"/>
+          <rect x="4" y="4" width="12" height="12" rx="1" fill="white"/>
+          <rect x="6" y="6" width="8" height="8" rx="1" fill="#1A1916"/>
+          <rect x="22" y="2" width="16" height="16" rx="2" fill="#1A1916"/>
+          <rect x="24" y="4" width="12" height="12" rx="1" fill="white"/>
+          <rect x="26" y="6" width="8" height="8" rx="1" fill="#1A1916"/>
+          <rect x="2" y="22" width="16" height="16" rx="2" fill="#1A1916"/>
+          <rect x="4" y="24" width="12" height="12" rx="1" fill="white"/>
+          <rect x="6" y="26" width="8" height="8" rx="1" fill="#1A1916"/>
+          <!-- Data dots -->
+          <rect x="22" y="22" width="3" height="3" fill="#1A1916"/>
+          <rect x="26" y="22" width="3" height="3" fill="#1A1916"/>
+          <rect x="30" y="22" width="3" height="3" fill="#1A1916"/>
+          <rect x="22" y="26" width="3" height="3" fill="#1A1916"/>
+          <rect x="30" y="26" width="3" height="3" fill="#1A1916"/>
+          <rect x="34" y="26" width="3" height="3" fill="#1A1916"/>
+          <rect x="26" y="30" width="3" height="3" fill="#1A1916"/>
+          <rect x="34" y="30" width="3" height="3" fill="#1A1916"/>
+          <rect x="22" y="34" width="3" height="3" fill="#1A1916"/>
+          <rect x="30" y="34" width="3" height="3" fill="#1A1916"/>
+        </svg>
+      </div>
+      <div class="qr-info">
+        <div class="qr-label">Swiss QR-Rechnung</div>
+        <div class="qr-text">Bankkonform · automatisch generiert</div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<div class="url-bar">offertio.io</div>
+
+</body>
+</html>

@@ -1,25 +1,17 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="192" height="192" viewBox="0 0 192 192">
-  <rect width="192" height="192" rx="42" fill="#FAF7F4"/>
-
-  <!-- Shadow layer -->
-  <path d="M36 30 L122 30 L154 62 L154 162 L36 162 Z" fill="#EDE8E2" transform="translate(3 3)"/>
-
-  <!-- Document body -->
-  <path d="M34 28 L120 28 L152 60 L152 160 L34 160 Z" fill="#FFFFFF" stroke="#E0D6CC" stroke-width="2"/>
-
-  <!-- Folded corner orange -->
-  <path d="M120 28 L120 60 L152 60 Z" fill="#D94F00"/>
-
-  <!-- Crease line -->
-  <path d="M120 28 L120 60 L152 60" stroke="#FAF7F4" stroke-width="1.5" fill="none"/>
-
-  <!-- Orange headline line -->
-  <line x1="54" y1="88" x2="124" y2="88" stroke="#D94F00" stroke-width="7" stroke-linecap="round"/>
-
-  <!-- Content lines warm gray -->
-  <line x1="54" y1="108" x2="116" y2="108" stroke="#C4B5A5" stroke-width="5" stroke-linecap="round"/>
-  <line x1="54" y1="126" x2="108" y2="126" stroke="#C4B5A5" stroke-width="5" stroke-linecap="round"/>
-
-  <!-- Total accent -->
-  <line x1="54" y1="146" x2="96" y2="146" stroke="#D94F00" stroke-width="4" stroke-linecap="round" opacity="0.5"/>
+<svg xmlns="http://www.w3.org/2000/svg" width="192" height="192" viewBox="0 0 100 100" fill="none">
+  <defs>
+    <linearGradient id="ag" x1="0.65" y1="0" x2="0.35" y2="1">
+      <stop offset="0%" stop-color="#E8945A"/>
+      <stop offset="100%" stop-color="#C8793D"/>
+    </linearGradient>
+  </defs>
+  <!-- Background -->
+  <rect width="100" height="100" rx="26" fill="#0F0D0B"/>
+  <!-- Arc O: 315° clockwise from 12 o'clock to 10:30 -->
+  <path d="M 50 23 A 27 27 0 1 1 30.9 30.9"
+        stroke="url(#ag)" stroke-width="11" stroke-linecap="round"/>
+  <!-- Origin dot: cream at 12 o'clock -->
+  <circle cx="50" cy="23" r="7" fill="#F5F1EB"/>
+  <!-- Completion dot: amber at 10:30 -->
+  <circle cx="30.9" cy="30.9" r="5" fill="#C8793D"/>
 </svg>

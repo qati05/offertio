@@ -1,8 +1,17 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 32 32">
-  <rect width="32" height="32" rx="6" fill="#FAF7F4"/>
-  <path d="M5 4 L19 4 L26 11 L26 28 L5 28 Z" fill="#FFFFFF" stroke="#E0D6CC" stroke-width="0.5"/>
-  <path d="M19 4 L19 11 L26 11 Z" fill="#D94F00"/>
-  <line x1="9" y1="16" x2="21" y2="16" stroke="#D94F00" stroke-width="1.5" stroke-linecap="round"/>
-  <line x1="9" y1="20" x2="19" y2="20" stroke="#C4B5A5" stroke-width="1.2" stroke-linecap="round"/>
-  <line x1="9" y1="24" x2="17" y2="24" stroke="#C4B5A5" stroke-width="1.2" stroke-linecap="round"/>
+<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 100 100" fill="none">
+  <defs>
+    <linearGradient id="ag" x1="0.65" y1="0" x2="0.35" y2="1">
+      <stop offset="0%" stop-color="#E8945A"/>
+      <stop offset="100%" stop-color="#C8793D"/>
+    </linearGradient>
+  </defs>
+  <!-- Background -->
+  <rect width="100" height="100" rx="26" fill="#0F0D0B"/>
+  <!-- Arc O: 315° clockwise from 12 o'clock to 10:30 -->
+  <path d="M 50 23 A 27 27 0 1 1 30.9 30.9"
+        stroke="url(#ag)" stroke-width="11" stroke-linecap="round"/>
+  <!-- Origin dot: cream at 12 o'clock -->
+  <circle cx="50" cy="23" r="7" fill="#F5F1EB"/>
+  <!-- Completion dot: amber at 10:30 -->
+  <circle cx="30.9" cy="30.9" r="5" fill="#C8793D"/>
 </svg>

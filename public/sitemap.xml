@@ -1,12 +1,73 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
         xmlns:xhtml="http://www.w3.org/1999/xhtml">
+
+  <!-- Homepage -->
   <url>
-    <loc>https://offert.io/</loc>
+    <loc>https://offertio.io/</loc>
     <changefreq>weekly</changefreq>
     <priority>1.0</priority>
-    <xhtml:link rel="alternate" hreflang="de-CH" href="https://offert.io/" />
-    <xhtml:link rel="alternate" hreflang="de-DE" href="https://offert.io/" />
-    <xhtml:link rel="alternate" hreflang="de-AT" href="https://offert.io/" />
+    <xhtml:link rel="alternate" hreflang="de-CH" href="https://offertio.io/" />
+    <xhtml:link rel="alternate" hreflang="de-DE" href="https://offertio.io/" />
+    <xhtml:link rel="alternate" hreflang="de-AT" href="https://offertio.io/" />
   </url>
+
+  <!-- Blog -->
+  <url>
+    <loc>https://offertio.io/blog</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://offertio.io/blog/qr-rechnung-schweiz-2026</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://offertio.io/blog/e-rechnung-deutschland-2026</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+
+  <!-- Branchen -->
+  <url>
+    <loc>https://offertio.io/branchen/handwerker</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://offertio.io/branchen/reinigung</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+
+  <!-- Vergleich -->
+  <url>
+    <loc>https://offertio.io/vergleich/offertio-vs-sevdesk</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://offertio.io/vergleich/offertio-vs-bexio</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+
+  <!-- Legal -->
+  <url>
+    <loc>https://offertio.io/impressum</loc>
+    <changefreq>yearly</changefreq>
+    <priority>0.3</priority>
+  </url>
+  <url>
+    <loc>https://offertio.io/datenschutz</loc>
+    <changefreq>yearly</changefreq>
+    <priority>0.3</priority>
+  </url>
+  <url>
+    <loc>https://offertio.io/agb</loc>
+    <changefreq>yearly</changefreq>
+    <priority>0.3</priority>
+  </url>
+
 </urlset>

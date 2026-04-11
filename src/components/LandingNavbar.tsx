@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import { trackCtaClick } from "@/lib/analytics";
+import { OffertioIcon } from "@/components/OffertioLogo";
 
 const links = [
   { href: "#produkt", label: "Produkt" },
@@ -54,17 +55,12 @@ export default function LandingNavbar() {
             className="flex items-center gap-2"
             aria-label="Offertio Startseite"
           >
-            <div
-              className="flex h-7 w-7 items-center justify-center rounded-lg text-white font-bold text-xs"
-              style={{ background: "var(--color-primary)" }}
-            >
-              O
-            </div>
+            <OffertioIcon size={28} theme="dark" />
             <span
-              className="text-[15px] font-bold tracking-[-0.02em]"
-              style={{ color: "#F0EDE8", fontFamily: "var(--font-display)" }}
+              className="text-[15px] tracking-[-0.03em]"
+              style={{ color: "#F0EDE8", fontFamily: "var(--font-display)", fontWeight: 600 }}
             >
-              Offertio
+              offert<em style={{ fontStyle: "italic", fontWeight: 400, color: "var(--color-primary)" }}>io</em>
             </span>
           </Link>
 
