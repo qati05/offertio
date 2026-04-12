@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { generateQrCodeDataUrl, generateQrBillData, generateQrrReference, QrIbanError } from "@/lib/qr-bill";
+import { generateQrCodeDataUrl, generateQrBillData, generateQrrReference, QrIbanError, IbanValidationError } from "@/lib/qr-bill";
 import type { Profile } from "@/lib/types";
 
 /** Minimal CH profile with a regular CH-IBAN */
@@ -71,6 +71,13 @@ describe("generateQrCodeDataUrl", () => {
   it("returns null for a non-CH IBAN (DE)", async () => {
     const result = await generateQrCodeDataUrl(deProfile, 100, "RE-001");
     expect(result).toBeNull();
+  });
+
+  it("throws IbanValidationError for a CH IBAN with invalid MOD-97 checksum", async () => {
+    // CH9008080009726692255 has an incorrect check digit — swissqrbill rejects it
+    await expect(
+      generateQrCodeDataUrl({ ...chProfile, iban: "CH9008080009726692255" }, 100, "RE-001"),
+    ).rejects.toThrow(IbanValidationError);
   });
 
   it("returns null when IBAN is missing", async () => {
