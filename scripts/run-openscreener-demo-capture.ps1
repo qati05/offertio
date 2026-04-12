@@ -1,17 +1,17 @@
 param(
-  [switch]$OpenBrowser
+  [switch]$OpenBrowser,
+  [string]$ProjectRoot = (Resolve-Path (Join-Path $PSScriptRoot "..")),
+  [string]$OpenScreenRoot = "D:\Kai\openscreen-source"
 )
 
-$projectRoot = "C:\Users\resha\OneDrive\Desktop\Offertio\Offerte-claude-offertio-landing-page-oeati"
-$openScreenRoot = "D:\Kai\openscreen-source"
 $offertioUrl = "http://localhost:3000"
 $tryModeUrl = "https://offertio-trymode.vercel.app/dokument/neu?demo=1"
 
 Write-Host "[1/4] Starting Offertio local dev server..."
-Start-Process powershell -ArgumentList "-NoExit", "-Command", "cd '$projectRoot'; npm run dev"
+Start-Process powershell -ArgumentList "-NoExit", "-Command", "cd '$ProjectRoot'; npm run dev"
 
 Write-Host "[2/4] Starting OpenScreen dev app..."
-Start-Process powershell -ArgumentList "-NoExit", "-Command", "cd '$openScreenRoot'; npm run dev"
+Start-Process powershell -ArgumentList "-NoExit", "-Command", "cd '$OpenScreenRoot'; npm run dev"
 
 Start-Sleep -Seconds 8
 

@@ -6,6 +6,10 @@ const removeMock = vi.fn();
 const uploadMock = vi.fn();
 const rateLimitMock = vi.fn();
 const serverProfileMock = vi.fn();
+const exportProfileMock = vi.fn();
+const exportDokumenteMock = vi.fn();
+const exportCustomersMock = vi.fn();
+const exportVorlagenMock = vi.fn();
 const buildZugferdXmlMock = vi.fn();
 const embedZugferdXmlMock = vi.fn();
 
@@ -17,13 +21,37 @@ vi.mock("@/lib/supabase-server", () => ({
       getUser: getUserMock,
     },
     from: (table: string) => {
-      if (table !== "profiles") {
+      if (table === "profiles") {
+        return {
+          select: vi.fn((columns: string) => ({
+            eq: vi.fn(() => ({
+              maybeSingle: vi.fn(() => {
+                return columns.includes("onboarding_complete")
+                  ? exportProfileMock()
+                  : serverProfileMock();
+              }),
+            })),
+          })),
+        };
+      }
+
+      const tableMocks: Record<string, ReturnType<typeof vi.fn>> = {
+        dokumente: exportDokumenteMock,
+        customers: exportCustomersMock,
+        vorlagen: exportVorlagenMock,
+      };
+
+      const tableMock = tableMocks[table];
+      if (!tableMock) {
         throw new Error(`Unexpected server table in test: ${table}`);
       }
+
       return {
         select: vi.fn(() => ({
           eq: vi.fn(() => ({
-            maybeSingle: serverProfileMock,
+            order: vi.fn(() => ({
+              limit: tableMock,
+            })),
           })),
         })),
       };
@@ -135,6 +163,22 @@ function sameOriginPost(path: string, body: unknown) {
   }) as never;
 }
 
+function crossOriginRequest(path: string, method = "POST") {
+  return new Request(`https://offertio.test${path}`, {
+    method,
+    headers: {
+      origin: "https://evil.test",
+    },
+  }) as never;
+}
+
+function sameOriginGet(path: string, withOrigin = true) {
+  return new Request(`https://offertio.test${path}`, {
+    method: "GET",
+    headers: withOrigin ? { origin: "https://offertio.test" } : {},
+  }) as never;
+}
+
 beforeEach(() => {
   vi.clearAllMocks();
   getUserMock.mockResolvedValue({ data: { user: { id: "user-1", email: "test@example.com" } } });
@@ -171,6 +215,10 @@ beforeEach(() => {
   });
   buildZugferdXmlMock.mockReturnValue("<xml />");
   embedZugferdXmlMock.mockResolvedValue(Buffer.from("%PDF-hardened\n"));
+  exportProfileMock.mockResolvedValue({ data: { email: "test@example.com" }, error: null });
+  exportDokumenteMock.mockResolvedValue({ data: [], error: null });
+  exportCustomersMock.mockResolvedValue({ data: [], error: null });
+  exportVorlagenMock.mockResolvedValue({ data: [], error: null });
 });
 
 describe("account delete hardening", () => {
@@ -197,6 +245,26 @@ describe("account delete hardening", () => {
   });
 });
 
+describe("account export hardening", () => {
+  it("allows authenticated GET exports without an Origin header", async () => {
+    const { GET } = await import("@/app/api/account/export/route");
+
+    const response = await GET(sameOriginGet("/api/account/export", false));
+
+    expect(response.status).toBe(200);
+    expect(getUserMock).toHaveBeenCalledOnce();
+  });
+
+  it("rejects cross-origin authenticated GET exports", async () => {
+    const { GET } = await import("@/app/api/account/export/route");
+
+    const response = await GET(crossOriginRequest("/api/account/export", "GET"));
+
+    expect(response.status).toBe(403);
+    expect(getUserMock).not.toHaveBeenCalled();
+  });
+});
+
 describe("document save hardening", () => {
   it("removes an uploaded PDF if both metadata write attempts fail", async () => {
     const { POST } = await import("@/app/api/dokument/save/route");
@@ -218,6 +286,18 @@ describe("document save hardening", () => {
     expect(uploadMock).toHaveBeenCalledOnce();
     expect(removeMock).toHaveBeenCalledOnce();
     expect(removeMock.mock.calls[0][0][0]).toMatch(/^user-1\/OF-2026-001_\d+\.pdf$/);
+  });
+});
+
+describe("logo upload hardening", () => {
+  it("rejects cross-origin logo uploads before auth or file parsing", async () => {
+    const { POST } = await import("@/app/api/profile/upload-logo/route");
+
+    const response = await POST(crossOriginRequest("/api/profile/upload-logo"));
+
+    expect(response.status).toBe(403);
+    expect(getUserMock).not.toHaveBeenCalled();
+    expect(uploadMock).not.toHaveBeenCalled();
   });
 });
 

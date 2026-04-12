@@ -1,4 +1,5 @@
-$envFile = "C:\Users\resha\OneDrive\Desktop\Offertio\Offerte-claude-offertio-landing-page-oeati\.env.local"
+$projectRoot = Resolve-Path (Join-Path $PSScriptRoot "..")
+$envFile = Join-Path $projectRoot ".env.local"
 Get-Content $envFile | ForEach-Object {
   if ($_ -match '^[^#][^=]*=') {
     $parts = $_ -split '=', 2

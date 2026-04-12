@@ -187,7 +187,7 @@ Security controls are layered rather than concentrated in a single place.
 
 ### Browser and transport
 
-- strict response headers in [next.config.ts](C:/Users/resha/OneDrive/Desktop/Offertio/Offerte-claude-offertio-landing-page-oeati/next.config.ts)
+- strict response headers in [next.config.ts](../next.config.ts)
 - nonce-based CSP in middleware
 - frame denial and strict transport settings
 

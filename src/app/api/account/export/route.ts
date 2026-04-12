@@ -17,7 +17,8 @@ import { logger } from "@/lib/logger";
  * Rate-limited to 5 requests per hour to prevent abuse.
  */
 export async function GET(request: NextRequest) {
-  if (!isAllowedOrigin(request.url, request.headers.get("origin"))) {
+  const origin = request.headers.get("origin");
+  if (origin && !isAllowedOrigin(request.url, origin)) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 

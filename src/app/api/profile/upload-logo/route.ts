@@ -15,6 +15,7 @@ import { createSupabaseServer } from "@/lib/supabase-server";
 import { getSupabaseAdmin } from "@/lib/supabase-admin";
 import { rateLimitAsync } from "@/lib/rate-limit";
 import { logger } from "@/lib/logger";
+import { isAllowedOrigin } from "@/lib/security";
 
 const MAX_LOGO_BYTES = 2 * 1024 * 1024; // 2 MB
 const ALLOWED_MIME = new Set(["image/png", "image/jpeg", "image/webp"]);
@@ -55,6 +56,10 @@ function json(body: unknown, status = 200) {
 }
 
 export async function POST(request: NextRequest) {
+  if (!isAllowedOrigin(request.url, request.headers.get("origin"))) {
+    return json({ error: "Ungueltige Herkunft der Anfrage." }, 403);
+  }
+
   const supabase = await createSupabaseServer();
   const {
     data: { user },
