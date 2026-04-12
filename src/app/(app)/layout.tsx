@@ -158,9 +158,15 @@ function AppLayoutInner({ children }: { children: React.ReactNode }) {
 
         setUser(currentUser);
 
-        // Fetch profile only once on mount — avoids a DB query on every navigation.
+        // Fetch profile only once per session — avoids a DB query on every navigation.
         if (!profileFetched.current) {
           profileFetched.current = true;
+
+          // Seed from cache instantly so child pages can read it before Supabase responds.
+          try {
+            const cached = localStorage.getItem("offertio-profile-cache");
+            if (cached) setProfile(JSON.parse(cached) as Profile);
+          } catch { /* ignore */ }
 
           const { data: profileData } = await supabase
             .from("profiles")
@@ -168,7 +174,11 @@ function AppLayoutInner({ children }: { children: React.ReactNode }) {
             .eq("id", currentUser.id)
             .maybeSingle();
 
-          if (profileData) setProfile(profileData as Profile);
+          if (profileData) {
+            setProfile(profileData as Profile);
+            // Cache for instant reads on next navigation / page load.
+            try { localStorage.setItem("offertio-profile-cache", JSON.stringify(profileData)); } catch { /* ignore quota */ }
+          }
 
           const onOnboarding = pathname === "/onboarding";
 
@@ -188,7 +198,9 @@ function AppLayoutInner({ children }: { children: React.ReactNode }) {
     }
 
     bootstrap();
-  }, [pathname, router]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // Run once on mount — auth.getUser() is cached by the Supabase client
+          // so re-running on every pathname change is unnecessary and adds latency.
 
   async function handleLogout() {
     try {

@@ -30,10 +30,31 @@ const kicker: React.CSSProperties = {
   marginBottom: 8,
 };
 
+/** Read cached history from localStorage synchronously (returns [] on miss/error). */
+function readCachedHistory(): DokumentHistorie[] {
+  try {
+    return JSON.parse(localStorage.getItem("dokument-history") || "[]")
+      .map((d: Record<string, unknown>) => ({ ...d, betrag: Number(d.betrag) }));
+  } catch { return []; }
+}
+
+/** Read cached profile from localStorage synchronously (returns null on miss/error). */
+function readCachedProfile(): Profile | null {
+  try {
+    const raw = localStorage.getItem("offertio-profile-cache");
+    return raw ? (JSON.parse(raw) as Profile) : null;
+  } catch { return null; }
+}
+
 export default function DashboardPage() {
-  const [profil, setProfil] = useState<Profile | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [history, setHistory] = useState<DokumentHistorie[]>([]);
+  // Seed state from localStorage immediately — zero-latency first paint.
+  const [profil, setProfil] = useState<Profile | null>(() => readCachedProfile());
+  const [history, setHistory] = useState<DokumentHistorie[]>(() => readCachedHistory());
+  // Only show the skeleton on the very first visit (no cache).
+  const [loading, setLoading] = useState(() =>
+    typeof window === "undefined" ||
+    (!localStorage.getItem("dokument-history") && !localStorage.getItem("offertio-profile-cache"))
+  );
   const [serverRemaining, setServerRemaining] = useState<number | null>(null);
   const [, setHistorySource] = useState<"local" | "cloud">("cloud");
 
@@ -55,23 +76,16 @@ export default function DashboardPage() {
       fetch("/api/dokument/check-limit").catch(() => null),
     ]);
 
-    if (profilRes.data) setProfil(profilRes.data as Profile);
+    if (profilRes.data) {
+      setProfil(profilRes.data as Profile);
+      try { localStorage.setItem("offertio-profile-cache", JSON.stringify(profilRes.data)); } catch { /* ignore */ }
+    }
 
     const zahlungsfrist = (profilRes.data as Profile | null)?.zahlungsfrist ?? 30;
 
     if (docsRes.error) {
-      try {
-        const local = JSON.parse(localStorage.getItem("dokument-history") || "[]");
-        setHistory(
-          local.map((d: Record<string, unknown>) => ({
-            ...d,
-            betrag: Number(d.betrag),
-          })),
-        );
-        setHistorySource("local");
-      } catch {
-        setHistory([]);
-      }
+      // Supabase failed — keep the cached data already rendered.
+      setHistorySource("local");
     } else {
       const docs = (docsRes.data || []).map((d: Record<string, unknown>) => ({
         ...d,
