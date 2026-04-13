@@ -5,10 +5,10 @@ import { isAllowedOrigin } from "@/lib/security";
 import { rateLimitAsync } from "@/lib/rate-limit";
 import { logger } from "@/lib/logger";
 
-function json(body: unknown, status = 200) {
+function json(body: unknown, status = 200, extra?: Record<string, string>) {
   return NextResponse.json(body, {
     status,
-    headers: { "Cache-Control": "no-store" },
+    headers: { "Cache-Control": "no-store", ...extra },
   });
 }
 
@@ -34,7 +34,7 @@ export async function POST(request: NextRequest) {
 
     const rl = await rateLimitAsync(`account-delete:${user.id}`, 5, 3_600_000);
     if (!rl.ok) {
-      return json({ error: "Zu viele Anfragen. Bitte warte eine Stunde." }, 429);
+      return json({ error: "Zu viele Anfragen. Bitte warte eine Stunde." }, 429, { "Retry-After": String(rl.retryAfterSeconds) });
     }
 
     const admin = getSupabaseAdmin();

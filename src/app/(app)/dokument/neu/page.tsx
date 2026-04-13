@@ -399,11 +399,19 @@ export default function DokumentNeuPage() {
     let qrReference: string | null = null;
     if (dokumentTyp === "rechnung" && isCH && qrModule) {
       // generateQrBillData supports both regular CH-IBANs (message/NON) and
-      // QR-IBANs (auto-generated QRR).  It never throws QrIbanError anymore.
-      const qrResult = await qrModule.generateQrBillData(profil, total, nummer);
-      if (qrResult) {
-        qrCodeDataUrl = qrResult.dataUrl;
-        qrReference = qrResult.qrReference;
+      // QR-IBANs (auto-generated QRR).  It throws IbanValidationError when
+      // the stored IBAN fails the MOD-97 checksum — surface that to the user.
+      try {
+        const qrResult = await qrModule.generateQrBillData(profil, total, nummer);
+        if (qrResult) {
+          qrCodeDataUrl = qrResult.dataUrl;
+          qrReference = qrResult.qrReference;
+        }
+      } catch (err) {
+        if (err instanceof Error && err.name === "IbanValidationError") {
+          showToast("Ungültige IBAN — QR-Zahlschein konnte nicht erstellt werden. Bitte IBAN im Profil prüfen.");
+        }
+        // qrCodeDataUrl stays null → PDF is generated without QR section
       }
     }
 

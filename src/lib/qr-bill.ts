@@ -15,6 +15,18 @@ export class QrIbanError extends Error {
 }
 
 /**
+ * Thrown when the IBAN stored in the profile fails the ISO 7064 MOD-97
+ * checksum check used by swissqrbill.  Callers should surface this to the
+ * user so they can correct the IBAN in their profile settings.
+ */
+export class IbanValidationError extends Error {
+  constructor(iban: string) {
+    super(`Ungültige IBAN: ${iban}`);
+    this.name = "IbanValidationError";
+  }
+}
+
+/**
  * Derives a valid 27-digit QRR (Swiss QR-Reference) from any document number.
  *
  * Algorithm:
@@ -92,10 +104,14 @@ export async function generateQrBillData(
   }
 
   try {
-    const [{ SwissQRCode }, { isQRIBAN }] = await Promise.all([
+    const [{ SwissQRCode }, { isQRIBAN, isIBANValid }] = await Promise.all([
       import("swissqrbill/svg"),
       import("swissqrbill/utils"),
     ]);
+
+    if (!isIBANValid(cleanIban)) {
+      throw new IbanValidationError(cleanIban);
+    }
 
     const isQrIban = isQRIBAN(cleanIban);
 
@@ -148,7 +164,7 @@ export async function generateQrBillData(
       qrReference,
     };
   } catch (err) {
-    if (err instanceof QrIbanError) {
+    if (err instanceof QrIbanError || err instanceof IbanValidationError) {
       throw err;
     }
     // QR code generation failed — return null so caller can handle gracefully

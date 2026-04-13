@@ -36,7 +36,7 @@ export async function GET(request: NextRequest) {
     if (!rl.ok) {
       return NextResponse.json(
         { error: "Zu viele Anfragen. Bitte warte eine Stunde." },
-        { status: 429 },
+        { status: 429, headers: { "Cache-Control": "no-store", "Retry-After": String(rl.retryAfterSeconds) } },
       );
     }
 

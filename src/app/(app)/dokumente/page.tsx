@@ -29,11 +29,32 @@ function statusOptionsFor(typ: "offerte" | "rechnung") {
   return ["entwurf", "gesendet", "bezahlt", "ueberfaellig"] as const;
 }
 
+/** Read cached history from localStorage synchronously (returns [] on miss/error). */
+function readCachedHistory(): DokumentHistorie[] {
+  try {
+    return JSON.parse(localStorage.getItem("dokument-history") || "[]")
+      .map((d: Record<string, unknown>) => ({ ...d, betrag: Number(d.betrag) }));
+  } catch { return []; }
+}
+
+/** Read cached profile from localStorage synchronously (returns null on miss/error). */
+function readCachedProfile(): Profile | null {
+  try {
+    const raw = localStorage.getItem("offertio-profile-cache");
+    return raw ? (JSON.parse(raw) as Profile) : null;
+  } catch { return null; }
+}
+
 export default function DokumentePage() {
-  const [loading, setLoading] = useState(true);
-  const [history, setHistory] = useState<DokumentHistorie[]>([]);
+  // Seed state from localStorage immediately — zero-latency first paint.
+  const [history, setHistory] = useState<DokumentHistorie[]>(() => readCachedHistory());
+  const [profile, setProfile] = useState<Profile | null>(() => readCachedProfile());
+  // Only show the skeleton on the very first visit (no cache).
+  const [loading, setLoading] = useState(() =>
+    typeof window === "undefined" ||
+    (!localStorage.getItem("dokument-history") && !localStorage.getItem("offertio-profile-cache"))
+  );
   const [source, setSource] = useState<"cloud" | "local">("cloud");
-  const [profile, setProfile] = useState<Profile | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [expandedCustomer, setExpandedCustomer] = useState<string | null>(null);
   const [updatingId, setUpdatingId] = useState<string | null>(null);
@@ -67,17 +88,14 @@ export default function DokumentePage() {
     ]);
 
     const loadedProfile = profileRes.data as Profile | null;
-    if (loadedProfile) setProfile(loadedProfile);
+    if (loadedProfile) {
+      setProfile(loadedProfile);
+      try { localStorage.setItem("offertio-profile-cache", JSON.stringify(loadedProfile)); } catch { /* ignore */ }
+    }
 
     if (docsRes.error) {
-      try {
-        const local = JSON.parse(localStorage.getItem("dokument-history") || "[]");
-        setHistory(local.map((d: Record<string, unknown>) => ({ ...d, betrag: Number(d.betrag) })));
-        setSource("local");
-      } catch {
-        setHistory([]);
-        setSource("local");
-      }
+      // Supabase failed — keep the cached data already rendered.
+      setSource("local");
     } else {
       const docs = (docsRes.data || []).map((d: Record<string, unknown>) => ({
         ...d,

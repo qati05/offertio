@@ -12,6 +12,42 @@ import { useT, LOCALE_LABELS } from "@/lib/i18n";
 import type { Locale } from "@/lib/i18n";
 import type { Land } from "@/lib/types";
 
+/**
+ * Validates an IBAN string for the given country prefix.
+ * Returns an error message string, or null when the IBAN is valid (or empty).
+ *
+ * Checks:
+ *  1. Correct country prefix
+ *  2. Correct total length
+ *  3. ISO 7064 MOD-97 checksum
+ */
+function validateIbanFormat(iban: string, ibanPrefix: string): string | null {
+  const clean = iban.replace(/\s/g, "").toUpperCase();
+  if (!clean) return null; // empty is allowed
+
+  if (!clean.startsWith(ibanPrefix)) {
+    return `IBAN muss mit ${ibanPrefix} beginnen`;
+  }
+
+  const expectedLength: Record<string, number> = { CH: 21, LI: 21, DE: 22, AT: 20 };
+  const expected = expectedLength[ibanPrefix] ?? 21;
+  if (clean.length !== expected) {
+    return `IBAN muss ${expected} Zeichen lang sein (aktuell: ${clean.length})`;
+  }
+
+  // ISO 7064 MOD-97 checksum
+  const rearranged = clean.substring(4) + clean.substring(0, 4);
+  const numeric = rearranged
+    .split("")
+    .map((c) => (/[A-Z]/.test(c) ? String(c.charCodeAt(0) - 55) : c))
+    .join("");
+  let r = 0;
+  for (const ch of numeric) { r = (r * 10 + parseInt(ch)) % 97; }
+  if (r !== 1) return "Ungültige IBAN — Prüfziffer stimmt nicht";
+
+  return null;
+}
+
 const BERUFE = [
   "Maler / Gipser",
   "Elektriker",
@@ -57,6 +93,7 @@ export default function ProfilPage() {
   });
 
   const dachConfig = getDachConfig(form.land);
+  const ibanError = validateIbanFormat(form.iban, dachConfig.ibanPrefix);
 
   useEffect(() => {
     void loadProfile();
@@ -193,6 +230,13 @@ export default function ProfilPage() {
     event.preventDefault();
     setSaving(true);
 
+    const ibanValidationError = validateIbanFormat(form.iban, getDachConfig(form.land).ibanPrefix);
+    if (ibanValidationError) {
+      setToast(`IBAN ungültig: ${ibanValidationError}`);
+      setSaving(false);
+      return;
+    }
+
     const requiredTax = getRequiredTaxField(form.land);
     if (requiredTax && !hasRequiredTaxId(form, form.land)) {
       setToast(`${requiredTax.label} ist für ${getDachConfig(form.land).name} erforderlich.`);
@@ -283,7 +327,7 @@ export default function ProfilPage() {
 
   if (loading) {
     return (
-      <div>
+      <div style={{ minHeight: "100%", maxWidth: 680, margin: "0 auto", padding: "48px 24px 104px" }}>
         <div className="page-header">
           <h1 className="page-title">
             {isOnboarding ? t("profile.welcome") : t("profile.title")}
@@ -295,7 +339,7 @@ export default function ProfilPage() {
   }
 
   return (
-    <div>
+    <div style={{ minHeight: "100%", maxWidth: 680, margin: "0 auto", padding: "48px 24px 104px" }}>
       <div className="page-header">
         <h1 className="page-title">
           {isOnboarding ? t("profile.welcome") : t("profile.title")}
@@ -520,10 +564,17 @@ export default function ProfilPage() {
               value={form.iban}
               onChange={(event) => update("iban", event.target.value)}
               placeholder={`${dachConfig.ibanPrefix}XX XXXX XXXX XXXX XXXX X`}
+              style={ibanError ? { borderColor: "var(--color-error)" } : undefined}
             />
-            <span style={{ fontSize: 11, color: "var(--color-text-muted)", marginTop: 4, display: "block" }}>
-              {dachConfig.hasQrBill ? "Wird für die QR-Rechnung benötigt" : "Wird für SEPA-Überweisungen benötigt"}
-            </span>
+            {ibanError ? (
+              <span style={{ fontSize: 11, color: "var(--color-error)", marginTop: 4, display: "block" }}>
+                {ibanError}
+              </span>
+            ) : (
+              <span style={{ fontSize: 11, color: "var(--color-text-muted)", marginTop: 4, display: "block" }}>
+                {dachConfig.hasQrBill ? "Wird für die QR-Rechnung benötigt" : "Wird für SEPA-Überweisungen benötigt"}
+              </span>
+            )}
           </div>
           {dachConfig.sepaEnabled && (
             <div className="form-group">

@@ -13,10 +13,10 @@ const VALID_STATUSES = new Set([
   "ueberfaellig",
 ]);
 
-function json(body: unknown, status = 200) {
+function json(body: unknown, status = 200, extra?: Record<string, string>) {
   return NextResponse.json(body, {
     status,
-    headers: { "Cache-Control": "no-store" },
+    headers: { "Cache-Control": "no-store", ...extra },
   });
 }
 
@@ -43,7 +43,7 @@ export async function PATCH(request: NextRequest) {
 
   const rl = await rateLimitAsync(`update-status:${user.id}`, 30, 60_000);
   if (!rl.ok) {
-    return json({ error: "Zu viele Anfragen." }, 429);
+    return json({ error: "Zu viele Anfragen." }, 429, { "Retry-After": String(rl.retryAfterSeconds) });
   }
 
   let body: unknown;

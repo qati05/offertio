@@ -15,10 +15,10 @@ function getCurrentMonat(): string {
   return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
 }
 
-function json(body: unknown, status = 200) {
+function json(body: unknown, status = 200, extra?: Record<string, string>) {
   return NextResponse.json(body, {
     status,
-    headers: { "Cache-Control": "no-store" },
+    headers: { "Cache-Control": "no-store", ...extra },
   });
 }
 
@@ -38,7 +38,7 @@ export async function GET() {
 
     const rl = await rateLimitAsync(`check-limit:${user.id}`, 30, 60_000);
     if (!rl.ok) {
-      return json({ error: "Zu viele Anfragen." }, 429);
+      return json({ error: "Zu viele Anfragen." }, 429, { "Retry-After": String(rl.retryAfterSeconds) });
     }
 
     const { data: profile } = await supabase
