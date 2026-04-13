@@ -11,10 +11,10 @@ const MAX_PDF_BYTES = 7 * 1024 * 1024;
 // base64 overhead ≈ 4/3 — a 7 MB PDF becomes ~9.5 MB base64 plus JSON wrapper.
 const MAX_REQUEST_BYTES = 12 * 1024 * 1024;
 
-function json(body: unknown, status = 200) {
+function json(body: unknown, status = 200, extra?: Record<string, string>) {
   return NextResponse.json(body, {
     status,
-    headers: { "Cache-Control": "no-store" },
+    headers: { "Cache-Control": "no-store", ...extra },
   });
 }
 
@@ -45,7 +45,7 @@ export async function POST(request: NextRequest) {
 
   const rl = await rateLimitAsync(`dokument-save:${user.id}`, 30, 60_000);
   if (!rl.ok) {
-    return json({ error: "Zu viele Anfragen. Bitte warte kurz." }, 429);
+    return json({ error: "Zu viele Anfragen. Bitte warte kurz." }, 429, { "Retry-After": String(rl.retryAfterSeconds) });
   }
 
   // Content-Length guard — reject oversized requests before parsing JSON.

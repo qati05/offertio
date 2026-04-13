@@ -20,10 +20,10 @@ import type { OfferteData, Profile } from "@/lib/types";
 
 const MAX_BODY_BYTES = 12 * 1024 * 1024; // 12 MB
 
-function json(body: unknown, status = 200) {
+function json(body: unknown, status = 200, extra?: Record<string, string>) {
   return NextResponse.json(body, {
     status,
-    headers: { "Cache-Control": "no-store" },
+    headers: { "Cache-Control": "no-store", ...extra },
   });
 }
 
@@ -97,9 +97,9 @@ export async function POST(request: NextRequest) {
   }
 
   // Rate limit
-  const { ok } = await rateLimitAsync(`e-rechnung:${user.id}`, 20, 60_000);
-  if (!ok) {
-    return json({ error: "Zu viele Anfragen. Bitte warte kurz." }, 429);
+  const rl = await rateLimitAsync(`e-rechnung:${user.id}`, 20, 60_000);
+  if (!rl.ok) {
+    return json({ error: "Zu viele Anfragen. Bitte warte kurz." }, 429, { "Retry-After": String(rl.retryAfterSeconds) });
   }
 
   // Body size guard

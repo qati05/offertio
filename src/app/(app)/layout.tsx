@@ -108,8 +108,20 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
 function AppLayoutInner({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
-  const [profile, setProfile] = useState<Profile | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [profile, setProfile] = useState<Profile | null>(() => {
+    if (typeof window === "undefined") return null;
+    try {
+      const cached = localStorage.getItem("offertio-profile-cache");
+      return cached ? (JSON.parse(cached) as Profile) : null;
+    } catch { return null; }
+  });
+  // Skip the loading spinner when a cached profile exists — the app shell
+  // renders immediately with stale-while-revalidate data. The middleware
+  // already validates sessions server-side, so this is safe.
+  const [loading, setLoading] = useState(() => {
+    if (typeof window === "undefined") return true;
+    return !localStorage.getItem("offertio-profile-cache");
+  });
   const [collapsed, setCollapsed] = useState(false);
   const [theme, setTheme] = useState<"light" | "dark">("light");
   const router = useRouter();

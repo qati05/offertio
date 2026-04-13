@@ -65,6 +65,13 @@ export default async function RootLayout({
   return (
     <html lang="de-CH" className={`${bricolage.variable} ${dmSans.variable}`} suppressHydrationWarning>
       <head>
+        {/* Preconnect to Supabase — shaves ~100-300 ms off the first auth/data call */}
+        {process.env.NEXT_PUBLIC_SUPABASE_URL && (
+          <>
+            <link rel="preconnect" href={process.env.NEXT_PUBLIC_SUPABASE_URL} />
+            <link rel="dns-prefetch" href={process.env.NEXT_PUBLIC_SUPABASE_URL} />
+          </>
+        )}
         <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
         <link rel="manifest" href="/manifest.json" />
         <meta name="theme-color" content="#C8793D" />

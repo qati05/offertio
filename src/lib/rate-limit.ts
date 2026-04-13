@@ -40,21 +40,25 @@ function memRateLimit(
   key: string,
   limit: number,
   windowMs: number
-): { ok: boolean; remaining: number } {
+): { ok: boolean; remaining: number; retryAfterSeconds: number } {
   const now = Date.now();
   const entry = memRequests.get(key);
 
   if (!entry || now > entry.resetAt) {
     memRequests.set(key, { count: 1, resetAt: now + windowMs });
-    return { ok: true, remaining: limit - 1 };
+    return { ok: true, remaining: limit - 1, retryAfterSeconds: 0 };
   }
 
   entry.count++;
   if (entry.count > limit) {
-    return { ok: false, remaining: 0 };
+    return {
+      ok: false,
+      remaining: 0,
+      retryAfterSeconds: Math.max(1, Math.ceil((entry.resetAt - now) / 1000)),
+    };
   }
 
-  return { ok: true, remaining: limit - entry.count };
+  return { ok: true, remaining: limit - entry.count, retryAfterSeconds: 0 };
 }
 
 // Cleanup stale in-memory entries every 5 minutes
@@ -73,12 +77,14 @@ export async function rateLimitAsync(
   key: string,
   limit: number = 10,
   windowMs: number = 60_000
-): Promise<{ ok: boolean; remaining: number }> {
+): Promise<{ ok: boolean; remaining: number; retryAfterSeconds: number }> {
   if (hasUpstash) {
     try {
       const limiter = getUpstashLimiter(limit, windowMs);
-      const { success, remaining } = await limiter.limit(key);
-      return { ok: success, remaining };
+      const { success, remaining, reset } = await limiter.limit(key);
+      // `reset` is the Unix timestamp (ms) when the window resets.
+      const retryAfterSeconds = success ? 0 : Math.max(1, Math.ceil((reset - Date.now()) / 1000));
+      return { ok: success, remaining, retryAfterSeconds };
     } catch {
       // Redis unavailable — fall back to in-memory limiter.
       // Log server-side so ops can detect Redis outages.

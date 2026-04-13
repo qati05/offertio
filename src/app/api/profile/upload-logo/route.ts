@@ -48,10 +48,10 @@ function detectImageType(buf: Buffer): "image/png" | "image/jpeg" | "image/webp"
   return null;
 }
 
-function json(body: unknown, status = 200) {
+function json(body: unknown, status = 200, extra?: Record<string, string>) {
   return NextResponse.json(body, {
     status,
-    headers: { "Cache-Control": "no-store" },
+    headers: { "Cache-Control": "no-store", ...extra },
   });
 }
 
@@ -70,9 +70,9 @@ export async function POST(request: NextRequest) {
   }
 
   // Rate limit: max 10 logo uploads per minute per user.
-  const { ok } = await rateLimitAsync(`logo:${user.id}`, 10, 60_000);
-  if (!ok) {
-    return json({ error: "Zu viele Anfragen. Bitte warte kurz." }, 429);
+  const rl = await rateLimitAsync(`logo:${user.id}`, 10, 60_000);
+  if (!rl.ok) {
+    return json({ error: "Zu viele Anfragen. Bitte warte kurz." }, 429, { "Retry-After": String(rl.retryAfterSeconds) });
   }
 
   // Coarse Content-Length guard (multipart overhead ~500 B, give 10 KB headroom).
