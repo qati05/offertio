@@ -327,7 +327,7 @@ export default function ProfilPage() {
 
   if (loading) {
     return (
-      <div>
+      <div style={{ minHeight: "100%", maxWidth: 680, margin: "0 auto", padding: "48px 24px 104px" }}>
         <div className="page-header">
           <h1 className="page-title">
             {isOnboarding ? t("profile.welcome") : t("profile.title")}
@@ -339,7 +339,7 @@ export default function ProfilPage() {
   }
 
   return (
-    <div>
+    <div style={{ minHeight: "100%", maxWidth: 680, margin: "0 auto", padding: "48px 24px 104px" }}>
       <div className="page-header">
         <h1 className="page-title">
           {isOnboarding ? t("profile.welcome") : t("profile.title")}

@@ -97,7 +97,7 @@ export default function VorlagenPage() {
 
   if (loading) {
     return (
-      <div>
+      <div style={{ minHeight: "100%", maxWidth: 900, margin: "0 auto", padding: "48px 24px 104px" }}>
         <div className="page-header">
           <h1 className="page-title">Vorlagen</h1>
           <p className="page-sub">Laden...</p>
@@ -117,7 +117,7 @@ export default function VorlagenPage() {
   }
 
   return (
-    <div>
+    <div style={{ minHeight: "100%", maxWidth: 900, margin: "0 auto", padding: "48px 24px 104px" }}>
       <div
         className="page-header"
         style={{
@@ -214,12 +214,12 @@ function VorlageEditor({
   }
 
   return (
-    <div>
+    <div style={{ minHeight: "100%", maxWidth: 900, margin: "0 auto", padding: "48px 24px 104px" }}>
       <div className="page-header">
         <h1 className="page-title">Vorlage bearbeiten</h1>
       </div>
 
-      <div className="app-card" style={{ maxWidth: 800, marginBottom: 20 }}>
+      <div className="app-card" style={{ marginBottom: 20 }}>
         <div className="form-group">
           <label className="form-label">Vorlagenname</label>
           <input
