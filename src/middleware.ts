@@ -35,6 +35,7 @@ function isPublicPath(path: string): boolean {
     path.startsWith("/blog") ||
     path.startsWith("/branchen") ||
     path.startsWith("/vergleich") ||
+    path === "/preise" ||
     path.startsWith("/api/webhooks/") ||
     path === "/api/health" ||
     path.startsWith("/_next/") ||
