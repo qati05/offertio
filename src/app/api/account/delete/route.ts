@@ -19,9 +19,6 @@ export async function POST(request: NextRequest) {
 
   try {
     const body = await request.json().catch(() => ({}));
-    if (body?.confirm !== "DELETE_OFFERTIO_ACCOUNT") {
-      return json({ error: "BestÃ¤tigung fÃ¼r KontolÃ¶schung fehlt." }, 400);
-    }
 
     const supabase = await createSupabaseServer();
     const {
@@ -32,9 +29,8 @@ export async function POST(request: NextRequest) {
       return json({ error: "Nicht angemeldet." }, 401);
     }
 
-    const body = await request.json().catch(() => ({}));
     if (body?.confirm !== "DELETE_OFFERTIO_ACCOUNT") {
-      return json({ error: "Bestätigung erforderlich." }, 400);
+      return json({ error: "Bestätigung für Kontolöschung fehlt." }, 400);
     }
 
     const rl = await rateLimitAsync(`account-delete:${user.id}`, 5, 3_600_000);
