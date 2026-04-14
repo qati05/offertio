@@ -12,10 +12,27 @@
     <xhtml:link rel="alternate" hreflang="de-AT" href="https://offertio.io/" />
   </url>
 
+  <!-- Preise (standalone SEO-Seite) -->
+  <url>
+    <loc>https://offertio.io/preise</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.9</priority>
+  </url>
+
   <!-- Blog -->
   <url>
     <loc>https://offertio.io/blog</loc>
     <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://offertio.io/blog/offerte-vorlage-schweiz</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://offertio.io/blog/rechnung-ohne-mwst-schweiz</loc>
+    <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
@@ -37,6 +54,16 @@
   </url>
   <url>
     <loc>https://offertio.io/branchen/reinigung</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://offertio.io/branchen/maler</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://offertio.io/branchen/gaertner</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>

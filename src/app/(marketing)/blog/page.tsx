@@ -8,6 +8,24 @@ export const metadata = {
 
 const blogPosts = [
   {
+    slug: "offerte-vorlage-schweiz",
+    title: "Offerte Vorlage Schweiz: Was gehört rein — und wie du sie in zwei Minuten erstellst",
+    teaser:
+      "Pflichtangaben, korrekter Aufbau, häufige Fehler — und eine kostenlose digitale Vorlage statt Word oder Excel.",
+    readingTime: "5 min",
+    date: "2026-04-15",
+    dateFormatted: "15. April 2026",
+  },
+  {
+    slug: "rechnung-ohne-mwst-schweiz",
+    title: "Rechnung ohne MwSt Schweiz: Was Kleinunternehmer wirklich wissen müssen",
+    teaser:
+      "MwSt-befreit unter CHF 100 000? Welche Angaben auf die Rechnung gehören, was verboten ist und wie Offertio das automatisch setzt.",
+    readingTime: "5 min",
+    date: "2026-04-15",
+    dateFormatted: "15. April 2026",
+  },
+  {
     slug: "qr-rechnung-schweiz-2026",
     title: "Swiss QR-Rechnung 2026: Alles was Schweizer Betriebe wissen müssen",
     teaser:

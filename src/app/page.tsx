@@ -1,3 +1,4 @@
+import { headers } from "next/headers";
 import LandingScrollReveal from "@/components/LandingScrollReveal";
 import LandingNavbar from "@/components/LandingNavbar";
 import LandingHero from "@/components/LandingHero";
@@ -11,7 +12,96 @@ import LandingFaq from "@/components/LandingFaq";
 import LandingCta from "@/components/LandingCta";
 import LandingFooter from "@/components/LandingFooter";
 
-export default function Home() {
+const faqJsonLd = {
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  mainEntity: [
+    {
+      "@type": "Question",
+      name: "Kann ich Offerten wirklich per WhatsApp senden?",
+      acceptedAnswer: {
+        "@type": "Answer",
+        text: "Ja. Ein Tap öffnet WhatsApp mit einer fertigen Nachricht und einem sicheren Link zum PDF. Der Kunde bekommt die Offerte in demselben Chat, in dem er dich kontaktiert hat — nicht im SPAM-Ordner. Der Link ist 7 Tage gültig.",
+      },
+    },
+    {
+      "@type": "Question",
+      name: "Wird die Swiss QR-Rechnung richtig erkannt?",
+      acceptedAnswer: {
+        "@type": "Answer",
+        text: "Ja. Offertio erzeugt den Swiss QR-Code nach ISO 20022 mit QR-IBAN und QRR-Referenz — genau so, wie ihn alle Schweizer Banken im E-Banking scannen.",
+      },
+    },
+    {
+      "@type": "Question",
+      name: "Funktioniert das auch für Deutschland und Österreich?",
+      acceptedAnswer: {
+        "@type": "Answer",
+        text: "Ja. Für DE erzeugen wir ZUGFeRD 2.3 BASIC (Factur-X) als hybride PDF mit eingebettetem XML — pflichtkonform für die E-Rechnungspflicht. Für AT setzen wir die UID-Schwellen und Pflichtfelder nach §11 öUStG automatisch.",
+      },
+    },
+    {
+      "@type": "Question",
+      name: "Was kostet der 14-Tage-Test?",
+      acceptedAnswer: {
+        "@type": "Answer",
+        text: "Nichts. Keine Kreditkarte, keine automatische Verlängerung. 14 Tage lang alle Pro-Funktionen — danach automatisch Free (5 Dokumente/Monat) oder Upgrade.",
+      },
+    },
+    {
+      "@type": "Question",
+      name: "Brauche ich technisches Wissen?",
+      acceptedAnswer: {
+        "@type": "Answer",
+        text: "Nein. Als PWA läuft Offertio direkt im Browser — kein App-Store, keine Installation, kein Training.",
+      },
+    },
+    {
+      "@type": "Question",
+      name: "Muss ich sofort Pro kaufen?",
+      acceptedAnswer: {
+        "@type": "Answer",
+        text: "Nein. Nach dem 14-Tage-Test kannst du kostenlos weiter mit 5 Dokumenten/Monat arbeiten. Pro ergibt erst Sinn, wenn es fester Teil deines Betriebs wird.",
+      },
+    },
+  ],
+};
+
+const pricingJsonLd = {
+  "@context": "https://schema.org",
+  "@type": "SoftwareApplication",
+  name: "Offertio",
+  url: "https://offert.io",
+  offers: [
+    {
+      "@type": "Offer",
+      name: "Free",
+      price: "0",
+      priceCurrency: "CHF",
+      description: "5 Dokumente pro Monat. QR-Rechnung, ZUGFeRD, WhatsApp-Versand, PDF-Export.",
+    },
+    {
+      "@type": "Offer",
+      name: "Pro Monatlich",
+      price: "28",
+      priceCurrency: "CHF",
+      billingDuration: "P1M",
+      description: "Unbegrenzte Dokumente, Logo & Branding, E-Mail-Versand, Vorlagen-Bibliothek, Offline-Modus.",
+    },
+    {
+      "@type": "Offer",
+      name: "Pro Jährlich",
+      price: "240",
+      priceCurrency: "CHF",
+      billingDuration: "P1Y",
+      description: "Unbegrenzte Dokumente, Logo & Branding, E-Mail-Versand, Vorlagen-Bibliothek, Offline-Modus. 2 Monate gratis.",
+    },
+  ],
+};
+
+export default async function Home() {
+  const nonce = (await headers()).get("x-nonce") ?? "";
+
   return (
     <div className="min-h-screen text-[color:var(--color-text)]" style={{
       background: `
@@ -37,6 +127,17 @@ export default function Home() {
       </main>
 
       <LandingFooter />
+
+      <script
+        nonce={nonce}
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }}
+      />
+      <script
+        nonce={nonce}
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(pricingJsonLd) }}
+      />
     </div>
   );
 }
