@@ -13,8 +13,8 @@ export default function ImpressumPage() {
           <h2 style={{ fontSize: 18, marginBottom: 12 }}>Betreiber</h2>
           <p>
             Offertio<br />
-            [Firmenadresse einsetzen]<br />
-            [PLZ Ort]<br />
+            Marbacherstrasse 12<br />
+            9445 Rebstein<br />
             Schweiz
           </p>
 
@@ -23,9 +23,10 @@ export default function ImpressumPage() {
             E-Mail: <a href="mailto:info@offertio.ch" style={{ color: "var(--color-primary)" }}>info@offertio.ch</a>
           </p>
 
-          <h2 style={{ fontSize: 18, marginTop: 32, marginBottom: 12 }}>Handelsregister</h2>
+          <h2 style={{ fontSize: 18, marginTop: 32, marginBottom: 12 }}>Rechtsform</h2>
           <p>
-            [UID / Handelsregisternummer einsetzen]
+            Einzelunternehmen — nicht im Handelsregister eingetragen.<br />
+            Kein MwSt-Register (Umsatz unter CHF 100 000).
           </p>
 
           <h2 style={{ fontSize: 18, marginTop: 32, marginBottom: 12 }}>Haftungshinweis</h2>
