@@ -9,17 +9,8 @@ import { createSupabaseBrowser } from "@/lib/supabase-browser";
 import { getDachConfig } from "@/lib/dach";
 import { buildDokumentCsv } from "@/lib/export";
 import { groupDocumentsByCustomer } from "@/lib/customer-folders";
-import { computeDocumentStatus } from "@/lib/dokument-status";
+import { computeDocumentStatus, getStatus } from "@/lib/dokument-status";
 import type { DokumentHistorie, Profile } from "@/lib/types";
-
-const STATUS_META: Record<string, { label: string; color: string; bg: string }> = {
-  entwurf:      { label: "In Arbeit",  color: "#6b7280", bg: "rgba(107,114,128,0.07)" },
-  gesendet:     { label: "Ausstehend", color: "#A8622E", bg: "rgba(200,121,61,0.07)" },
-  bezahlt:      { label: "Erledigt",   color: "#15803d", bg: "rgba(21,128,61,0.07)" },
-  angenommen:   { label: "Bestätigt",  color: "#15803d", bg: "rgba(21,128,61,0.07)" },
-  abgelaufen:   { label: "Abgelaufen", color: "var(--color-warning)", bg: "var(--color-warning-soft)" },
-  ueberfaellig: { label: "Überfällig", color: "var(--color-warning)", bg: "var(--color-warning-soft)" },
-};
 
 /** Status options available per document type */
 function statusOptionsFor(typ: "offerte" | "rechnung") {
@@ -177,7 +168,7 @@ export default function DokumentePage() {
   }
 
   function DocRow({ doc, compact = false }: { doc: DokumentHistorie; compact?: boolean }) {
-    const status = STATUS_META[doc.status] ?? STATUS_META.entwurf;
+    const status = getStatus(doc.status);
     const isRechnung = doc.typ === "rechnung";
     const convertedInvoice = doc.id ? convertedInvoicesBySourceId.get(doc.id) : null;
     const isUpdating = doc.id === updatingId;
@@ -250,7 +241,7 @@ export default function DokumentePage() {
               >
                 {options.map((s) => (
                   <option key={s} value={s}>
-                    {STATUS_META[s]?.label ?? s}
+                    {getStatus(s).label}
                   </option>
                 ))}
               </select>
@@ -510,16 +501,11 @@ function CustomerFolder({
         <div className="flex items-center gap-3">
           {/* Latest document status chip */}
           {folder.docs[0] && (() => {
-            const st = STATUS_META[folder.docs[0].status] ?? STATUS_META.entwurf;
+            const st = getStatus(folder.docs[0].status);
             return (
               <span
-                className="text-[11px] font-semibold uppercase tracking-[0.06em]"
-                style={{
-                  color: st.color,
-                  background: st.bg,
-                  padding: "2px 8px",
-                  borderRadius: 6,
-                }}
+                className="pill-badge"
+                style={{ color: st.color, background: st.bg }}
               >
                 {st.label}
               </span>

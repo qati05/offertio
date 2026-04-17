@@ -4,13 +4,13 @@
  * Dashboard insights — compact KPI strip + revenue sparkline + top customers.
  *
  * Pure presentation layer: all numbers come from computeInsights() in lib/insights.ts.
- * Renders gracefully when history is empty (shows "—" placeholders instead of zeros
- * so new users don't see misleadingly optimistic metrics).
+ * Uses design primitives (.kpi-card, .surface, .bar-row, .kicker) defined in globals.css
+ * so spacing/colors stay consistent with the rest of the app and are themable.
  */
 
 import Link from "next/link";
 import { motion } from "framer-motion";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { computeInsights, formatCompactCurrency, type MonthBucket } from "@/lib/insights";
 import { toCustomerSlug } from "@/lib/customers";
 import type { DokumentHistorie } from "@/lib/types";
@@ -32,16 +32,9 @@ export default function DashboardInsights({ history, currency }: Props) {
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.45, delay: 0.14, ease }}
-      style={{ marginBottom: 40 }}
+      className="insights"
     >
-      <div
-        style={{
-          display: "grid",
-          gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))",
-          gap: 10,
-          marginBottom: 14,
-        }}
-      >
+      <div className="insights-kpi-grid">
         <KpiCard
           label="Umsatz Monat"
           value={hasData ? formatCompactCurrency(insights.revenueThisMonth, currency) : "—"}
@@ -50,11 +43,7 @@ export default function DashboardInsights({ history, currency }: Props) {
         />
         <KpiCard
           label="Offen"
-          value={
-            hasData
-              ? formatCompactCurrency(insights.openInvoiceAmount, currency)
-              : "—"
-          }
+          value={hasData ? formatCompactCurrency(insights.openInvoiceAmount, currency) : "—"}
           hint={
             insights.openInvoiceCount
               ? `${insights.openInvoiceCount} ${insights.openInvoiceCount === 1 ? "Rechnung" : "Rechnungen"}`
@@ -65,26 +54,14 @@ export default function DashboardInsights({ history, currency }: Props) {
         />
         <KpiCard
           label="Überfällig"
-          value={
-            insights.overdueCount
-              ? formatCompactCurrency(insights.overdueAmount, currency)
-              : "—"
-          }
-          hint={
-            insights.overdueCount
-              ? `${insights.overdueCount} mahnen`
-              : "Keine Mahnungen"
-          }
+          value={insights.overdueCount ? formatCompactCurrency(insights.overdueAmount, currency) : "—"}
+          hint={insights.overdueCount ? `${insights.overdueCount} mahnen` : "Keine Mahnungen"}
           tone={insights.overdueCount > 0 ? "danger" : "neutral"}
           href={insights.overdueCount > 0 ? "/dokumente" : undefined}
         />
         <KpiCard
           label="Abschlussquote"
-          value={
-            insights.winRate !== null
-              ? `${Math.round(insights.winRate * 100)}%`
-              : "—"
-          }
+          value={insights.winRate !== null ? `${Math.round(insights.winRate * 100)}%` : "—"}
           hint={
             insights.winRateSample > 0
               ? `${insights.winRateSample} Offerten entschieden`
@@ -99,34 +76,14 @@ export default function DashboardInsights({ history, currency }: Props) {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ duration: 0.5, delay: 0.22 }}
-          style={{
-            background: "var(--app-card)",
-            border: "1px solid var(--app-border)",
-            borderRadius: 16,
-            padding: "18px 20px 12px",
-          }}
+          className="surface insights-chart"
         >
-          <div style={{
-            display: "flex",
-            alignItems: "baseline",
-            justifyContent: "space-between",
-            marginBottom: 12,
-          }}>
-            <div style={{
-              fontSize: 11, fontWeight: 600, letterSpacing: "0.13em",
-              textTransform: "uppercase", color: "var(--app-text-soft)",
-            }}>
-              Umsatz · 6 Monate
-            </div>
-            <div style={{
-              fontSize: 13, fontWeight: 600, color: "var(--app-text)",
-              fontVariantNumeric: "tabular-nums",
-            }}>
+          <div className="insights-chart-header">
+            <span className="kicker">Umsatz · 6 Monate</span>
+            <span className="insights-ytd num">
               {formatCompactCurrency(insights.revenueYearToDate, currency)}
-              <span style={{ color: "var(--app-text-soft)", fontWeight: 400, marginLeft: 6 }}>
-                YTD
-              </span>
-            </div>
+              <span className="insights-ytd-label">YTD</span>
+            </span>
           </div>
           <RevenueSparkline data={insights.monthlySeries} currency={currency} />
         </motion.div>
@@ -137,27 +94,12 @@ export default function DashboardInsights({ history, currency }: Props) {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ duration: 0.5, delay: 0.3 }}
-          style={{ marginTop: 14 }}
+          className="insights-top"
         >
-          <div style={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-            marginBottom: 10,
-          }}>
-            <div style={{
-              fontSize: 11, fontWeight: 600, letterSpacing: "0.13em",
-              textTransform: "uppercase", color: "var(--app-text-soft)",
-            }}>
-              Top Kunden
-            </div>
+          <div className="insights-top-header">
+            <span className="kicker">Top Kunden</span>
           </div>
-          <div style={{
-            background: "var(--app-card)",
-            border: "1px solid var(--app-border)",
-            borderRadius: 16,
-            overflow: "hidden",
-          }}>
+          <div className="surface">
             {insights.topCustomers.slice(0, 3).map((customer, i, arr) => {
               const max = arr[0].revenue || 1;
               const pct = Math.max(6, Math.round((customer.revenue / max) * 100));
@@ -166,57 +108,19 @@ export default function DashboardInsights({ history, currency }: Props) {
                 <Link
                   key={customer.name}
                   href={`/kunden/${encodeURIComponent(slug)}`}
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: 14,
-                    padding: "14px 18px",
-                    borderBottom: i < arr.length - 1 && i < 2 ? "1px solid var(--app-border)" : "none",
-                    textDecoration: "none",
-                    color: "inherit",
-                  }}
+                  className="bar-row focus-ring"
                 >
-                  <div style={{ flex: 1, minWidth: 0 }}>
-                    <div style={{
-                      fontSize: 14, fontWeight: 600,
-                      color: "var(--app-text)",
-                      whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis",
-                      marginBottom: 6,
-                    }}>
-                      {customer.name}
-                    </div>
-                    <div style={{
-                      height: 4,
-                      background: "var(--app-card-muted)",
-                      borderRadius: 2,
-                      overflow: "hidden",
-                    }}>
-                      <div style={{
-                        width: `${pct}%`,
-                        height: "100%",
-                        background: "var(--color-primary)",
-                        borderRadius: 2,
-                        transition: "width 0.8s var(--ease-out-expo)",
-                      }} />
+                  <div className="bar-row-main">
+                    <div className="bar-row-name">{customer.name}</div>
+                    <div className="bar-track">
+                      <div className="bar-fill" style={{ width: `${pct}%` }} />
                     </div>
                   </div>
-                  <div style={{
-                    flexShrink: 0,
-                    textAlign: "right",
-                    minWidth: 90,
-                  }}>
-                    <div style={{
-                      fontSize: 13, fontWeight: 600,
-                      color: "var(--app-text)",
-                      fontVariantNumeric: "tabular-nums",
-                    }}>
+                  <div className="bar-row-aside">
+                    <div className="bar-row-value num">
                       {formatCompactCurrency(customer.revenue, currency)}
                     </div>
-                    <div style={{
-                      fontSize: 11,
-                      color: "var(--app-text-soft)",
-                      marginTop: 2,
-                    }}>
+                    <div className="bar-row-count">
                       {customer.docs} {customer.docs === 1 ? "Rechnung" : "Rechnungen"}
                     </div>
                   </div>
@@ -245,62 +149,31 @@ function KpiCard({
   tone: "neutral" | "primary" | "danger";
   href?: string;
 }) {
-  const toneColors = {
-    neutral: "var(--app-text)",
-    primary: "var(--color-primary-strong, #a8622e)",
-    danger: "#B91C1C",
-  };
+  const valueClass = [
+    "kpi-value",
+    tone === "primary" ? "kpi-value--primary" : "",
+    tone === "danger" ? "kpi-value--danger" : "",
+  ].filter(Boolean).join(" ");
 
   const content = (
     <>
-      <div style={{
-        fontSize: 10, fontWeight: 600, letterSpacing: "0.12em",
-        textTransform: "uppercase", color: "var(--app-text-soft)",
-        marginBottom: 6,
-      }}>
-        {label}
-      </div>
-      <div style={{
-        fontSize: 20, fontWeight: 700, letterSpacing: "-0.02em",
-        color: toneColors[tone],
-        fontVariantNumeric: "tabular-nums",
-        lineHeight: 1.1,
-        marginBottom: 4,
-        fontFamily: "var(--font-display)",
-      }}>
-        {value}
-      </div>
-      <div style={{
-        fontSize: 11, lineHeight: 1.3,
-        color: "var(--app-text-muted)",
-      }}>
-        {hint}
-      </div>
+      <div className="kpi-label">{label}</div>
+      <div className={valueClass}>{value}</div>
+      <div className="kpi-hint">{hint}</div>
     </>
   );
 
-  const sharedStyle: React.CSSProperties = {
-    background: "var(--app-card)",
-    border: "1px solid var(--app-border)",
-    borderRadius: 14,
-    padding: "14px 16px",
-    textDecoration: "none",
-    color: "inherit",
-    display: "block",
-    transition: "border-color 0.15s ease, transform 0.15s ease",
-  };
-
   if (href) {
     return (
-      <Link href={href} style={sharedStyle} className="kpi-card-link">
+      <Link href={href} className="kpi-card kpi-card-link">
         {content}
       </Link>
     );
   }
-  return <div style={sharedStyle}>{content}</div>;
+  return <div className="kpi-card">{content}</div>;
 }
 
-/* ── Revenue Sparkline ─────────────────────────────────── */
+/* ── Revenue Sparkline with hover tooltip ──────────────── */
 
 function RevenueSparkline({
   data,
@@ -309,6 +182,7 @@ function RevenueSparkline({
   data: MonthBucket[];
   currency: string;
 }) {
+  const [hoverIdx, setHoverIdx] = useState<number | null>(null);
   const width = 640;
   const height = 76;
   const padY = 10;
@@ -329,14 +203,16 @@ function RevenueSparkline({
 
   const areaPath = `${linePath} L ${points[points.length - 1].x.toFixed(1)} ${height - padY} L ${points[0].x.toFixed(1)} ${height - padY} Z`;
 
+  const activePoint = hoverIdx !== null ? points[hoverIdx] : null;
+
   return (
-    <div style={{ width: "100%" }}>
+    <div className="sparkline">
       <svg
         viewBox={`0 0 ${width} ${height}`}
         width="100%"
         height={height}
         preserveAspectRatio="none"
-        style={{ display: "block" }}
+        className="sparkline-svg"
         aria-label="Umsatzverlauf der letzten 6 Monate"
       >
         <defs>
@@ -354,34 +230,60 @@ function RevenueSparkline({
           strokeLinecap="round"
           strokeLinejoin="round"
         />
+        {activePoint && (
+          <line
+            x1={activePoint.x}
+            y1={padY}
+            x2={activePoint.x}
+            y2={height - padY}
+            stroke="var(--color-primary)"
+            strokeWidth={1}
+            strokeDasharray="2 2"
+            opacity={0.35}
+          />
+        )}
         {points.map((p, i) => (
           <circle
             key={i}
             cx={p.x}
             cy={p.y}
-            r={i === points.length - 1 ? 3 : 2}
+            r={i === hoverIdx || i === points.length - 1 ? 3.5 : 2}
             fill="var(--color-primary)"
           />
         ))}
+        {/* Invisible wide hitboxes — one per month for easy hover/tap */}
+        {points.map((p, i) => (
+          <rect
+            key={`hit-${i}`}
+            x={p.x - step / 2}
+            y={0}
+            width={step}
+            height={height}
+            fill="transparent"
+            onMouseEnter={() => setHoverIdx(i)}
+            onMouseLeave={() => setHoverIdx(null)}
+            onFocus={() => setHoverIdx(i)}
+            onBlur={() => setHoverIdx(null)}
+            tabIndex={0}
+            role="button"
+            aria-label={`${p.data.label}: ${formatCompactCurrency(p.data.revenue, currency)}`}
+          />
+        ))}
       </svg>
-      <div style={{
-        display: "flex",
-        justifyContent: "space-between",
-        marginTop: 8,
-        padding: "0 2px",
-      }}>
+      {activePoint && (
+        <div
+          className="sparkline-tooltip"
+          style={{ left: `calc(${(activePoint.x / width) * 100}% - 50px)` }}
+        >
+          <div className="sparkline-tooltip-month">{activePoint.data.label}</div>
+          <div className="sparkline-tooltip-value num">
+            {formatCompactCurrency(activePoint.data.revenue, currency)}
+          </div>
+        </div>
+      )}
+      <div className="sparkline-axis">
         {data.map((bucket) => (
-          <div
-            key={bucket.key}
-            title={formatCompactCurrency(bucket.revenue, currency)}
-            style={{
-              fontSize: 10,
-              color: "var(--app-text-soft)",
-              letterSpacing: "0.04em",
-              textAlign: "center",
-              flex: 1,
-            }}
-          >
+          <div key={bucket.key} className="sparkline-axis-label">
             {bucket.label}
           </div>
         ))}
