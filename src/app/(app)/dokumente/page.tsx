@@ -47,6 +47,8 @@ export default function DokumentePage() {
   );
   const [source, setSource] = useState<"cloud" | "local">("cloud");
   const [searchQuery, setSearchQuery] = useState("");
+  const [typFilter, setTypFilter] = useState<"alle" | "offerte" | "rechnung">("alle");
+  const [statusFilter, setStatusFilter] = useState<"alle" | "offen" | "bezahlt" | "ueberfaellig">("alle");
   const [expandedCustomer, setExpandedCustomer] = useState<string | null>(null);
   const [updatingId, setUpdatingId] = useState<string | null>(null);
   const [showExport, setShowExport] = useState(false);
@@ -135,7 +137,23 @@ export default function DokumentePage() {
 
   const currency = getDachConfig(profile?.land).currency;
   const zahlungsfrist = profile?.zahlungsfrist ?? 30;
-  const customerFolders = useMemo(() => groupDocumentsByCustomer(history), [history]);
+  const filteredHistory = useMemo(() => {
+    return history.filter((doc) => {
+      if (typFilter !== "alle" && doc.typ !== typFilter) return false;
+      if (statusFilter === "alle") return true;
+      if (statusFilter === "offen") {
+        return doc.status === "gesendet" || doc.status === "ueberfaellig";
+      }
+      if (statusFilter === "bezahlt") return doc.status === "bezahlt";
+      if (statusFilter === "ueberfaellig") return doc.status === "ueberfaellig";
+      return true;
+    });
+  }, [history, typFilter, statusFilter]);
+
+  const customerFolders = useMemo(
+    () => groupDocumentsByCustomer(filteredHistory),
+    [filteredHistory],
+  );
   const convertedInvoicesBySourceId = useMemo(
     () =>
       new Map(
@@ -376,9 +394,9 @@ export default function DokumentePage() {
           </div>
         )}
 
-        {/* Search */}
+        {/* Search + Filters */}
         {!loading && history.length > 0 && (
-          <div className="mb-6">
+          <div className="mb-6 flex flex-col gap-3">
             <input
               className="field"
               value={searchQuery}
@@ -386,6 +404,37 @@ export default function DokumentePage() {
               placeholder="Kunde suchen…"
               style={{ maxWidth: 360 }}
             />
+            <div className="flex flex-wrap items-center gap-2">
+              <FilterChipGroup
+                value={typFilter}
+                onChange={setTypFilter}
+                options={[
+                  { value: "alle", label: "Alle" },
+                  { value: "offerte", label: "Offerten" },
+                  { value: "rechnung", label: "Rechnungen" },
+                ]}
+              />
+              <span className="filter-divider" aria-hidden="true" />
+              <FilterChipGroup
+                value={statusFilter}
+                onChange={setStatusFilter}
+                options={[
+                  { value: "alle", label: "Alle Status" },
+                  { value: "offen", label: "Offen" },
+                  { value: "bezahlt", label: "Bezahlt" },
+                  { value: "ueberfaellig", label: "Überfällig" },
+                ]}
+              />
+              {(typFilter !== "alle" || statusFilter !== "alle") && (
+                <button
+                  type="button"
+                  className="filter-reset"
+                  onClick={() => { setTypFilter("alle"); setStatusFilter("alle"); }}
+                >
+                  Filter zurücksetzen
+                </button>
+              )}
+            </div>
           </div>
         )}
 
@@ -547,6 +596,34 @@ function CustomerFolder({
           </div>
         </div>
       )}
+    </div>
+  );
+}
+
+/* ── Filter Chip Group ───────────────────────────────── */
+
+function FilterChipGroup<T extends string>({
+  value,
+  onChange,
+  options,
+}: {
+  value: T;
+  onChange: (next: T) => void;
+  options: readonly { value: T; label: string }[];
+}) {
+  return (
+    <div className="filter-chip-group" role="group">
+      {options.map((opt) => (
+        <button
+          key={opt.value}
+          type="button"
+          className={`filter-chip${value === opt.value ? " filter-chip--active" : ""}`}
+          onClick={() => onChange(opt.value)}
+          aria-pressed={value === opt.value}
+        >
+          {opt.label}
+        </button>
+      ))}
     </div>
   );
 }
