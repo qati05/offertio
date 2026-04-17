@@ -15,6 +15,8 @@ import {
 } from "@/lib/payment";
 import { trackUpgradeClick } from "@/lib/analytics";
 import { computeDocumentStatus, countOpenActions, getStatus, statusBadgeVariants } from "@/lib/dokument-status";
+import { getDachConfig } from "@/lib/dach";
+import DashboardInsights from "@/components/DashboardInsights";
 import type { Profile, DokumentHistorie } from "@/lib/types";
 
 const FREE_DOCS = 5;
@@ -72,7 +74,7 @@ export default function DashboardPage() {
         .select("*")
         .eq("user_id", user.id)
         .order("datum", { ascending: false })
-        .limit(8),
+        .limit(200),
       fetch("/api/dokument/check-limit").catch(() => null),
     ]);
 
@@ -287,6 +289,14 @@ export default function DashboardPage() {
             <div className="dash-tile-sub">Exakt. DACH-konform.</div>
           </Link>
         </motion.div>
+
+        {/* ── Insights (KPIs + Sparkline + Top-Kunden) ─────── */}
+        {!loading && history.length > 0 && (
+          <DashboardInsights
+            history={history}
+            currency={getDachConfig(profil?.land).currency}
+          />
+        )}
 
         {/* ── Verlauf ──────────────────────────────────── */}
         <motion.section

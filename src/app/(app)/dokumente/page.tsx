@@ -483,7 +483,6 @@ function CustomerFolder({
   onToggle,
   zahlungsfrist,
   DocRow,
-  currency,
 }: {
   folder: ReturnType<typeof groupDocumentsByCustomer>[number];
   expanded: boolean;
@@ -534,6 +533,23 @@ function CustomerFolder({
 
       {expanded && (
         <div className="border-t px-5 pb-5 pt-4" style={{ borderColor: "var(--app-border)" }}>
+          <div className="mb-4 flex justify-end">
+            <Link
+              href={`/kunden/${encodeURIComponent(folder.slug)}`}
+              style={{
+                fontSize: 12,
+                fontWeight: 600,
+                color: "var(--color-primary)",
+                textDecoration: "none",
+                padding: "4px 10px",
+                borderRadius: 8,
+                border: "1px solid var(--app-border)",
+                background: "var(--app-card)",
+              }}
+            >
+              Kundenprofil öffnen →
+            </Link>
+          </div>
           <div className="space-y-3">
             {folder.docs.map((doc, idx) => (
               <DocRow
