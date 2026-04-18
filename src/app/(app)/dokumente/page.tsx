@@ -229,6 +229,19 @@ export default function DokumentePage() {
                 : `→ ${doc.converted_document_nummer || convertedInvoice?.nummer}`}
             </div>
           )}
+          {!compact &&
+            doc.typ === "offerte" &&
+            (doc.status === "angenommen" || doc.status === "gesendet") &&
+            !doc.converted_document_id &&
+            !convertedInvoice &&
+            doc.id && (
+              <Link
+                href={`/dokument/neu?typ=rechnung&from=${encodeURIComponent(doc.id)}`}
+                className="convert-link mt-2"
+              >
+                → Rechnung aus Offerte erstellen
+              </Link>
+            )}
           {compact && (
             <div className="mt-0.5 text-xs font-medium" style={{ color: "var(--app-text)" }}>
               {doc.nummer}
