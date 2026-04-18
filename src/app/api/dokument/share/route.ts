@@ -58,7 +58,7 @@ export async function POST(request: NextRequest) {
   // RLS ensures the user only sees their own documents.
   const { data: doc, error: readError } = await supabase
     .from("dokumente")
-    .select("id, nummer, pdf_url")
+    .select("id, nummer, pdf_url, share_token")
     .eq("id", id)
     .eq("user_id", user.id)
     .maybeSingle();
@@ -92,5 +92,6 @@ export async function POST(request: NextRequest) {
     url: signed.signedUrl,
     expiresIn: EXPIRES_IN,
     nummer: doc.nummer,
+    shareToken: doc.share_token ?? null,
   });
 }
