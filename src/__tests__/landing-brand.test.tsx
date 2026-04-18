@@ -35,7 +35,7 @@ describe("landing brand surfaces", () => {
   it("keeps the footer brand copy and legal links", () => {
     render(createElement(LandingFooter));
 
-    expect(screen.getByText(/weniger büroarbeit/i)).toBeInTheDocument();
+    expect(screen.getAllByText(/weniger nacharbeit/i).length).toBeGreaterThan(0);
     expect(screen.getAllByRole("link", { name: /^impressum$/i })).toHaveLength(1);
     expect(screen.getAllByRole("link", { name: /^datenschutz$/i })).toHaveLength(1);
     expect(screen.getByText(/^offertio$/i)).toBeInTheDocument();

@@ -1,137 +1,94 @@
 "use client";
 
 import { motion } from "framer-motion";
+import { useLang } from "@/components/LangContext";
 
-const featureGroups = [
-  {
-    eyebrow: "Swiss QR-Rechnung",
-    icon: (
-      <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><rect x="2" y="2" width="5" height="5" stroke="currentColor" strokeWidth="1.4"/><rect x="9" y="2" width="5" height="5" stroke="currentColor" strokeWidth="1.4"/><rect x="2" y="9" width="5" height="5" stroke="currentColor" strokeWidth="1.4"/><rect x="10.5" y="10.5" width="2" height="2" fill="currentColor"/></svg>
-    ),
-    title: "QR-Rechnung, die funktioniert.",
-    desc: "QR-IBAN, QRR-Referenz, Swiss-QR-Code — automatisch generiert nach ISO 20022. Kein Einzahlungsschein, kein Kopfzerbrechen. Dein Kunde scannt im E-Banking, fertig.",
-  },
-  {
-    eyebrow: "WhatsApp-Versand",
-    icon: (
-      <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M2 14l1.1-2.5A6 6 0 1 1 5.5 13.5L2 14z" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round" strokeLinejoin="round"/></svg>
-    ),
-    title: "Dort senden, wo dein Kunde liest.",
-    desc: "Ein Tap öffnet WhatsApp mit Nachricht und PDF-Link. Der Kunde bekommt die Offerte in dem Chat, in dem er dir die Anfrage geschickt hat — nicht in einem SPAM-Ordner.",
-  },
-  {
-    eyebrow: "ZUGFeRD · DACH",
-    icon: (
-      <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><rect x="2" y="2" width="12" height="12" rx="2.5" stroke="currentColor" strokeWidth="1.4"/><path d="M5 8h6M5 5.5h4M5 10.5h3" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/></svg>
-    ),
-    title: "CH, DE, AT — ein Profil.",
-    desc: "ZUGFeRD 2.3 BASIC (Factur-X) für DE E-Rechnung, Leistungsdatum-Pflicht, AT UID-Schwellen ab €400/€10.000 — automatisch geprüft. Rechtssicher, ohne dass du §14 UStG lesen musst.",
-  },
-  {
-    eyebrow: "Mobile-first",
-    icon: (
-      <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><rect x="4" y="2" width="8" height="12" rx="1.5" stroke="currentColor" strokeWidth="1.4"/><path d="M7.5 12.5h1" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/></svg>
-    ),
-    title: "Auf der Baustelle. Direkt.",
-    desc: "Als PWA auf dem Homescreen, offlinefähig, kein App-Store. Vom Kundentermin zur gesendeten Offerte — während der Kunde dich noch zur Tür bringt.",
-  },
+const featureIcons = [
+  <svg key="qr" width="20" height="20" viewBox="0 0 20 20" fill="none"><rect x="2" y="2" width="6" height="6" stroke="currentColor" strokeWidth="1.4"/><rect x="12" y="2" width="6" height="6" stroke="currentColor" strokeWidth="1.4"/><rect x="2" y="12" width="6" height="6" stroke="currentColor" strokeWidth="1.4"/><rect x="13.5" y="13.5" width="2.5" height="2.5" fill="currentColor"/></svg>,
+  <svg key="doc" width="20" height="20" viewBox="0 0 20 20" fill="none"><rect x="3" y="2" width="14" height="16" rx="2.5" stroke="currentColor" strokeWidth="1.4"/><path d="M6.5 7h7M6.5 10h5M6.5 13h3.5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/></svg>,
+  <svg key="bank" width="20" height="20" viewBox="0 0 20 20" fill="none"><rect x="2" y="6" width="16" height="11" rx="2" stroke="currentColor" strokeWidth="1.4"/><path d="M5 6V5a5 5 0 0110 0v1" stroke="currentColor" strokeWidth="1.4"/><path d="M8 11h4" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/></svg>,
+  <svg key="template" width="20" height="20" viewBox="0 0 20 20" fill="none"><rect x="2" y="2" width="7" height="7" rx="1.5" stroke="currentColor" strokeWidth="1.4"/><rect x="11" y="2" width="7" height="7" rx="1.5" stroke="currentColor" strokeWidth="1.4"/><rect x="2" y="11" width="7" height="7" rx="1.5" stroke="currentColor" strokeWidth="1.4"/><rect x="11" y="11" width="7" height="7" rx="1.5" stroke="currentColor" strokeWidth="1.4"/></svg>,
+  <svg key="offline" width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M3 3l14 14" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/><path d="M10 15a1 1 0 100 2 1 1 0 000-2z" fill="currentColor"/><path d="M6.5 12a5.5 5.5 0 017 0M4 9a9 9 0 0112 0" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/></svg>,
+  <svg key="globe" width="20" height="20" viewBox="0 0 20 20" fill="none"><circle cx="10" cy="10" r="7.5" stroke="currentColor" strokeWidth="1.4"/><path d="M10 2.5c0 0-3 3-3 7.5s3 7.5 3 7.5M10 2.5c0 0 3 3 3 7.5s-3 7.5-3 7.5M2.5 10h15" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/></svg>,
 ];
 
 export default function LandingFeatures() {
+  const { t } = useLang();
+
+  const features = [
+    { title: t.f1_t, desc: t.f1_d },
+    { title: t.f2_t, desc: t.f2_d },
+    { title: t.f3_t, desc: t.f3_d },
+    { title: t.f4_t, desc: t.f4_d },
+    { title: t.f5_t, desc: t.f5_d },
+    { title: t.f6_t, desc: t.f6_d },
+  ];
+
   return (
-    <section className="py-24 sm:py-32">
+    <section className="py-24 sm:py-32" style={{ background: "#F5F2EE" }}>
       <div className="landing-shell">
-        <div className="grid gap-12 lg:grid-cols-[0.85fr_1.15fr] lg:items-start">
 
-          {/* Left: Sticky label */}
-          <motion.div
-            initial={{ opacity: 0, y: 24 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true, margin: "-80px" }}
-            transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
-            className="lg:sticky lg:top-28 lg:self-start"
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, margin: "-80px" }}
+          transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
+          className="mx-auto max-w-xl text-center"
+        >
+          <div
+            className="section-kicker"
+            style={{ color: "rgba(26,25,22,0.45)", background: "rgba(200,121,61,0.08)", border: "1px solid rgba(200,121,61,0.15)" }}
           >
-            <div className="section-kicker">Warum Offertio</div>
-            <h2 className="section-title mt-5">
-              Nicht mehr Features.{" "}
-              <span style={{ color: "var(--color-primary)" }}>Weniger Reibung.</span>
-            </h2>
-            <p className="section-copy mt-5 max-w-sm">
-              Was im Alltag zählt — nicht was auf dem Datenblatt steht.
-            </p>
+            {t.sec_feat_eyebrow}
+          </div>
+          <h2
+            className="section-title mt-5"
+            style={{ color: "#1A1916" }}
+          >
+            {t.sec_feat_title}
+          </h2>
+        </motion.div>
 
-            {/* Trust signal */}
-            <div
-              className="mt-8 flex items-center gap-3.5 rounded-xl p-4"
-              style={{ background: "rgba(255,255,255,0.03)", border: "1px solid rgba(255,255,255,0.06)" }}
+        <div className="mt-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {features.map((feat, i) => (
+            <motion.article
+              key={i}
+              initial={{ opacity: 0, y: 24 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, margin: "-60px" }}
+              transition={{ duration: 0.55, delay: i * 0.07, ease: [0.16, 1, 0.3, 1] }}
+              className="rounded-2xl p-6"
+              style={{
+                background: "#FFFFFF",
+                border: "1px solid rgba(26,25,22,0.07)",
+                boxShadow: "0 2px 12px rgba(0,0,0,0.04)",
+              }}
             >
               <div
-                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg"
-                style={{ background: "rgba(200,121,61,0.10)" }}
+                className="inline-flex h-10 w-10 items-center justify-center rounded-xl mb-4"
+                style={{ background: "rgba(200,121,61,0.10)", color: "#A8622E" }}
               >
-                <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                  <path d="M8 2l1.5 3.1L13 5.7l-2.5 2.4.6 3.5L8 9.8l-3.1 1.8.6-3.5L3 5.7l3.5-.6L8 2z"
-                    fill="var(--color-primary)" fillOpacity="0.9"/>
-                </svg>
+                {featureIcons[i]}
               </div>
-              <p className="text-sm leading-5" style={{ color: "var(--color-text-muted)" }}>
-                <strong style={{ color: "var(--color-text)" }}>Für Handwerk, Reinigung, Service</strong>
-                {" "}&mdash; nicht für Software-Abteilungen.
-              </p>
-            </div>
-          </motion.div>
-
-          {/* Right: Feature cards */}
-          <div className="space-y-3">
-            {featureGroups.map((group, i) => (
-              <motion.article
-                key={group.title}
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true, margin: "-60px" }}
-                transition={{ duration: 0.6, delay: i * 0.08, ease: [0.16, 1, 0.3, 1] }}
-                className="rounded-2xl p-6 sm:p-7"
+              <h3
+                className="font-bold"
                 style={{
-                  background: "rgba(255,255,255,0.03)",
-                  border: "1px solid rgba(255,255,255,0.06)",
+                  fontSize: "1.0rem",
+                  lineHeight: 1.3,
+                  letterSpacing: "-0.02em",
+                  color: "#1A1916",
+                  fontFamily: "var(--font-display)",
                 }}
               >
-                <div className="sm:grid sm:grid-cols-[auto_1fr] sm:gap-5 sm:items-start">
-                  <div className="mb-3 sm:mb-0">
-                    <div
-                      className="inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5"
-                      style={{ background: "rgba(200,121,61,0.10)", color: "var(--color-primary)" }}
-                    >
-                      {group.icon}
-                      <span className="text-[10px] font-semibold uppercase tracking-[0.12em]">
-                        {group.eyebrow}
-                      </span>
-                    </div>
-                  </div>
-
-                  <div>
-                    <h3
-                      className="font-bold"
-                      style={{
-                        fontSize: "clamp(1.15rem, 2.4vw, 1.3rem)",
-                        lineHeight: 1.25,
-                        letterSpacing: "-0.025em",
-                        color: "var(--color-text)",
-                        fontFamily: "var(--font-display)",
-                      }}
-                    >
-                      {group.title}
-                    </h3>
-                    <p className="mt-2.5 text-sm" style={{ lineHeight: 1.65, color: "var(--color-text-muted)" }}>
-                      {group.desc}
-                    </p>
-                  </div>
-                </div>
-              </motion.article>
-            ))}
-          </div>
-
+                {feat.title}
+              </h3>
+              <p className="mt-2 text-sm" style={{ lineHeight: 1.65, color: "#5A5750" }}>
+                {feat.desc}
+              </p>
+            </motion.article>
+          ))}
         </div>
+
       </div>
     </section>
   );

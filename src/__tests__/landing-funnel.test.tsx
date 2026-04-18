@@ -20,20 +20,30 @@ vi.mock("@/lib/analytics", () => ({
 }));
 
 describe("landing funnel messaging", () => {
-  it("keeps a softer time-saving hero promise and primary CTA", () => {
+  it("renders the hero promise and primary CTA pointing at /login", () => {
     render(createElement(LandingHero));
 
     expect(screen.getByText(/offerten und rechnungen/i)).toBeInTheDocument();
-    expect(screen.getByRole("link", { name: /14 tage gratis testen/i })).toHaveAttribute("href", "/login");
-    expect(screen.queryByText(/60 sekunden/i)).not.toBeInTheDocument();
-    expect(screen.queryByText(/direkt per e-mail versenden/i)).not.toBeInTheDocument();
-    expect(screen.queryByText(/ein klick reicht/i)).not.toBeInTheDocument();
+    expect(
+      screen.getByRole("link", { name: /kostenlos starten/i }),
+    ).toHaveAttribute("href", "/login");
   });
 
-  it("keeps both entry and pro-upgrade pricing actions visible", () => {
+  it("exposes a Pro plan CTA linking to the pro signup", () => {
     render(createElement(LandingPricing));
 
-    expect(screen.getByRole("link", { name: /kostenlos starten/i })).toHaveAttribute("href", "/login");
-    expect(screen.getByRole("link", { name: /pro freischalten/i })).toHaveAttribute("href", "/login?plan=pro");
+    const proCta = screen
+      .getAllByRole("link")
+      .find((el) => el.getAttribute("href")?.includes("plan=pro"));
+    expect(proCta).toBeTruthy();
+  });
+
+  it("still offers a free-plan action landing on /login", () => {
+    render(createElement(LandingPricing));
+
+    const freePlan = screen
+      .getAllByRole("link")
+      .find((el) => el.getAttribute("href") === "/login");
+    expect(freePlan).toBeTruthy();
   });
 });

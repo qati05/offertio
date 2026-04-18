@@ -1,14 +1,15 @@
 import type { Metadata } from "next";
 import { headers } from "next/headers";
-import { Bricolage_Grotesque, DM_Sans } from "next/font/google";
+import { Fraunces, DM_Sans, JetBrains_Mono } from "next/font/google";
 import CookieConsent from "@/components/CookieConsent";
 import "./globals.css";
 
-const bricolage = Bricolage_Grotesque({
+const fraunces = Fraunces({
   subsets: ["latin"],
-  variable: "--font-bricolage",
+  variable: "--font-fraunces",
   display: "swap",
-  weight: ["400", "500", "600", "700", "800"],
+  weight: ["400", "500", "600"],
+  style: ["normal", "italic"],
 });
 
 const dmSans = DM_Sans({
@@ -16,6 +17,13 @@ const dmSans = DM_Sans({
   variable: "--font-dm-sans",
   display: "swap",
   weight: ["400", "500", "600", "700"],
+});
+
+const jetBrainsMono = JetBrains_Mono({
+  subsets: ["latin"],
+  variable: "--font-jetbrains",
+  display: "swap",
+  weight: ["400", "500"],
 });
 
 export const metadata: Metadata = {
@@ -63,7 +71,7 @@ export default async function RootLayout({
   const nonce = (await headers()).get("x-nonce") ?? "";
 
   return (
-    <html lang="de-CH" className={`${bricolage.variable} ${dmSans.variable}`} suppressHydrationWarning>
+    <html lang="de-CH" className={`${fraunces.variable} ${dmSans.variable} ${jetBrainsMono.variable}`} suppressHydrationWarning>
       <head>
         {/* Preconnect to Supabase — shaves ~100-300 ms off the first auth/data call */}
         {process.env.NEXT_PUBLIC_SUPABASE_URL && (
