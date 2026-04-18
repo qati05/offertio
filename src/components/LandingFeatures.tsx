@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { useLang } from "@/components/LangContext";
+import { useT } from "@/lib/i18n";
 
 const featureIcons = [
   <svg key="qr" width="20" height="20" viewBox="0 0 20 20" fill="none"><rect x="2" y="2" width="6" height="6" stroke="currentColor" strokeWidth="1.4"/><rect x="12" y="2" width="6" height="6" stroke="currentColor" strokeWidth="1.4"/><rect x="2" y="12" width="6" height="6" stroke="currentColor" strokeWidth="1.4"/><rect x="13.5" y="13.5" width="2.5" height="2.5" fill="currentColor"/></svg>,
@@ -13,7 +13,7 @@ const featureIcons = [
 ];
 
 export default function LandingFeatures() {
-  const { t } = useLang();
+  const { landing: t } = useT();
 
   const features = [
     { title: t.f1_t, desc: t.f1_d },

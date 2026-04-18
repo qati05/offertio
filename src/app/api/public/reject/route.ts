@@ -37,6 +37,12 @@ function getClientIp(req: NextRequest): string {
  */
 export async function POST(request: NextRequest) {
   const locale = pickLocale(request);
+
+  // Mirror the signing flag — reject flow is only live when signing is live.
+  if (process.env.NEXT_PUBLIC_ENABLE_SIGNING !== "true") {
+    return json({ error: publicViewError("not_found", locale) }, 404);
+  }
+
   const ip = getClientIp(request);
   const rl = await rateLimitAsync(`public-reject:${ip}`, 5, 60_000);
   if (!rl.ok) {

@@ -4,7 +4,7 @@ import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import { useEffect, useState } from "react";
 import { trackCtaClick } from "@/lib/analytics";
-import { useLang } from "@/components/LangContext";
+import { useT } from "@/lib/i18n";
 
 const DOCS = [
   { nr: "OF-2026-019", kunde: "Baumann Elektro AG", betrag: "CHF 2'340.00", status: "Gesendet", statusColor: "#A8622E", statusBg: "rgba(200,121,61,0.08)", typ: "OF" },
@@ -363,7 +363,7 @@ function SuccessScene() {
 // ─── Main Component ───────────────────────────────────────────────────────────
 
 export default function LandingHero() {
-  const { t } = useLang();
+  const { landing: t } = useT();
   const [step, setStep] = useState(0);
   const [charCount, setCharCount] = useState(0);
   const [highlightBtn, setHighlightBtn] = useState(false);

@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { useLang } from "@/components/LangContext";
+import { useT } from "@/lib/i18n";
 
 const stepIcons = [
   <svg key="phone" width="20" height="20" viewBox="0 0 20 20" fill="none"><rect x="5" y="2" width="10" height="16" rx="2" stroke="currentColor" strokeWidth="1.5"/><path d="M8.5 15h3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/></svg>,
@@ -13,7 +13,7 @@ const stepDetails = ["CH · DE · AT", "WhatsApp · Push", "QR · SEPA · ZUGFeR
 const stepNums = ["01", "02", "03"];
 
 export default function LandingHowItWorks() {
-  const { t } = useLang();
+  const { landing: t } = useT();
 
   const steps = [
     { title: t.how1_t, copy: t.how1_d },

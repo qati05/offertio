@@ -1,4 +1,15 @@
-export type Lang = "de" | "fr" | "it";
+import type { Locale } from "./translations";
+
+/**
+ * Landing-page content, keyed by locale.
+ *
+ * Kept as a nested object (not flat-key translations) because the landing
+ * holds lots of arrays — plan feature lists, FAQ tuples — which don't map
+ * cleanly onto the flat `t("key")` pattern used for app UI strings.
+ *
+ * Access via `useT().landing` — both share the same `I18nProvider`.
+ */
+export type Lang = Locale;
 
 export const I18N = {
   de: {

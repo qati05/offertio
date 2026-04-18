@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useLang } from "@/components/LangContext";
+import { useT } from "@/lib/i18n";
 
 const legal = [
   { label: "Impressum", href: "/impressum" },
@@ -10,7 +10,7 @@ const legal = [
 ];
 
 export default function LandingFooter() {
-  const { t } = useLang();
+  const { landing: t } = useT();
 
   const nav = [
     { label: t.nav_product, href: "/#produkt" },

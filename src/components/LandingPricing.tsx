@@ -3,10 +3,10 @@
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { trackCtaClick } from "@/lib/analytics";
-import { useLang } from "@/components/LangContext";
+import { useT } from "@/lib/i18n";
 
 export default function LandingPricing() {
-  const { t } = useLang();
+  const { landing: t } = useT();
 
   const plans = [
     {

@@ -70,7 +70,10 @@ export default function RecipientViewClient({
 
   const label = doc.typ === "offerte" ? "Offerte" : "Rechnung";
   const isOfferte = doc.typ === "offerte";
-  const canAct = isOfferte && doc.status === "gesendet" && decision === "pending";
+  // Signing is gated behind a flag until legal/consent/email-verify is in place.
+  // When disabled, recipients see a "please reply by e-mail" block instead of the SignPad.
+  const signingEnabled = process.env.NEXT_PUBLIC_ENABLE_SIGNING === "true";
+  const canAct = signingEnabled && isOfferte && doc.status === "gesendet" && decision === "pending";
 
   const handleSign = useCallback(async () => {
     if (!signaturePath || submitting) return;
@@ -618,6 +621,15 @@ export default function RecipientViewClient({
                     Mit Klick auf „Offerte annehmen" erteilen Sie verbindlich den Auftrag gemäss dieser Offerte. Eine Kopie wird Ihnen per E-Mail zugestellt.
                   </div>
                 </>
+              ) : !signingEnabled && isOfferte && doc.status === "gesendet" ? (
+                <div style={{ textAlign: "center", padding: "12px 4px" }}>
+                  <div style={{ fontWeight: 700, fontSize: "15px", marginBottom: "8px" }}>
+                    Angebot prüfen
+                  </div>
+                  <div style={{ fontSize: "13px", color: "#6B6760", lineHeight: 1.65 }}>
+                    Bitte antworten Sie direkt an <strong>{firmenname}</strong>, um das Angebot anzunehmen oder Fragen zu klären.
+                  </div>
+                </div>
               ) : (
                 <div style={{ fontSize: "13px", color: "#6B6760", textAlign: "center", padding: "8px 0" }}>
                   {doc.status === "abgelaufen"

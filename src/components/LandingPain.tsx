@@ -1,7 +1,7 @@
 "use client";
 
 import { motion } from "framer-motion";
-import { useLang } from "@/components/LangContext";
+import { useT } from "@/lib/i18n";
 
 const icons = [
   <svg key="clock" width="20" height="20" viewBox="0 0 20 20" fill="none"><circle cx="10" cy="10" r="7.5" stroke="currentColor" strokeWidth="1.5"/><path d="M10 6v4.5l3 2" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>,
@@ -10,7 +10,7 @@ const icons = [
 ];
 
 export default function LandingPain() {
-  const { t } = useLang();
+  const { landing: t } = useT();
 
   const cards = [
     { title: t.pain1_t, desc: t.pain1_d },

@@ -1,5 +1,5 @@
 import { headers } from "next/headers";
-import { LangProvider } from "@/components/LangContext";
+import { I18nProvider } from "@/lib/i18n";
 import LandingScrollReveal from "@/components/LandingScrollReveal";
 import LandingNavbar from "@/components/LandingNavbar";
 import LandingHero from "@/components/LandingHero";
@@ -104,7 +104,7 @@ export default async function Home() {
 
   return (
     <>
-      <LangProvider>
+      <I18nProvider>
         <div className="min-h-screen text-[color:var(--color-text)]" style={{
           background: `
             radial-gradient(ellipse 70% 50% at 20% 0%, rgba(200,121,61,0.12), transparent 60%),
@@ -129,7 +129,7 @@ export default async function Home() {
 
           <LandingFooter />
         </div>
-      </LangProvider>
+      </I18nProvider>
 
       <script
         nonce={nonce}

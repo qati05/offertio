@@ -5,11 +5,11 @@ import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import { trackCtaClick } from "@/lib/analytics";
 import { OffertioIcon } from "@/components/OffertioLogo";
-import { useLang } from "@/components/LangContext";
-import type { Lang } from "@/lib/i18n";
+import { useT } from "@/lib/i18n";
+import type { Locale } from "@/lib/i18n";
 
 export default function LandingNavbar() {
-  const { lang, setLang, t } = useLang();
+  const { locale, setLocale, landing: t } = useT();
   const [scrolled, setScrolled] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const closeMenu = useCallback(() => setMenuOpen(false), []);
@@ -74,7 +74,7 @@ export default function LandingNavbar() {
 
           {/* Desktop CTAs + lang switcher */}
           <div className="hidden items-center gap-2 lg:flex">
-            <LangSwitch lang={lang} setLang={setLang} />
+            <LangSwitch locale={locale} setLocale={setLocale} />
             <Link
               href="/login"
               className="text-[13px] font-medium px-3 py-1.5 rounded-lg transition-all duration-200 hover:bg-white/[0.04]"
@@ -151,7 +151,7 @@ export default function LandingNavbar() {
                 </a>
               ))}
               <div className="mt-3 flex items-center justify-between gap-2">
-                <LangSwitch lang={lang} setLang={setLang} />
+                <LangSwitch locale={locale} setLocale={setLocale} />
                 <Link
                   href="/login"
                   className="cta-primary flex-1 text-center text-sm"
@@ -168,21 +168,21 @@ export default function LandingNavbar() {
   );
 }
 
-function LangSwitch({ lang, setLang }: { lang: Lang; setLang: (l: Lang) => void }) {
+function LangSwitch({ locale, setLocale }: { locale: Locale; setLocale: (l: Locale) => void }) {
   return (
     <div
       className="inline-flex rounded-full p-[3px]"
       style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.06)" }}
     >
-      {(["de", "fr", "it"] as Lang[]).map((l) => (
+      {(["de", "fr", "it"] as Locale[]).map((l) => (
         <button
           key={l}
           type="button"
-          onClick={() => setLang(l)}
+          onClick={() => setLocale(l)}
           className="rounded-full px-2.5 py-1 text-[11px] font-semibold tracking-wide transition-all duration-150"
           style={{
-            background: lang === l ? "rgba(200,121,61,0.18)" : "transparent",
-            color: lang === l ? "var(--color-primary)" : "rgba(240,237,232,0.45)",
+            background: locale === l ? "rgba(200,121,61,0.18)" : "transparent",
+            color: locale === l ? "var(--color-primary)" : "rgba(240,237,232,0.45)",
           }}
         >
           {l.toUpperCase()}

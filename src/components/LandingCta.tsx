@@ -3,10 +3,10 @@
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { trackCtaClick } from "@/lib/analytics";
-import { useLang } from "@/components/LangContext";
+import { useT } from "@/lib/i18n";
 
 export default function LandingCta() {
-  const { t } = useLang();
+  const { landing: t } = useT();
   return (
     <section className="pb-24 pt-8 sm:pb-32">
       <div className="landing-shell">

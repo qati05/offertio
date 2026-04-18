@@ -43,6 +43,13 @@ function getClientIp(req: NextRequest): string {
  */
 export async function POST(request: NextRequest) {
   const locale = pickLocale(request);
+
+  // Feature flag: signing is disabled in production until consent / email-verify
+  // is implemented. When off, the route behaves as if the feature doesn't exist.
+  if (process.env.NEXT_PUBLIC_ENABLE_SIGNING !== "true") {
+    return json({ error: publicViewError("not_found", locale) }, 404);
+  }
+
   const ip = getClientIp(request);
   const rl = await rateLimitAsync(`public-sign:${ip}`, 5, 60_000);
   if (!rl.ok) {

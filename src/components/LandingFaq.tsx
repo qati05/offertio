@@ -2,10 +2,10 @@
 
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { useLang } from "@/components/LangContext";
+import { useT } from "@/lib/i18n";
 
 export default function LandingFaq() {
-  const { t } = useLang();
+  const { landing: t } = useT();
   const [open, setOpen] = useState<number | null>(0);
   const items = t.faq;
 
