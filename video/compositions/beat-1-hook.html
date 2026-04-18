@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<template id="beat-1-hook-template">
+<div data-composition-id="beat-1-hook" data-start="0" data-duration="4" data-width="1920" data-height="1080">
+  <style>
+    [data-composition-id="beat-1-hook"] {
+      background: #09090B;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      position: relative;
+      font-family: 'DM Sans', -apple-system, sans-serif;
+    }
+
+    [data-composition-id="beat-1-hook"] .noise {
+      position: absolute;
+      inset: 0;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='1'/%3E%3C/svg%3E");
+      opacity: 0.035;
+      pointer-events: none;
+      z-index: 10;
+    }
+
+    [data-composition-id="beat-1-hook"] .glow-center {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 900px;
+      height: 700px;
+      background: radial-gradient(ellipse at center, rgba(200, 121, 61, 0.18) 0%, transparent 70%);
+      pointer-events: none;
+      z-index: 1;
+      opacity: 0;
+    }
+
+    [data-composition-id="beat-1-hook"] .scene-content {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: flex-start;
+      width: 100%;
+      height: 100%;
+      padding: 0 180px;
+      box-sizing: border-box;
+      position: relative;
+      z-index: 5;
+    }
+
+    [data-composition-id="beat-1-hook"] .line {
+      font-family: 'Fraunces', Georgia, serif;
+      font-style: italic;
+      font-weight: 600;
+      line-height: 1.05;
+      color: #F0EDE8;
+      display: block;
+      opacity: 0;
+    }
+
+    [data-composition-id="beat-1-hook"] .line-1 {
+      font-size: 108px;
+      letter-spacing: -0.02em;
+    }
+
+    [data-composition-id="beat-1-hook"] .line-2 {
+      font-size: 108px;
+      letter-spacing: -0.02em;
+      color: rgba(240, 237, 232, 0.72);
+      font-size: 88px;
+    }
+
+    [data-composition-id="beat-1-hook"] .line-3 {
+      font-size: 108px;
+      letter-spacing: -0.02em;
+      color: #C8793D;
+    }
+
+    [data-composition-id="beat-1-hook"] .orange-glow {
+      position: absolute;
+      left: 160px;
+      top: 50%;
+      width: 700px;
+      height: 180px;
+      background: radial-gradient(ellipse at center, rgba(200, 121, 61, 0.28) 0%, transparent 70%);
+      pointer-events: none;
+      z-index: 2;
+      opacity: 0;
+      transform: translateY(120px);
+    }
+
+    [data-composition-id="beat-1-hook"] .logo {
+      position: absolute;
+      top: 52px;
+      left: 64px;
+      z-index: 20;
+      opacity: 0;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    [data-composition-id="beat-1-hook"] .logo-dot {
+      width: 28px;
+      height: 28px;
+      background: #C8793D;
+      border-radius: 50%;
+    }
+
+    [data-composition-id="beat-1-hook"] .logo-text {
+      font-family: 'DM Sans', sans-serif;
+      font-weight: 600;
+      font-size: 22px;
+      color: #F0EDE8;
+      letter-spacing: -0.01em;
+    }
+  </style>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@1,400;1,600;1,700&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+
+  <div class="noise"></div>
+  <div class="glow-center"></div>
+  <div class="orange-glow"></div>
+
+  <div class="logo">
+    <div class="logo-dot"></div>
+    <span class="logo-text">Offertio</span>
+  </div>
+
+  <div class="scene-content">
+    <span class="line line-1">Die Offerte,</span>
+    <span class="line line-2">noch vor der</span>
+    <span class="line line-3">Heimfahrt.</span>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+  <script>
+    window.__timelines = window.__timelines || {};
+    const tl = gsap.timeline({ paused: true });
+
+    tl.to(".glow-center", { opacity: 1, duration: 2.0, ease: "power2.out" }, 0);
+
+    tl.to(".line-1", { opacity: 1, y: 0, duration: 0.7, ease: "power3.out" }, 0.3);
+    gsap.set(".line-1", { y: 40 });
+
+    tl.to(".line-2", { opacity: 1, y: 0, duration: 0.55, ease: "power2.out" }, 0.75);
+    gsap.set(".line-2", { y: 30 });
+
+    tl.to(".line-3", { opacity: 1, y: 0, duration: 0.6, ease: "power3.out" }, 1.15);
+    gsap.set(".line-3", { y: 50 });
+
+    tl.to(".line-3", { scale: 1.025, duration: 0.2, ease: "power2.out" }, 1.75);
+    tl.to(".line-3", { scale: 1.0, duration: 0.25, ease: "power2.inOut" }, 1.95);
+
+    tl.to(".orange-glow", { opacity: 1, duration: 0.5, ease: "power2.out" }, 1.2);
+    tl.to(".orange-glow", { opacity: 0.5, duration: 0.8, ease: "power2.inOut" }, 1.8);
+
+    tl.to(".logo", { opacity: 1, duration: 0.4, ease: "power2.out" }, 1.5);
+
+    tl.to([".line-1", ".line-2", ".line-3", ".glow-center", ".orange-glow", ".logo"],
+      { scale: 1.04, filter: "blur(16px)", opacity: 0, duration: 0.35, ease: "power2.in" }, 3.65);
+
+    window.__timelines["beat-1-hook"] = tl;
+  </script>
+</div>
+</template>

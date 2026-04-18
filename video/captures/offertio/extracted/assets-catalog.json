@@ -1,0 +1,191 @@
+[
+  {
+    "url": "http://localhost:3000/_next/static/chunks/webpack.js?v=1776533875554",
+    "type": "Other",
+    "contexts": [
+      "link[rel=\"preload\"]"
+    ],
+    "notes": null
+  },
+  {
+    "url": "http://localhost:3000/favicon.svg",
+    "type": "Icon",
+    "contexts": [
+      "link[rel=\"icon\"]"
+    ],
+    "notes": null
+  },
+  {
+    "url": "http://localhost:3000/icon-192.svg",
+    "type": "Icon",
+    "contexts": [
+      "link[rel=\"apple-touch-icon\"]"
+    ],
+    "notes": null
+  },
+  {
+    "url": "http://localhost:3000/_next/static/media/13971731025ec697-s.p.woff2",
+    "type": "Font",
+    "contexts": [
+      "link[rel=\"preload\"]",
+      "css url()"
+    ],
+    "notes": null
+  },
+  {
+    "url": "http://localhost:3000/_next/static/media/558ca1a6aa3cb55e-s.p.woff2",
+    "type": "Font",
+    "contexts": [
+      "link[rel=\"preload\"]",
+      "css url()"
+    ],
+    "notes": null
+  },
+  {
+    "url": "http://localhost:3000/_next/static/media/6ba5f591ae6c56f6-s.p.woff2",
+    "type": "Font",
+    "contexts": [
+      "link[rel=\"preload\"]",
+      "css url()"
+    ],
+    "notes": null
+  },
+  {
+    "url": "http://localhost:3000/_next/static/media/af4bf8399d1aacdf-s.p.woff2",
+    "type": "Font",
+    "contexts": [
+      "link[rel=\"preload\"]",
+      "css url()"
+    ],
+    "notes": null
+  },
+  {
+    "url": "http://localhost:3000/_next/static/css/app/layout.css?v=1776533899756",
+    "type": "Other",
+    "contexts": [
+      "link[rel=\"preload\"]"
+    ],
+    "notes": null
+  },
+  {
+    "url": "https://offert.io/offertio/og-image.png",
+    "type": "Image",
+    "contexts": [
+      "meta[og:image]",
+      "meta[twitter:image]"
+    ],
+    "notes": null
+  },
+  {
+    "url": "http://localhost:3000/_next/static/media/f3deaf8281908ff2-s.woff2",
+    "type": "Font",
+    "contexts": [
+      "css url()"
+    ],
+    "notes": null
+  },
+  {
+    "url": "http://localhost:3000/_next/static/media/c62081b071647022-s.woff2",
+    "type": "Font",
+    "contexts": [
+      "css url()"
+    ],
+    "notes": null
+  },
+  {
+    "url": "http://localhost:3000/_next/static/media/fb526027db1fc1ae-s.woff2",
+    "type": "Font",
+    "contexts": [
+      "css url()"
+    ],
+    "notes": null
+  },
+  {
+    "url": "http://localhost:3000/_next/static/media/4da3161b738b07dd-s.woff2",
+    "type": "Font",
+    "contexts": [
+      "css url()"
+    ],
+    "notes": null
+  },
+  {
+    "url": "http://localhost:3000/_next/static/media/7ab938503e4547a1-s.woff2",
+    "type": "Font",
+    "contexts": [
+      "css url()"
+    ],
+    "notes": null
+  },
+  {
+    "url": "http://localhost:3000/_next/static/media/edc640959b0c7826-s.woff2",
+    "type": "Font",
+    "contexts": [
+      "css url()"
+    ],
+    "notes": null
+  },
+  {
+    "url": "http://localhost:3000/_next/static/media/ac0e76ddaeeb7981-s.woff2",
+    "type": "Font",
+    "contexts": [
+      "css url()"
+    ],
+    "notes": null
+  },
+  {
+    "url": "http://localhost:3000/_next/static/media/64d784ea54a4acde-s.woff2",
+    "type": "Font",
+    "contexts": [
+      "css url()"
+    ],
+    "notes": null
+  },
+  {
+    "url": "http://localhost:3000/_next/static/media/ff71da380fbe67dd-s.woff2",
+    "type": "Font",
+    "contexts": [
+      "css url()"
+    ],
+    "notes": null
+  },
+  {
+    "url": "http://localhost:3000/_next/static/media/6d831b18ae5b01dc-s.woff2",
+    "type": "Font",
+    "contexts": [
+      "css url()"
+    ],
+    "notes": null
+  },
+  {
+    "url": "http://localhost:3000/__nextjs_font/geist-latin-ext.woff2",
+    "type": "Font",
+    "contexts": [
+      "css url()"
+    ],
+    "notes": null
+  },
+  {
+    "url": "http://localhost:3000/__nextjs_font/geist-mono-latin-ext.woff2",
+    "type": "Font",
+    "contexts": [
+      "css url()"
+    ],
+    "notes": null
+  },
+  {
+    "url": "http://localhost:3000/__nextjs_font/geist-latin.woff2",
+    "type": "Font",
+    "contexts": [
+      "css url()"
+    ],
+    "notes": null
+  },
+  {
+    "url": "http://localhost:3000/__nextjs_font/geist-mono-latin.woff2",
+    "type": "Font",
+    "contexts": [
+      "css url()"
+    ],
+    "notes": null
+  }
+]

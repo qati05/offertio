@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<template id="beat-4-dach-template">
+<div data-composition-id="beat-4-dach" data-start="0" data-duration="6" data-width="1920" data-height="1080">
+  <style>
+    [data-composition-id="beat-4-dach"] {
+      background: #09090B;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      position: relative;
+      font-family: 'DM Sans', -apple-system, sans-serif;
+    }
+
+    [data-composition-id="beat-4-dach"] .noise {
+      position: absolute;
+      inset: 0;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='1'/%3E%3C/svg%3E");
+      opacity: 0.03;
+      pointer-events: none;
+      z-index: 30;
+    }
+
+    [data-composition-id="beat-4-dach"] .particles {
+      position: absolute;
+      inset: 0;
+      z-index: 1;
+    }
+
+    [data-composition-id="beat-4-dach"] .particle {
+      position: absolute;
+      width: 3px;
+      height: 3px;
+      background: rgba(200, 121, 61, 0.3);
+      border-radius: 50%;
+    }
+
+    [data-composition-id="beat-4-dach"] .scene-content {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      width: 100%;
+      height: 100%;
+      padding: 80px 160px;
+      box-sizing: border-box;
+      position: relative;
+      z-index: 10;
+      gap: 40px;
+    }
+
+    [data-composition-id="beat-4-dach"] .flags-row {
+      display: flex;
+      gap: 28px;
+      align-items: center;
+    }
+
+    [data-composition-id="beat-4-dach"] .flag-card {
+      background: #1A1916;
+      border: 1px solid rgba(200, 121, 61, 0.2);
+      border-radius: 20px;
+      padding: 28px 40px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 12px;
+      opacity: 0;
+    }
+
+    [data-composition-id="beat-4-dach"] .flag-emoji {
+      font-size: 56px;
+      line-height: 1;
+    }
+
+    [data-composition-id="beat-4-dach"] .flag-name {
+      font-size: 15px;
+      font-weight: 600;
+      color: #F0EDE8;
+      text-align: center;
+    }
+
+    [data-composition-id="beat-4-dach"] .flag-detail {
+      font-size: 12px;
+      color: #918A80;
+      text-align: center;
+    }
+
+    [data-composition-id="beat-4-dach"] .tagline {
+      font-family: 'Fraunces', Georgia, serif;
+      font-style: italic;
+      font-weight: 600;
+      font-size: 62px;
+      color: #F0EDE8;
+      letter-spacing: -0.02em;
+      text-align: center;
+      line-height: 1.1;
+      opacity: 0;
+    }
+
+    [data-composition-id="beat-4-dach"] .tagline .highlight {
+      color: #C8793D;
+    }
+
+    [data-composition-id="beat-4-dach"] .divider-line {
+      width: 80px;
+      height: 2px;
+      background: linear-gradient(90deg, transparent, #C8793D, transparent);
+      opacity: 0;
+    }
+  </style>
+
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@1,400;1,600&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+
+  <div class="noise"></div>
+
+  <div class="particles">
+    <!-- Seeded particle positions using mulberry32 -->
+    <script>
+      function mulberry32(a) {
+        return function() {
+          a |= 0; a = a + 0x6D2B79F5 | 0;
+          var t = Math.imul(a ^ a >>> 15, 1 | a);
+          t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+          return ((t ^ t >>> 14) >>> 0) / 4294967296;
+        }
+      }
+      var rand = mulberry32(42);
+      var container = document.currentScript.parentElement;
+      for (var i = 0; i < 40; i++) {
+        var dot = document.createElement('div');
+        dot.className = 'particle';
+        dot.style.left = (rand() * 100) + '%';
+        dot.style.top = (rand() * 100) + '%';
+        dot.style.opacity = (rand() * 0.4 + 0.1).toFixed(2);
+        dot.style.width = (rand() * 3 + 2) + 'px';
+        dot.style.height = dot.style.width;
+        container.appendChild(dot);
+      }
+    </script>
+  </div>
+
+  <div class="scene-content">
+    <div class="flags-row">
+      <div class="flag-card" id="flag-ch">
+        <span class="flag-emoji">🇨🇭</span>
+        <div class="flag-name">Schweiz</div>
+        <div class="flag-detail">QR-Rechnung · CHF</div>
+      </div>
+      <div class="flag-card" id="flag-de">
+        <span class="flag-emoji">🇩🇪</span>
+        <div class="flag-name">Deutschland</div>
+        <div class="flag-detail">ZUGFeRD · SEPA · EUR</div>
+      </div>
+      <div class="flag-card" id="flag-at">
+        <span class="flag-emoji">🇦🇹</span>
+        <div class="flag-name">Österreich</div>
+        <div class="flag-detail">SEPA · EUR</div>
+      </div>
+    </div>
+
+    <div class="divider-line"></div>
+
+    <div class="tagline">
+      Für <span class="highlight">Handwerk</span><br>
+      und Selbständige.
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+  <script>
+    window.__timelines = window.__timelines || {};
+    const tl = gsap.timeline({ paused: true });
+
+    gsap.set("#flag-ch", { x: -80, opacity: 0 });
+    gsap.set("#flag-de", { y: 40, opacity: 0 });
+    gsap.set("#flag-at", { x: 80, opacity: 0 });
+    gsap.set(".tagline", { opacity: 0, y: 20 });
+    gsap.set(".divider-line", { opacity: 0, scaleX: 0 });
+
+    tl.to("#flag-ch", { x: 0, opacity: 1, duration: 0.5, ease: "power2.out" }, 0.0);
+    tl.to("#flag-de", { y: 0, opacity: 1, duration: 0.5, ease: "power2.out" }, 0.15);
+    tl.to("#flag-at", { x: 0, opacity: 1, duration: 0.5, ease: "power2.out" }, 0.30);
+
+    tl.to(".divider-line", {
+      opacity: 1, scaleX: 1, duration: 0.5, ease: "power2.out"
+    }, 0.8);
+
+    tl.to(".tagline", { opacity: 1, y: 0, duration: 0.7, ease: "power2.out" }, 1.1);
+
+    // Gentle float loop for flag cards (finite repeat: 6s duration, ~2s cycle → 2 repeats)
+    ["#flag-ch", "#flag-de", "#flag-at"].forEach((id, i) => {
+      tl.to(id, {
+        y: -5, duration: 1.8 + i * 0.3, ease: "sine.inOut",
+        repeat: 2, yoyo: true
+      }, 1.2 + i * 0.4);
+    });
+
+    tl.to([".flags-row", ".tagline", ".divider-line"], {
+      filter: "blur(18px)", opacity: 0, duration: 0.3, ease: "power2.in"
+    }, 5.7);
+
+    window.__timelines["beat-4-dach"] = tl;
+  </script>
+</div>
+</template>

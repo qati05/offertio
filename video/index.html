@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Offertio — Product Video</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { background: #09090B; }
+  </style>
+</head>
+<body>
+
+<!--
+  Offertio Product Video
+  Total duration: 39s
+  Audio: narration.wav (26.28s) — VO runs through beats 1-5
+  Format: 1920x1080
+-->
+
+<div
+  id="root"
+  data-composition-id="offertio-video"
+  data-start="0"
+  data-duration="39"
+  data-width="1920"
+  data-height="1080"
+>
+
+  <!-- ── Voiceover ──────────────────────────────────────── -->
+  <audio
+    id="vo"
+    data-start="0"
+    data-duration="26.28"
+    data-track-index="0"
+    data-volume="1"
+    src="narration.wav"
+  ></audio>
+
+  <!-- ── BEAT 1 — Hook (0–4s) ───────────────────────────── -->
+  <div
+    id="beat-1"
+    data-composition-id="beat-1-hook"
+    data-composition-src="compositions/beat-1-hook.html"
+    data-start="0"
+    data-duration="4"
+    data-track-index="1"
+  ></div>
+
+  <!-- ── BEAT 2 — App Demo (4–17s) ─────────────────────── -->
+  <div
+    id="beat-2"
+    data-composition-id="beat-2-demo"
+    data-composition-src="compositions/beat-2-demo.html"
+    data-start="4"
+    data-duration="13"
+    data-track-index="1"
+  ></div>
+
+  <!-- ── BEAT 3 — One Click (17–25s) ───────────────────── -->
+  <div
+    id="beat-3"
+    data-composition-id="beat-3-one-click"
+    data-composition-src="compositions/beat-3-one-click.html"
+    data-start="17"
+    data-duration="8"
+    data-track-index="1"
+  ></div>
+
+  <!-- ── BEAT 4 — DACH + Handwerk (25–31s) ─────────────── -->
+  <div
+    id="beat-4"
+    data-composition-id="beat-4-dach"
+    data-composition-src="compositions/beat-4-dach.html"
+    data-start="25"
+    data-duration="6"
+    data-track-index="1"
+  ></div>
+
+  <!-- ── BEAT 5 — CTA + Brand Close (31–39s) ───────────── -->
+  <div
+    id="beat-5"
+    data-composition-id="beat-5-cta"
+    data-composition-src="compositions/beat-5-cta.html"
+    data-start="31"
+    data-duration="8"
+    data-track-index="1"
+  ></div>
+
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+<script>
+  window.__timelines = window.__timelines || {};
+  const tl = gsap.timeline({ paused: true });
+  window.__timelines["offertio-video"] = tl;
+</script>
+
+</body>
+</html>
