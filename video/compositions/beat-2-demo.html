@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<template id="beat-2-demo-template">
+<div data-composition-id="beat-2-demo" data-start="0" data-duration="13" data-width="1920" data-height="1080">
+  <style>
+    [data-composition-id="beat-2-demo"] {
+      background: #0D0C0A;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      position: relative;
+      font-family: 'DM Sans', -apple-system, sans-serif;
+    }
+
+    [data-composition-id="beat-2-demo"] .noise {
+      position: absolute;
+      inset: 0;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='1'/%3E%3C/svg%3E");
+      opacity: 0.03;
+      pointer-events: none;
+      z-index: 50;
+    }
+
+    [data-composition-id="beat-2-demo"] .app-window {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 1100px;
+      height: 680px;
+      background: #FFFFFF;
+      border-radius: 16px;
+      box-shadow:
+        0 0 0 1px rgba(26, 20, 10, 0.1),
+        0 24px 80px rgba(0, 0, 0, 0.5),
+        0 4px 16px rgba(0, 0, 0, 0.3);
+      overflow: hidden;
+      display: flex;
+      opacity: 0;
+      z-index: 10;
+    }
+
+    [data-composition-id="beat-2-demo"] .window-bar {
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 4px;
+      background: linear-gradient(90deg, #C8793D, #A8622E);
+      z-index: 5;
+    }
+
+    [data-composition-id="beat-2-demo"] .sidebar {
+      width: 220px;
+      background: #FAFAFA;
+      border-right: 1px solid rgba(0,0,0,0.07);
+      display: flex;
+      flex-direction: column;
+      padding: 24px 0;
+      flex-shrink: 0;
+    }
+
+    [data-composition-id="beat-2-demo"] .sidebar-logo {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 0 20px 24px;
+      border-bottom: 1px solid rgba(0,0,0,0.06);
+      margin-bottom: 16px;
+    }
+
+    [data-composition-id="beat-2-demo"] .sidebar-logo-dot {
+      width: 20px;
+      height: 20px;
+      background: #C8793D;
+      border-radius: 50%;
+    }
+
+    [data-composition-id="beat-2-demo"] .sidebar-logo-text {
+      font-weight: 600;
+      font-size: 15px;
+      color: #1A1916;
+    }
+
+    [data-composition-id="beat-2-demo"] .nav-item {
+      padding: 9px 20px;
+      font-size: 13px;
+      color: #5A5750;
+      cursor: default;
+      border-radius: 6px;
+      margin: 1px 8px;
+    }
+
+    [data-composition-id="beat-2-demo"] .nav-item.active {
+      background: rgba(200, 121, 61, 0.08);
+      color: #C8793D;
+      font-weight: 500;
+    }
+
+    [data-composition-id="beat-2-demo"] .free-badge {
+      margin: auto 12px 0;
+      padding: 8px 12px;
+      background: rgba(200, 121, 61, 0.08);
+      border: 1px solid rgba(200, 121, 61, 0.2);
+      border-radius: 8px;
+      font-size: 11px;
+      color: #C8793D;
+      font-weight: 500;
+    }
+
+    [data-composition-id="beat-2-demo"] .main {
+      flex: 1;
+      padding: 28px 32px;
+      overflow: hidden;
+    }
+
+    [data-composition-id="beat-2-demo"] .greeting {
+      font-size: 18px;
+      font-weight: 600;
+      color: #1A1916;
+      margin-bottom: 24px;
+    }
+
+    [data-composition-id="beat-2-demo"] .section-label {
+      font-size: 11px;
+      font-weight: 600;
+      color: #918A80;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      margin-bottom: 12px;
+    }
+
+    [data-composition-id="beat-2-demo"] .activity-list {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    [data-composition-id="beat-2-demo"] .activity-row {
+      display: flex;
+      align-items: center;
+      padding: 12px 16px;
+      background: #FAFAF7;
+      border: 1px solid rgba(26, 25, 22, 0.06);
+      border-radius: 10px;
+      gap: 12px;
+    }
+
+    [data-composition-id="beat-2-demo"] .activity-name {
+      font-size: 13px;
+      font-weight: 500;
+      color: #1A1916;
+      flex: 1;
+    }
+
+    [data-composition-id="beat-2-demo"] .activity-num {
+      font-size: 12px;
+      color: #918A80;
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    [data-composition-id="beat-2-demo"] .activity-amount {
+      font-size: 13px;
+      font-weight: 600;
+      color: #1A1916;
+      text-align: right;
+      min-width: 100px;
+    }
+
+    [data-composition-id="beat-2-demo"] .badge {
+      font-size: 11px;
+      font-weight: 600;
+      padding: 3px 8px;
+      border-radius: 5px;
+      min-width: 64px;
+      text-align: center;
+    }
+
+    [data-composition-id="beat-2-demo"] .badge-sent {
+      background: rgba(200, 121, 61, 0.1);
+      color: #C8793D;
+    }
+
+    [data-composition-id="beat-2-demo"] .badge-paid {
+      background: rgba(26, 127, 66, 0.1);
+      color: #1A7F42;
+    }
+
+    [data-composition-id="beat-2-demo"] .badge-draft {
+      background: rgba(0,0,0,0.05);
+      color: #918A80;
+    }
+
+    [data-composition-id="beat-2-demo"] .action-button {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 10px 20px;
+      background: #C8793D;
+      color: white;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 600;
+      margin-bottom: 20px;
+      cursor: default;
+    }
+
+    [data-composition-id="beat-2-demo"] .floating-label {
+      position: absolute;
+      background: rgba(200, 121, 61, 0.95);
+      color: white;
+      font-size: 14px;
+      font-weight: 600;
+      padding: 10px 18px;
+      border-radius: 8px;
+      box-shadow: 0 8px 24px rgba(200, 121, 61, 0.4);
+      opacity: 0;
+      z-index: 30;
+      white-space: nowrap;
+    }
+
+    [data-composition-id="beat-2-demo"] .floating-label::after {
+      content: '';
+      position: absolute;
+      bottom: -6px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 12px;
+      height: 12px;
+      background: rgba(200, 121, 61, 0.95);
+      clip-path: polygon(0 0, 100% 0, 50% 100%);
+    }
+
+    [data-composition-id="beat-2-demo"] .label-vorlagen {
+      top: 180px;
+      left: 520px;
+    }
+
+    [data-composition-id="beat-2-demo"] .label-senden {
+      top: 280px;
+      right: 200px;
+    }
+
+    [data-composition-id="beat-2-demo"] .label-signatur {
+      top: 380px;
+      left: 480px;
+    }
+
+    [data-composition-id="beat-2-demo"] .badge-paid-glow {
+      box-shadow: 0 0 12px rgba(26, 127, 66, 0.4);
+      transition: box-shadow 0.3s;
+    }
+  </style>
+
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@1,400;1,600&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+
+  <div class="noise"></div>
+
+  <div class="floating-label label-vorlagen">Vorlage wählen ✓</div>
+  <div class="floating-label label-senden">Senden →</div>
+  <div class="floating-label label-signatur">Unterschrift per Link ✍</div>
+
+  <div class="app-window">
+    <div class="window-bar"></div>
+    <div class="sidebar">
+      <div class="sidebar-logo">
+        <div class="sidebar-logo-dot"></div>
+        <span class="sidebar-logo-text">Offertio</span>
+      </div>
+      <div class="nav-item active">Übersicht</div>
+      <div class="nav-item">Dokumente</div>
+      <div class="nav-item">Kunden</div>
+      <div class="nav-item">Einstellungen</div>
+      <div class="free-badge">Free Plan · 3 von 5 Dok.</div>
+    </div>
+    <div class="main">
+      <div class="greeting">Guten Tag, Muster GmbH</div>
+      <div class="action-button">+ Neue Offerte</div>
+      <div class="section-label">Letzte Aktivität</div>
+      <div class="activity-list">
+        <div class="activity-row">
+          <div class="activity-name">Baumann Elektro AG</div>
+          <div class="activity-num">OF-2026-019</div>
+          <div class="activity-amount">CHF 2'340.00</div>
+          <div class="badge badge-sent">Gesendet</div>
+        </div>
+        <div class="activity-row">
+          <div class="activity-name">Müller Haustechnik</div>
+          <div class="activity-num">RG-2026-018</div>
+          <div class="activity-amount">CHF 1'378.80</div>
+          <div class="badge badge-paid" id="paid-badge">Bezahlt</div>
+        </div>
+        <div class="activity-row">
+          <div class="activity-name">Schneider Garten</div>
+          <div class="activity-num">OF-2026-017</div>
+          <div class="activity-amount">CHF 890.00</div>
+          <div class="badge badge-draft">Entwurf</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="../gsap.min.js"></script>
+  <script>
+    window.__timelines = window.__timelines || {};
+    const tl = gsap.timeline({ paused: true });
+
+    gsap.set(".app-window", { xPercent: -50, yPercent: -50, y: 60, scale: 0.92, opacity: 0, perspective: 1200, rotateX: 8, rotateY: -5 });
+    gsap.set(".floating-label", { opacity: 0 });
+
+    tl.to(".app-window", {
+      xPercent: -50, yPercent: -50, y: 0, scale: 1, opacity: 1, rotateX: 3, rotateY: -2,
+      duration: 0.85, ease: "expo.out"
+    }, 0.1);
+
+    tl.to(".label-vorlagen", { opacity: 1, y: 0, duration: 0.4, ease: "back.out(1.4)" }, 1.8);
+    gsap.set(".label-vorlagen", { y: -8 });
+
+    tl.to(".label-senden", { opacity: 1, y: 0, duration: 0.4, ease: "back.out(1.4)" }, 5.0);
+    gsap.set(".label-senden", { y: -8 });
+
+    tl.to(".label-signatur", { opacity: 1, y: 0, duration: 0.4, ease: "back.out(1.4)" }, 8.5);
+    gsap.set(".label-signatur", { y: -8 });
+
+    tl.to("#paid-badge", {
+      boxShadow: "0 0 0 3px rgba(26,127,66,0.3), 0 0 16px rgba(26,127,66,0.4)",
+      duration: 0.5, ease: "power2.out"
+    }, 10.0);
+
+    tl.to([".app-window", ".floating-label"], {
+      x: -300, filter: "blur(20px)", opacity: 0, duration: 0.3, ease: "power3.in"
+    }, 12.7);
+
+    window.__timelines["beat-2-demo"] = tl;
+  </script>
+</div>
+</template>

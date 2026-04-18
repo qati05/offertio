@@ -10,6 +10,8 @@ import { createSupabaseBrowser } from "@/lib/supabase-browser";
 import OfflineBanner from "@/components/OfflineBanner";
 import PwaInstallPrompt from "@/components/PwaInstallPrompt";
 import PlanExpiryBanner from "@/components/PlanExpiryBanner";
+import CommandPalette from "@/components/CommandPalette";
+import ShortcutsOverlay from "@/components/ShortcutsOverlay";
 import { I18nProvider, useT } from "@/lib/i18n";
 import type { Profile } from "@/lib/types";
 import { OffertioIcon } from "@/components/OffertioLogo";
@@ -254,6 +256,8 @@ function AppLayoutInner({ children }: { children: React.ReactNode }) {
     <div className="flex h-screen overflow-hidden app-body">
       <OfflineBanner />
       <PwaInstallPrompt />
+      <CommandPalette />
+      <ShortcutsOverlay />
 
       {/* ── Desktop Sidebar (hidden in Focus Mode) ─────── */}
       <AnimatePresence initial={false}>
@@ -315,6 +319,45 @@ function AppLayoutInner({ children }: { children: React.ReactNode }) {
             >
               <IconCollapse />
             </motion.span>
+          </button>
+        </div>
+
+        {/* Command palette trigger — discoverable surface for ⌘K */}
+        <div className="px-2 pt-2">
+          <button
+            type="button"
+            onClick={() => {
+              haptic(6);
+              window.dispatchEvent(new CustomEvent("offertio:open-command-palette"));
+            }}
+            className="sidebar-item w-full"
+            style={collapsed
+              ? { justifyContent: "center", padding: "12px", minHeight: "44px" }
+              : { justifyContent: "space-between" }
+            }
+            title={collapsed ? "Schnell-Suche (⌘K)" : undefined}
+            aria-label="Befehlspalette öffnen"
+          >
+            <span style={{ display: "flex", alignItems: "center", gap: 10 }}>
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+                <circle cx="7" cy="7" r="5" stroke="currentColor" strokeWidth="1.5" />
+                <path d="M11 11l3 3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+              </svg>
+              {!collapsed && <span>Suchen</span>}
+            </span>
+            {!collapsed && (
+              <span style={{
+                fontSize: 10,
+                fontFamily: "var(--font-mono, monospace)",
+                padding: "1px 5px",
+                borderRadius: 4,
+                border: "1px solid var(--sidebar-border)",
+                color: "var(--sidebar-text)",
+                opacity: 0.7,
+              }}>
+                ⌘K
+              </span>
+            )}
           </button>
         </div>
 

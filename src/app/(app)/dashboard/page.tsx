@@ -15,20 +15,12 @@ import {
 } from "@/lib/payment";
 import { trackUpgradeClick } from "@/lib/analytics";
 import { computeDocumentStatus, countOpenActions, getStatus, statusBadgeVariants } from "@/lib/dokument-status";
+import { getDachConfig } from "@/lib/dach";
+import DashboardInsights from "@/components/DashboardInsights";
 import type { Profile, DokumentHistorie } from "@/lib/types";
 
 const FREE_DOCS = 5;
 const ease = [0.16, 1, 0.3, 1] as const;
-
-// Shared label style — 11px uppercase, max breathing room
-const kicker: React.CSSProperties = {
-  fontSize: 11,
-  fontWeight: 600,
-  letterSpacing: "0.13em",
-  textTransform: "uppercase",
-  color: "var(--app-text-soft)",
-  marginBottom: 8,
-};
 
 /** Read cached history from localStorage synchronously (returns [] on miss/error). */
 function readCachedHistory(): DokumentHistorie[] {
@@ -72,7 +64,7 @@ export default function DashboardPage() {
         .select("*")
         .eq("user_id", user.id)
         .order("datum", { ascending: false })
-        .limit(8),
+        .limit(200),
       fetch("/api/dokument/check-limit").catch(() => null),
     ]);
 
@@ -288,6 +280,14 @@ export default function DashboardPage() {
           </Link>
         </motion.div>
 
+        {/* ── Insights (KPIs + Sparkline + Top-Kunden) ─────── */}
+        {!loading && history.length > 0 && (
+          <DashboardInsights
+            history={history}
+            currency={getDachConfig(profil?.land).currency}
+          />
+        )}
+
         {/* ── Verlauf ──────────────────────────────────── */}
         <motion.section
           initial={{ opacity: 0 }}
@@ -298,7 +298,7 @@ export default function DashboardPage() {
             display: "flex", alignItems: "center",
             justifyContent: "space-between", marginBottom: 20,
           }}>
-            <div style={kicker}>Verlauf</div>
+            <div className="kicker">Verlauf</div>
             {!loading && history.length > 0 && (
               <Link href="/dokumente" style={{
                 fontSize: 13, color: "var(--color-primary)",
@@ -385,14 +385,7 @@ export default function DashboardPage() {
                       borderBottom: isLast ? "none" : "1px solid var(--app-border)",
                     }}
                   >
-                    {/* Type badge */}
-                    <div style={{
-                      width: 38, height: 38, borderRadius: 11, flexShrink: 0,
-                      display: "flex", alignItems: "center", justifyContent: "center",
-                      fontSize: 10, fontWeight: 700, letterSpacing: "0.05em",
-                      background: isRechnung ? "rgba(200,121,61,0.08)" : "var(--app-card-muted)",
-                      color: isRechnung ? "var(--color-primary)" : "var(--app-text-muted)",
-                    }}>
+                    <div className={`doc-type${isRechnung ? " doc-type--rechnung" : ""}`}>
                       {isRechnung ? "RG" : "OF"}
                     </div>
 
@@ -433,16 +426,8 @@ export default function DashboardPage() {
                           initial="enter"
                           animate="visible"
                           exit="exit"
-                          style={{
-                            display: "inline-block",
-                            fontSize: 11, fontWeight: 600,
-                            letterSpacing: "0.06em",
-                            textTransform: "uppercase",
-                            color: st.color,
-                            padding: "3px 8px",
-                            borderRadius: 6,
-                            background: st.bg,
-                          }}
+                          className="pill-badge"
+                          style={{ color: st.color, background: st.bg }}
                         >
                           {st.label}
                         </motion.span>

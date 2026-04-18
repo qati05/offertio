@@ -119,6 +119,25 @@ export default function DokumentNeuPage() {
               : `${typLabel} weitergeben`;
   const missingProfileFields = getMissingProfileFieldsForDocument(profil, dokumentTyp, profil?.land);
 
+  // Position autocomplete: unique bezeichnungen from vorlagen, mapped to
+  // their last-known price + einheit. Used by the datalist below and to
+  // auto-fill price when a matching bezeichnung is entered.
+  const bezeichnungPriceIndex = useMemo(() => {
+    const map = new Map<string, { original: string; preis: number; einheit: string }>();
+    for (const v of vorlagen) {
+      for (const p of v.positionen || []) {
+        const label = (p.bezeichnung || "").trim();
+        if (!label) continue;
+        map.set(label.toLowerCase(), {
+          original: label,
+          preis: Number.isFinite(p.preis) ? p.preis : 0,
+          einheit: p.einheit || "Std.",
+        });
+      }
+    }
+    return map;
+  }, [vorlagen]);
+
   useEffect(() => {
     const today = new Date().toISOString().split("T")[0];
     setDatum(today);
@@ -200,6 +219,37 @@ export default function DokumentNeuPage() {
     }
     if (vorlagenRes.data) setVorlagen(vorlagenRes.data as Vorlage[]);
     if (customersRes.data) setCustomerRecords(customersRes.data as CustomerRecord[]);
+
+    // 1-click conversion: load source offerte when "?from=<id>" is present.
+    const fromId = searchParams.get("from");
+    if (fromId && !sourceDocumentId) {
+      const { data: src } = await supabase
+        .from("dokumente")
+        .select("id, nummer, typ, objekt, kundenname, kunde_email, kunde_adresse, kunde_adresse2, kunde_plz, kunde_ort, kunde_uid_mwst, converted_document_id, converted_document_nummer")
+        .eq("id", fromId)
+        .eq("user_id", user.id)
+        .maybeSingle();
+      if (src && src.typ === "offerte") {
+        setSourceDocumentId(src.id);
+        setSourceDocumentNumber(src.nummer);
+        if (src.objekt) setObjekt(src.objekt as string);
+        setKunde({
+          name: (src.kundenname as string) || "",
+          firma: "",
+          adresse: (src.kunde_adresse as string) || "",
+          adresse2: (src.kunde_adresse2 as string) || "",
+          plz: (src.kunde_plz as string) || "",
+          ort: (src.kunde_ort as string) || "",
+          email: (src.kunde_email as string) || "",
+          uid_mwst: (src.kunde_uid_mwst as string) || "",
+        });
+        if (src.converted_document_id) {
+          showToast(`Hinweis: Zu ${src.nummer} existiert bereits Rechnung ${src.converted_document_nummer || ""}.`);
+        } else {
+          showToast(`Offerte ${src.nummer} übernommen — Positionen prüfen und senden.`);
+        }
+      }
+    }
 
     // Guard: warn if source offerte was already converted to a Rechnung
     if (sourceDocumentId) {
@@ -1631,12 +1681,19 @@ export default function DokumentNeuPage() {
           value={kunde.email}
           onChange={(e) => updateKunde("email", e.target.value)}
           ref={emailInputRef}
+          aria-invalid={fieldErrors.kundeEmail || undefined}
+          aria-describedby={fieldErrors.kundeEmail ? "kunde-email-error" : undefined}
           style={
             fieldErrors.kundeEmail
               ? { borderColor: "var(--color-error)", boxShadow: "0 0 0 4px var(--color-error-soft)" }
               : undefined
           }
         />
+        {fieldErrors.kundeEmail && (
+          <div id="kunde-email-error" className="field-error-hint">
+            Bitte E-Mail prüfen — Beispiel: name@firma.ch
+          </div>
+        )}
         {profil?.land === "DE" && dokumentTyp === "rechnung" && (
           <input
             className="input-field"
@@ -1693,6 +1750,11 @@ export default function DokumentNeuPage() {
       )}
 
       {/* Positionen */}
+      <datalist id="pos-bezeichnungen">
+        {Array.from(bezeichnungPriceIndex.entries()).map(([key, val]) => (
+          <option key={key} value={val.original} />
+        ))}
+      </datalist>
       <div className="form-section" style={{ marginBottom: 20 }}>
         <div className="form-label">Positionen</div>
         <div className="pos-table">
@@ -1713,6 +1775,18 @@ export default function DokumentNeuPage() {
                 style={{ textAlign: "left" }}
                 value={pos.bezeichnung}
                 onChange={(e) => updatePos(i, "bezeichnung", e.target.value)}
+                onFocus={(e) => {
+                  const match = bezeichnungPriceIndex.get(e.target.value.trim().toLowerCase());
+                  if (match && !pos.preis) updatePos(i, "preis", match.preis);
+                }}
+                onBlur={(e) => {
+                  const match = bezeichnungPriceIndex.get(e.target.value.trim().toLowerCase());
+                  if (match && !pos.preis) {
+                    updatePos(i, "preis", match.preis);
+                    if (match.einheit && pos.einheit === "Std.") updatePos(i, "einheit", match.einheit);
+                  }
+                }}
+                list="pos-bezeichnungen"
                 placeholder="Bezeichnung"
               />
               <input

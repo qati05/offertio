@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<template id="beat-3-one-click-template">
+<div data-composition-id="beat-3-one-click" data-start="0" data-duration="8" data-width="1920" data-height="1080">
+  <style>
+    [data-composition-id="beat-3-one-click"] {
+      background: #09090B;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      position: relative;
+      font-family: 'DM Sans', -apple-system, sans-serif;
+    }
+
+    [data-composition-id="beat-3-one-click"] .noise {
+      position: absolute;
+      inset: 0;
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='1'/%3E%3C/svg%3E");
+      opacity: 0.03;
+      pointer-events: none;
+      z-index: 50;
+    }
+
+    [data-composition-id="beat-3-one-click"] .glow {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 800px;
+      height: 600px;
+      background: radial-gradient(ellipse, rgba(200,121,61,0.14) 0%, transparent 70%);
+      pointer-events: none;
+      z-index: 1;
+    }
+
+    [data-composition-id="beat-3-one-click"] .scene-content {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      width: 100%;
+      height: 100%;
+      padding: 80px 160px;
+      box-sizing: border-box;
+      position: relative;
+      z-index: 5;
+      gap: 32px;
+    }
+
+    [data-composition-id="beat-3-one-click"] .headline {
+      font-family: 'Fraunces', Georgia, serif;
+      font-style: italic;
+      font-weight: 600;
+      font-size: 90px;
+      color: #F0EDE8;
+      letter-spacing: -0.02em;
+      line-height: 1.0;
+      text-align: center;
+      opacity: 0;
+    }
+
+    [data-composition-id="beat-3-one-click"] .doc-transform {
+      display: flex;
+      align-items: center;
+      gap: 24px;
+      opacity: 0;
+    }
+
+    [data-composition-id="beat-3-one-click"] .doc-pill {
+      padding: 10px 24px;
+      border: 1.5px solid rgba(200, 121, 61, 0.4);
+      border-radius: 8px;
+      font-size: 20px;
+      font-weight: 600;
+      color: #F0EDE8;
+      font-family: 'JetBrains Mono', monospace;
+      background: rgba(200, 121, 61, 0.06);
+      position: relative;
+      overflow: hidden;
+    }
+
+    [data-composition-id="beat-3-one-click"] .doc-pill .shimmer {
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(90deg, transparent 0%, rgba(200,121,61,0.4) 50%, transparent 100%);
+      transform: translateX(-100%);
+    }
+
+    [data-composition-id="beat-3-one-click"] .doc-arrow {
+      font-size: 28px;
+      color: #C8793D;
+      font-weight: 300;
+    }
+
+    [data-composition-id="beat-3-one-click"] .doc-pill-new {
+      border-color: rgba(26, 127, 66, 0.5);
+      background: rgba(26, 127, 66, 0.08);
+      color: #1A7F42;
+    }
+
+    [data-composition-id="beat-3-one-click"] .cards-row {
+      display: flex;
+      gap: 20px;
+      justify-content: center;
+    }
+
+    [data-composition-id="beat-3-one-click"] .feature-card {
+      background: #1A1916;
+      border: 1.5px solid rgba(200, 121, 61, 0.0);
+      border-radius: 16px;
+      padding: 28px 28px;
+      width: 300px;
+      opacity: 0;
+      position: relative;
+      overflow: hidden;
+    }
+
+    [data-composition-id="beat-3-one-click"] .feature-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 2px;
+      background: linear-gradient(90deg, #C8793D, rgba(200,121,61,0.3));
+      transform: scaleX(0);
+      transform-origin: left;
+    }
+
+    [data-composition-id="beat-3-one-click"] .card-flag {
+      font-size: 36px;
+      margin-bottom: 12px;
+      display: block;
+    }
+
+    [data-composition-id="beat-3-one-click"] .card-title {
+      font-size: 17px;
+      font-weight: 700;
+      color: #F0EDE8;
+      margin-bottom: 6px;
+    }
+
+    [data-composition-id="beat-3-one-click"] .card-desc {
+      font-size: 13px;
+      color: #918A80;
+      line-height: 1.5;
+    }
+
+    [data-composition-id="beat-3-one-click"] .card-badge {
+      margin-top: 14px;
+      display: inline-block;
+      padding: 4px 10px;
+      background: rgba(200, 121, 61, 0.12);
+      border-radius: 5px;
+      font-size: 11px;
+      font-weight: 600;
+      color: #C8793D;
+      letter-spacing: 0.04em;
+    }
+  </style>
+
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@1,400;1,600&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+  <div class="noise"></div>
+  <div class="glow"></div>
+
+  <div class="scene-content">
+    <div class="headline">Ein Klick.</div>
+
+    <div class="doc-transform">
+      <div class="doc-pill">
+        OF-2026-019
+        <div class="shimmer" id="shimmer1"></div>
+      </div>
+      <div class="doc-arrow">→</div>
+      <div class="doc-pill doc-pill-new">RG-2026-019</div>
+    </div>
+
+    <div class="cards-row">
+      <div class="feature-card" id="card-1">
+        <span class="card-flag">🇨🇭</span>
+        <div class="card-title">Swiss QR-Rechnung</div>
+        <div class="card-desc">Automatisch auf jeder CH-Rechnung. Konform mit dem neuen Standard.</div>
+        <span class="card-badge">QR · AUTOMATISCH</span>
+      </div>
+      <div class="feature-card" id="card-2">
+        <span class="card-flag">🇩🇪</span>
+        <div class="card-title">ZUGFeRD für DE</div>
+        <div class="card-desc">Eingebettet als XML. Dein Steuerberater freut sich — du sparst Rückfragen.</div>
+        <span class="card-badge">XML · EINGEBETTET</span>
+      </div>
+      <div class="feature-card" id="card-3">
+        <span class="card-flag">🇦🇹</span>
+        <div class="card-title">SEPA + Bank-Abgleich</div>
+        <div class="card-desc">IBAN, Zahlungsziel — fertig. Zahlung erkannt, Status auf «Bezahlt».</div>
+        <span class="card-badge">SEPA · AUTOMATISCH</span>
+      </div>
+    </div>
+  </div>
+
+  <script src="../gsap.min.js"></script>
+  <script>
+    window.__timelines = window.__timelines || {};
+    const tl = gsap.timeline({ paused: true });
+
+    gsap.set(".headline", { y: 50, opacity: 0 });
+    gsap.set(".doc-transform", { opacity: 0 });
+    gsap.set(".feature-card", { y: 60, opacity: 0 });
+    gsap.set(".doc-pill-new", { opacity: 0.3 });
+
+    tl.to(".headline", { y: 0, opacity: 1, duration: 0.55, ease: "power3.out" }, 0.0);
+
+    tl.to(".doc-transform", { opacity: 1, duration: 0.4, ease: "power2.out" }, 0.9);
+
+    tl.to("#shimmer1", { x: "200%", duration: 0.45, ease: "power2.inOut" }, 1.1);
+
+    tl.to(".doc-pill-new", { opacity: 1, duration: 0.3, ease: "power2.out" }, 1.6);
+    tl.to(".doc-pill-new", { scale: 1.04, duration: 0.15, ease: "power2.out" }, 1.6);
+    tl.to(".doc-pill-new", { scale: 1.0, duration: 0.2, ease: "power2.inOut" }, 1.75);
+
+    tl.to("#card-1", { y: 0, opacity: 1, duration: 0.45, ease: "power2.out" }, 1.5);
+    tl.to("#card-1::before", { scaleX: 1, duration: 0.4, ease: "power2.out" }, 1.55);
+
+    tl.to("#card-2", { y: 0, opacity: 1, duration: 0.45, ease: "power2.out" }, 1.65);
+    tl.to("#card-3", { y: 0, opacity: 1, duration: 0.45, ease: "power2.out" }, 1.80);
+
+    tl.to("#card-1", {
+      borderColor: "rgba(200,121,61,0.35)",
+      duration: 0.3, ease: "power2.out"
+    }, 1.95);
+    tl.to("#card-2", {
+      borderColor: "rgba(200,121,61,0.35)",
+      duration: 0.3, ease: "power2.out"
+    }, 2.05);
+    tl.to("#card-3", {
+      borderColor: "rgba(200,121,61,0.35)",
+      duration: 0.3, ease: "power2.out"
+    }, 2.15);
+
+    tl.to([".headline", ".doc-transform", ".cards-row"], {
+      y: -120, filter: "blur(20px)", opacity: 0, duration: 0.3, ease: "power2.in"
+    }, 7.7);
+
+    window.__timelines["beat-3-one-click"] = tl;
+  </script>
+</div>
+</template>

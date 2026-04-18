@@ -3,8 +3,10 @@
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { trackCtaClick } from "@/lib/analytics";
+import { useT } from "@/lib/i18n";
 
 export default function LandingCta() {
+  const { landing: t } = useT();
   return (
     <section className="pb-24 pt-8 sm:pb-32">
       <div className="landing-shell">
@@ -33,28 +35,20 @@ export default function LandingCta() {
 
           <div className="relative grid gap-8 lg:grid-cols-[1fr_auto] lg:items-center">
             <div>
-              <div className="section-kicker">Bereit?</div>
+              <div className="section-kicker">{t.sec_price_eyebrow}</div>
               <h2
                 className="mt-5 leading-[1.06] tracking-[-0.03em] font-bold"
                 style={{ fontSize: "clamp(1.75rem, 3.5vw, 2.8rem)", color: "var(--color-text)", fontFamily: "var(--font-display)" }}
               >
-                14 Tage Pro gratis.{" "}
-                <span style={{ color: "var(--color-primary)" }}>
-                  Ohne Kreditkarte.
-                </span>
+                {t.cta_title}
               </h2>
               <p className="section-copy mt-4 max-w-lg">
-                Swiss QR-Rechnung, ZUGFeRD und WhatsApp-Versand — zwei Wochen lang
-                im echten Alltag testen. Danach automatisch Free, wenn du nicht upgradest.
+                {t.cta_sub}
               </p>
 
               {/* Proof */}
               <div className="mt-6 flex flex-wrap gap-4">
-                {[
-                  "Keine Kreditkarte",
-                  "14 Tage alles drin",
-                  "In 2 Min. bereit",
-                ].map((point) => (
+                {[t.hero_proof1, t.hero_proof2, t.hero_proof3].map((point) => (
                   <div
                     key={point}
                     className="flex items-center gap-1.5 text-sm"
@@ -73,13 +67,13 @@ export default function LandingCta() {
                 className="cta-primary px-7 py-3.5 text-sm"
                 onClick={() => trackCtaClick("final_cta_primary")}
               >
-                14 Tage gratis testen
+                {t.cta_free}
                 <svg width="14" height="14" viewBox="0 0 14 14" fill="none" className="ml-1">
                   <path d="M3 7h8m0 0L7.5 3.5M11 7l-3.5 3.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
                 </svg>
               </Link>
               <a href="#preise" className="cta-secondary px-7 py-3.5 text-sm">
-                Preise ansehen
+                {t.nav_pricing}
               </a>
             </div>
           </div>

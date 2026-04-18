@@ -1,36 +1,53 @@
 "use client";
 
-import { useState } from "react";
 import Link from "next/link";
 import { motion } from "framer-motion";
 import { trackCtaClick } from "@/lib/analytics";
-
-const freeFeatures = [
-  "5 Dokumente pro Monat",
-  "Swiss QR-Rechnung (CH)",
-  "ZUGFeRD Factur-X (DE)",
-  "WhatsApp-Versand",
-  "PDF-Export",
-];
-
-const proFeatures = [
-  "Alles aus Free — unbegrenzt",
-  "14 Tage gratis testen",
-  "Eigenes Logo & Branding",
-  "E-Mail-Versand aus der App",
-  "Vorlagen-Bibliothek",
-  "Offline-Modus (PWA)",
-  "Priorisierter Support",
-];
+import { useT } from "@/lib/i18n";
 
 export default function LandingPricing() {
-  const [annual, setAnnual] = useState(true);
+  const { landing: t } = useT();
+
+  const plans = [
+    {
+      key: "free",
+      name: t.plan_free,
+      price: t.plan_free_p,
+      sub: t.plan_free_sub,
+      features: t.plan_free_f as readonly string[],
+      highlighted: false,
+      ctaHref: "/login",
+      ctaLabel: t.choose,
+      ctaTrack: "pricing_free",
+    },
+    {
+      key: "pro",
+      name: t.plan_pro,
+      price: t.plan_pro_p,
+      sub: t.plan_pro_sub,
+      features: t.plan_pro_f as readonly string[],
+      highlighted: true,
+      ctaHref: "/login?plan=pro",
+      ctaLabel: t.choose,
+      ctaTrack: "pricing_pro",
+    },
+    {
+      key: "team",
+      name: t.plan_team,
+      price: t.plan_team_p,
+      sub: t.plan_team_sub,
+      features: t.plan_team_f as readonly string[],
+      highlighted: false,
+      ctaHref: "/login?plan=team",
+      ctaLabel: t.choose,
+      ctaTrack: "pricing_team",
+    },
+  ];
 
   return (
     <section className="py-24 sm:py-32" id="preise">
       <div className="landing-shell">
 
-        {/* Header */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
@@ -38,192 +55,85 @@ export default function LandingPricing() {
           transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
           className="mx-auto max-w-xl text-center"
         >
-          <div className="section-kicker">Preise</div>
-          <h2 className="section-title mt-5">
-            14 Tage alles testen.{" "}
-            <span style={{ color: "var(--color-primary)" }}>Danach du entscheidest.</span>
-          </h2>
-          <p className="section-copy mt-5">
-            Zwei Wochen lang alle Pro-Funktionen. Ohne Kreditkarte. Danach automatisch Free — oder Pro, wenn du magst.
-          </p>
-
-          {/* Toggle */}
-          <div
-            className="mt-8 inline-flex rounded-xl p-1"
-            style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.06)" }}
-          >
-            {[
-              { label: "Monatlich", val: false },
-              { label: "Jährlich", val: true, badge: "2 Monate gratis" },
-            ].map(({ label, val, badge }) => (
-              <button
-                key={label}
-                type="button"
-                onClick={() => setAnnual(val)}
-                className="relative flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-medium transition-all duration-200"
-                style={{
-                  background: annual === val ? "rgba(255,255,255,0.08)" : "transparent",
-                  color: annual === val ? "var(--color-text)" : "var(--color-text-soft)",
-                }}
-              >
-                {label}
-                {badge && annual && val && (
-                  <span
-                    className="text-[10px] font-semibold px-1.5 py-0.5 rounded-md"
-                    style={{ background: "rgba(200,121,61,0.12)", color: "var(--color-primary)" }}
-                  >
-                    {badge}
-                  </span>
-                )}
-              </button>
-            ))}
-          </div>
+          <div className="section-kicker">{t.sec_price_eyebrow}</div>
+          <h2 className="section-title mt-5">{t.sec_price_title}</h2>
+          <p className="section-copy mt-5">{t.price_lead}</p>
         </motion.div>
 
-        {/* Cards */}
-        <div className="mt-12 grid gap-4 lg:grid-cols-2 lg:items-start">
+        <div className="mt-12 grid gap-4 lg:grid-cols-3 lg:items-start">
+          {plans.map((plan, i) => (
+            <motion.article
+              key={plan.key}
+              initial={{ opacity: 0, y: 24 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, margin: "-60px" }}
+              transition={{ duration: 0.6, delay: i * 0.08, ease: [0.16, 1, 0.3, 1] }}
+              className="relative rounded-2xl p-7 sm:p-8"
+              style={plan.highlighted ? {
+                background: "rgba(200,121,61,0.04)",
+                border: "1px solid rgba(200,121,61,0.22)",
+                boxShadow: "0 0 40px rgba(200,121,61,0.08)",
+              } : {
+                background: "rgba(255,255,255,0.03)",
+                border: "1px solid rgba(255,255,255,0.06)",
+              }}
+            >
+              {plan.highlighted && (
+                <div
+                  className="absolute right-6 top-6 rounded-md px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.12em]"
+                  style={{ background: "var(--color-primary)", color: "white" }}
+                >
+                  {t.popular}
+                </div>
+              )}
 
-          {/* Free */}
-          <motion.article
-            initial={{ opacity: 0, y: 24 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true, margin: "-60px" }}
-            transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
-            className="rounded-2xl p-7 sm:p-8"
-            style={{
-              background: "rgba(255,255,255,0.03)",
-              border: "1px solid rgba(255,255,255,0.06)",
-            }}
-          >
-            <div
-              className="inline-flex rounded-md px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.14em]"
-              style={{ background: "rgba(255,255,255,0.04)", color: "var(--color-text-soft)" }}
-            >
-              Gratis
-            </div>
-            <h3
-              className="mt-4 text-xl font-bold"
-              style={{ color: "var(--color-text)", fontFamily: "var(--font-display)" }}
-            >
-              Zum Reinschnuppern
-            </h3>
-            <div className="mt-5 flex items-end gap-2">
-              <span
-                className="text-4xl font-bold leading-none tracking-tight"
+              <h3
+                className="text-lg font-bold"
                 style={{ color: "var(--color-text)", fontFamily: "var(--font-display)" }}
               >
-                CHF 0
-              </span>
-              <span className="mb-0.5 text-sm" style={{ color: "var(--color-text-soft)" }}>/Monat</span>
-            </div>
-            <p className="mt-4 text-sm leading-6" style={{ color: "var(--color-text-muted)" }}>
-              Für die ersten echten Einsätze. Ohne Risiko und ohne ein neues System einzuführen.
-            </p>
+                {plan.name}
+              </h3>
 
-            <ul className="mt-6 space-y-2.5">
-              {freeFeatures.map((f) => (
-                <li key={f} className="flex items-center gap-2.5 text-sm" style={{ color: "var(--color-text)" }}>
-                  <span
-                    className="inline-flex h-4.5 w-4.5 shrink-0 items-center justify-center rounded text-[10px]"
-                    style={{ color: "var(--color-text-soft)" }}
-                  >
-                    <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2.5 6l2.5 2.5 4.5-4.5" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"/></svg>
-                  </span>
-                  {f}
-                </li>
-              ))}
-            </ul>
-
-            <Link
-              href="/login"
-              className="cta-secondary mt-7 w-full"
-              onClick={() => trackCtaClick("pricing_free")}
-            >
-              Kostenlos starten
-            </Link>
-          </motion.article>
-
-          {/* Pro */}
-          <motion.article
-            initial={{ opacity: 0, y: 24 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true, margin: "-60px" }}
-            transition={{ duration: 0.6, delay: 0.1, ease: [0.16, 1, 0.3, 1] }}
-            className="relative rounded-2xl p-7 sm:p-8"
-            style={{
-              background: "rgba(200,121,61,0.04)",
-              border: "1px solid rgba(200,121,61,0.16)",
-              boxShadow: "0 0 40px rgba(200,121,61,0.06)",
-            }}
-          >
-            {/* Pro badge */}
-            <div
-              className="absolute right-6 top-6 rounded-md px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.12em]"
-              style={{ background: "var(--color-primary)", color: "white" }}
-            >
-              Pro
-            </div>
-
-            <div
-              className="inline-flex rounded-md px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.14em]"
-              style={{ background: "rgba(200,121,61,0.10)", color: "var(--color-primary)" }}
-            >
-              Für wachsende Betriebe
-            </div>
-
-            <h3
-              className="mt-4 text-xl font-bold"
-              style={{ color: "var(--color-text)", fontFamily: "var(--font-display)" }}
-            >
-              Mehr Volumen, mehr Auftritt
-            </h3>
-
-            <div className="mt-5 flex items-end gap-2">
-              <span
-                className="text-4xl font-bold leading-none tracking-tight"
-                style={{ color: "var(--color-primary)", fontFamily: "var(--font-display)" }}
-              >
-                CHF {annual ? "20" : "28"}
-              </span>
-              <span className="mb-0.5 text-sm" style={{ color: "var(--color-text-soft)" }}>/Monat</span>
-              {annual && (
+              <div className="mt-4 flex items-end gap-1.5">
                 <span
-                  className="mb-0.5 text-xs font-medium px-2 py-0.5 rounded-md"
-                  style={{ background: "rgba(200,121,61,0.10)", color: "var(--color-primary)" }}
+                  className="text-4xl font-bold leading-none tracking-tight"
+                  style={{
+                    color: plan.highlighted ? "var(--color-primary)" : "var(--color-text)",
+                    fontFamily: "var(--font-display)",
+                  }}
                 >
-                  = CHF 240/Jahr
+                  {plan.price}
                 </span>
-              )}
-            </div>
+              </div>
+              <div className="mt-1 text-sm" style={{ color: "var(--color-text-soft)" }}>
+                {plan.sub}
+              </div>
 
-            <p className="mt-4 text-sm leading-6" style={{ color: "var(--color-text-muted)" }}>
-              Sobald Offertio fester Teil deines Tages wird: mehr Volumen,
-              besserer Auftritt und weniger Büro-Backlog.
-            </p>
+              <ul className="mt-6 space-y-2.5">
+                {plan.features.map((f) => (
+                  <li key={f} className="flex items-center gap-2.5 text-sm" style={{ color: "var(--color-text)" }}>
+                    <span
+                      className="inline-flex h-4 w-4 shrink-0 items-center justify-center rounded"
+                      style={{ color: plan.highlighted ? "var(--color-primary)" : "var(--color-text-soft)" }}
+                    >
+                      <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2.5 6l2.5 2.5 4.5-4.5" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"/></svg>
+                    </span>
+                    {f}
+                  </li>
+                ))}
+              </ul>
 
-            <ul className="mt-6 space-y-2.5">
-              {proFeatures.map((f) => (
-                <li key={f} className="flex items-center gap-2.5 text-sm" style={{ color: "var(--color-text)" }}>
-                  <span className="inline-flex h-4.5 w-4.5 shrink-0 items-center justify-center rounded text-[10px]" style={{ color: "var(--color-primary)" }}>
-                    <svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2.5 6l2.5 2.5 4.5-4.5" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round"/></svg>
-                  </span>
-                  {f}
-                </li>
-              ))}
-            </ul>
-
-            <Link
-              href="/login?plan=pro"
-              className="cta-primary mt-7 w-full"
-              onClick={() => trackCtaClick("pricing_pro")}
-            >
-              Pro freischalten
-            </Link>
-          </motion.article>
-
+              <Link
+                href={plan.ctaHref}
+                className={`${plan.highlighted ? "cta-primary" : "cta-secondary"} mt-7 w-full`}
+                onClick={() => trackCtaClick(plan.ctaTrack)}
+              >
+                {plan.ctaLabel}
+              </Link>
+            </motion.article>
+          ))}
         </div>
 
-        {/* Bottom note */}
         <motion.p
           initial={{ opacity: 0 }}
           whileInView={{ opacity: 1 }}
@@ -232,7 +142,7 @@ export default function LandingPricing() {
           className="mt-6 text-center text-sm"
           style={{ color: "var(--color-text-soft)" }}
         >
-          Keine Kreditkarte nötig. Upgrade jederzeit, kündbar monatlich.
+          {t.hero_proof2} · {t.hero_proof3}
         </motion.p>
 
       </div>

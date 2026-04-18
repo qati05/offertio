@@ -5,18 +5,13 @@ import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import { trackCtaClick } from "@/lib/analytics";
 import { OffertioIcon } from "@/components/OffertioLogo";
-
-const links = [
-  { href: "#produkt", label: "Produkt" },
-  { href: "#ablauf",  label: "Ablauf" },
-  { href: "#preise",  label: "Preise" },
-  { href: "#faq",     label: "FAQ" },
-];
+import { useT } from "@/lib/i18n";
+import type { Locale } from "@/lib/i18n";
 
 export default function LandingNavbar() {
+  const { locale, setLocale, landing: t } = useT();
   const [scrolled, setScrolled] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
-
   const closeMenu = useCallback(() => setMenuOpen(false), []);
 
   useEffect(() => {
@@ -29,6 +24,13 @@ export default function LandingNavbar() {
     return () => window.removeEventListener("scroll", handleScroll);
   }, [closeMenu, menuOpen]);
 
+  const links = [
+    { href: "#produkt", label: t.nav_product },
+    { href: "#ablauf",  label: t.nav_how },
+    { href: "#preise",  label: t.nav_pricing },
+    { href: "#faq",     label: t.nav_faq },
+  ];
+
   return (
     <>
       <header className="fixed inset-x-0 top-0 z-50 px-4 pt-3 sm:px-6">
@@ -39,22 +41,14 @@ export default function LandingNavbar() {
           className="mx-auto flex max-w-5xl items-center justify-between rounded-2xl px-4 py-2.5 transition-all duration-300 sm:px-5"
           style={{
             border: `1px solid ${scrolled ? "rgba(255,255,255,0.08)" : "rgba(255,255,255,0.04)"}`,
-            background: scrolled
-              ? "rgba(9,9,11,0.85)"
-              : "rgba(9,9,11,0.50)",
+            background: scrolled ? "rgba(9,9,11,0.85)" : "rgba(9,9,11,0.50)",
             backdropFilter: "blur(24px)",
             WebkitBackdropFilter: "blur(24px)",
-            boxShadow: scrolled
-              ? "0 8px 32px rgba(0,0,0,0.30)"
-              : "none",
+            boxShadow: scrolled ? "0 8px 32px rgba(0,0,0,0.30)" : "none",
           }}
         >
           {/* Brand */}
-          <Link
-            href="/"
-            className="flex items-center gap-2"
-            aria-label="Offertio Startseite"
-          >
+          <Link href="/" className="flex items-center gap-2" aria-label="Offertio Startseite">
             <OffertioIcon size={28} theme="dark" />
             <span
               className="text-[15px] tracking-[-0.03em]"
@@ -78,26 +72,23 @@ export default function LandingNavbar() {
             ))}
           </nav>
 
-          {/* Desktop CTAs */}
+          {/* Desktop CTAs + lang switcher */}
           <div className="hidden items-center gap-2 lg:flex">
+            <LangSwitch locale={locale} setLocale={setLocale} />
             <Link
               href="/login"
               className="text-[13px] font-medium px-3 py-1.5 rounded-lg transition-all duration-200 hover:bg-white/[0.04]"
               style={{ color: "var(--color-text-muted)" }}
             >
-              Anmelden
+              {t.cta_login}
             </Link>
             <Link
               href="/login"
               className="text-[13px] font-semibold px-4 py-2 rounded-lg transition-all duration-200"
-              style={{
-                background: "var(--color-primary)",
-                color: "white",
-                boxShadow: "0 2px 12px rgba(200,121,61,0.25)",
-              }}
+              style={{ background: "var(--color-primary)", color: "white", boxShadow: "0 2px 12px rgba(200,121,61,0.25)" }}
               onClick={() => trackCtaClick("navbar_primary")}
             >
-              Kostenlos starten
+              {t.cta_free}
             </Link>
           </div>
 
@@ -120,8 +111,7 @@ export default function LandingNavbar() {
                     transform:
                       menuOpen && i === 0 ? "translateY(6.5px) rotate(45deg)" :
                       menuOpen && i === 1 ? "scaleX(0)" :
-                      menuOpen && i === 2 ? "translateY(-6.5px) rotate(-45deg)" :
-                      "none",
+                      menuOpen && i === 2 ? "translateY(-6.5px) rotate(-45deg)" : "none",
                     opacity: menuOpen && i === 1 ? 0 : 1,
                   }}
                 />
@@ -160,20 +150,14 @@ export default function LandingNavbar() {
                   {link.label}
                 </a>
               ))}
-              <div className="mt-3 grid grid-cols-2 gap-2">
+              <div className="mt-3 flex items-center justify-between gap-2">
+                <LangSwitch locale={locale} setLocale={setLocale} />
                 <Link
                   href="/login"
-                  className="cta-secondary text-center text-sm"
-                  onClick={closeMenu}
-                >
-                  Anmelden
-                </Link>
-                <Link
-                  href="/login"
-                  className="cta-primary text-center text-sm"
+                  className="cta-primary flex-1 text-center text-sm"
                   onClick={() => { closeMenu(); trackCtaClick("navbar_mobile_primary"); }}
                 >
-                  Starten
+                  {t.cta_free}
                 </Link>
               </div>
             </div>
@@ -181,5 +165,29 @@ export default function LandingNavbar() {
         )}
       </AnimatePresence>
     </>
+  );
+}
+
+function LangSwitch({ locale, setLocale }: { locale: Locale; setLocale: (l: Locale) => void }) {
+  return (
+    <div
+      className="inline-flex rounded-full p-[3px]"
+      style={{ background: "rgba(255,255,255,0.04)", border: "1px solid rgba(255,255,255,0.06)" }}
+    >
+      {(["de", "fr", "it"] as Locale[]).map((l) => (
+        <button
+          key={l}
+          type="button"
+          onClick={() => setLocale(l)}
+          className="rounded-full px-2.5 py-1 text-[11px] font-semibold tracking-wide transition-all duration-150"
+          style={{
+            background: locale === l ? "rgba(200,121,61,0.18)" : "transparent",
+            color: locale === l ? "var(--color-primary)" : "rgba(240,237,232,0.45)",
+          }}
+        >
+          {l.toUpperCase()}
+        </button>
+      ))}
+    </div>
   );
 }

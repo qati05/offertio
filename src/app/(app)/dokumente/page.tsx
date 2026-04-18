@@ -9,17 +9,8 @@ import { createSupabaseBrowser } from "@/lib/supabase-browser";
 import { getDachConfig } from "@/lib/dach";
 import { buildDokumentCsv } from "@/lib/export";
 import { groupDocumentsByCustomer } from "@/lib/customer-folders";
-import { computeDocumentStatus } from "@/lib/dokument-status";
+import { computeDocumentStatus, getStatus } from "@/lib/dokument-status";
 import type { DokumentHistorie, Profile } from "@/lib/types";
-
-const STATUS_META: Record<string, { label: string; color: string; bg: string }> = {
-  entwurf:      { label: "In Arbeit",  color: "#6b7280", bg: "rgba(107,114,128,0.07)" },
-  gesendet:     { label: "Ausstehend", color: "#A8622E", bg: "rgba(200,121,61,0.07)" },
-  bezahlt:      { label: "Erledigt",   color: "#15803d", bg: "rgba(21,128,61,0.07)" },
-  angenommen:   { label: "Bestätigt",  color: "#15803d", bg: "rgba(21,128,61,0.07)" },
-  abgelaufen:   { label: "Abgelaufen", color: "var(--color-warning)", bg: "var(--color-warning-soft)" },
-  ueberfaellig: { label: "Überfällig", color: "var(--color-warning)", bg: "var(--color-warning-soft)" },
-};
 
 /** Status options available per document type */
 function statusOptionsFor(typ: "offerte" | "rechnung") {
@@ -56,6 +47,8 @@ export default function DokumentePage() {
   );
   const [source, setSource] = useState<"cloud" | "local">("cloud");
   const [searchQuery, setSearchQuery] = useState("");
+  const [typFilter, setTypFilter] = useState<"alle" | "offerte" | "rechnung">("alle");
+  const [statusFilter, setStatusFilter] = useState<"alle" | "offen" | "bezahlt" | "ueberfaellig">("alle");
   const [expandedCustomer, setExpandedCustomer] = useState<string | null>(null);
   const [updatingId, setUpdatingId] = useState<string | null>(null);
   const [showExport, setShowExport] = useState(false);
@@ -144,7 +137,23 @@ export default function DokumentePage() {
 
   const currency = getDachConfig(profile?.land).currency;
   const zahlungsfrist = profile?.zahlungsfrist ?? 30;
-  const customerFolders = useMemo(() => groupDocumentsByCustomer(history), [history]);
+  const filteredHistory = useMemo(() => {
+    return history.filter((doc) => {
+      if (typFilter !== "alle" && doc.typ !== typFilter) return false;
+      if (statusFilter === "alle") return true;
+      if (statusFilter === "offen") {
+        return doc.status === "gesendet" || doc.status === "ueberfaellig";
+      }
+      if (statusFilter === "bezahlt") return doc.status === "bezahlt";
+      if (statusFilter === "ueberfaellig") return doc.status === "ueberfaellig";
+      return true;
+    });
+  }, [history, typFilter, statusFilter]);
+
+  const customerFolders = useMemo(
+    () => groupDocumentsByCustomer(filteredHistory),
+    [filteredHistory],
+  );
   const convertedInvoicesBySourceId = useMemo(
     () =>
       new Map(
@@ -177,7 +186,7 @@ export default function DokumentePage() {
   }
 
   function DocRow({ doc, compact = false }: { doc: DokumentHistorie; compact?: boolean }) {
-    const status = STATUS_META[doc.status] ?? STATUS_META.entwurf;
+    const status = getStatus(doc.status);
     const isRechnung = doc.typ === "rechnung";
     const convertedInvoice = doc.id ? convertedInvoicesBySourceId.get(doc.id) : null;
     const isUpdating = doc.id === updatingId;
@@ -220,6 +229,19 @@ export default function DokumentePage() {
                 : `→ ${doc.converted_document_nummer || convertedInvoice?.nummer}`}
             </div>
           )}
+          {!compact &&
+            doc.typ === "offerte" &&
+            (doc.status === "angenommen" || doc.status === "gesendet") &&
+            !doc.converted_document_id &&
+            !convertedInvoice &&
+            doc.id && (
+              <Link
+                href={`/dokument/neu?typ=rechnung&from=${encodeURIComponent(doc.id)}`}
+                className="convert-link mt-2"
+              >
+                → Rechnung aus Offerte erstellen
+              </Link>
+            )}
           {compact && (
             <div className="mt-0.5 text-xs font-medium" style={{ color: "var(--app-text)" }}>
               {doc.nummer}
@@ -250,7 +272,7 @@ export default function DokumentePage() {
               >
                 {options.map((s) => (
                   <option key={s} value={s}>
-                    {STATUS_META[s]?.label ?? s}
+                    {getStatus(s).label}
                   </option>
                 ))}
               </select>
@@ -385,9 +407,9 @@ export default function DokumentePage() {
           </div>
         )}
 
-        {/* Search */}
+        {/* Search + Filters */}
         {!loading && history.length > 0 && (
-          <div className="mb-6">
+          <div className="mb-6 flex flex-col gap-3">
             <input
               className="field"
               value={searchQuery}
@@ -395,6 +417,37 @@ export default function DokumentePage() {
               placeholder="Kunde suchen…"
               style={{ maxWidth: 360 }}
             />
+            <div className="flex flex-wrap items-center gap-2">
+              <FilterChipGroup
+                value={typFilter}
+                onChange={setTypFilter}
+                options={[
+                  { value: "alle", label: "Alle" },
+                  { value: "offerte", label: "Offerten" },
+                  { value: "rechnung", label: "Rechnungen" },
+                ]}
+              />
+              <span className="filter-divider" aria-hidden="true" />
+              <FilterChipGroup
+                value={statusFilter}
+                onChange={setStatusFilter}
+                options={[
+                  { value: "alle", label: "Alle Status" },
+                  { value: "offen", label: "Offen" },
+                  { value: "bezahlt", label: "Bezahlt" },
+                  { value: "ueberfaellig", label: "Überfällig" },
+                ]}
+              />
+              {(typFilter !== "alle" || statusFilter !== "alle") && (
+                <button
+                  type="button"
+                  className="filter-reset"
+                  onClick={() => { setTypFilter("alle"); setStatusFilter("alle"); }}
+                >
+                  Filter zurücksetzen
+                </button>
+              )}
+            </div>
           </div>
         )}
 
@@ -483,7 +536,6 @@ function CustomerFolder({
   onToggle,
   zahlungsfrist,
   DocRow,
-  currency,
 }: {
   folder: ReturnType<typeof groupDocumentsByCustomer>[number];
   expanded: boolean;
@@ -511,16 +563,11 @@ function CustomerFolder({
         <div className="flex items-center gap-3">
           {/* Latest document status chip */}
           {folder.docs[0] && (() => {
-            const st = STATUS_META[folder.docs[0].status] ?? STATUS_META.entwurf;
+            const st = getStatus(folder.docs[0].status);
             return (
               <span
-                className="text-[11px] font-semibold uppercase tracking-[0.06em]"
-                style={{
-                  color: st.color,
-                  background: st.bg,
-                  padding: "2px 8px",
-                  borderRadius: 6,
-                }}
+                className="pill-badge"
+                style={{ color: st.color, background: st.bg }}
               >
                 {st.label}
               </span>
@@ -534,6 +581,23 @@ function CustomerFolder({
 
       {expanded && (
         <div className="border-t px-5 pb-5 pt-4" style={{ borderColor: "var(--app-border)" }}>
+          <div className="mb-4 flex justify-end">
+            <Link
+              href={`/kunden/${encodeURIComponent(folder.slug)}`}
+              style={{
+                fontSize: 12,
+                fontWeight: 600,
+                color: "var(--color-primary)",
+                textDecoration: "none",
+                padding: "4px 10px",
+                borderRadius: 8,
+                border: "1px solid var(--app-border)",
+                background: "var(--app-card)",
+              }}
+            >
+              Kundenprofil öffnen →
+            </Link>
+          </div>
           <div className="space-y-3">
             {folder.docs.map((doc, idx) => (
               <DocRow
@@ -545,6 +609,34 @@ function CustomerFolder({
           </div>
         </div>
       )}
+    </div>
+  );
+}
+
+/* ── Filter Chip Group ───────────────────────────────── */
+
+function FilterChipGroup<T extends string>({
+  value,
+  onChange,
+  options,
+}: {
+  value: T;
+  onChange: (next: T) => void;
+  options: readonly { value: T; label: string }[];
+}) {
+  return (
+    <div className="filter-chip-group" role="group">
+      {options.map((opt) => (
+        <button
+          key={opt.value}
+          type="button"
+          className={`filter-chip${value === opt.value ? " filter-chip--active" : ""}`}
+          onClick={() => onChange(opt.value)}
+          aria-pressed={value === opt.value}
+        >
+          {opt.label}
+        </button>
+      ))}
     </div>
   );
 }

@@ -1,43 +1,30 @@
 "use client";
 
 import { motion } from "framer-motion";
+import { useT } from "@/lib/i18n";
 
-const steps = [
-  {
-    n: "01",
-    icon: (
-      <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M10 3C6.686 3 4 5.686 4 9a6 6 0 0010.83 3.6M14 3l3 3-3 3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
-    ),
-    title: "Vor Ort erfassen",
-    copy: "Kunde, Leistung und Betrag direkt nach dem Termin festhalten. Kein App-Wechsel, keine Zettelwirtschaft.",
-    detail: "Vom Handy, beim Kunden",
-  },
-  {
-    n: "02",
-    icon: (
-      <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><rect x="4" y="3" width="12" height="14" rx="2" stroke="currentColor" strokeWidth="1.5"/><path d="M7 7h6M7 10h4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/></svg>
-    ),
-    title: "Compliance im Hintergrund",
-    copy: "Swiss QR-Rechnung, ZUGFeRD, DE/AT-Pflichtfelder — Offertio setzt sie automatisch. Du siehst nur das fertige Dokument.",
-    detail: "CH · DE · AT",
-  },
-  {
-    n: "03",
-    icon: (
-      <svg width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M4 10l4 4L16 6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
-    ),
-    title: "Direkt per WhatsApp raus",
-    copy: "WhatsApp, E-Mail oder System-Share — dort, wo du mit deinen Kunden wirklich redest. Ein Tap, fertig.",
-    detail: "WhatsApp · E-Mail · Share",
-  },
+const stepIcons = [
+  <svg key="phone" width="20" height="20" viewBox="0 0 20 20" fill="none"><rect x="5" y="2" width="10" height="16" rx="2" stroke="currentColor" strokeWidth="1.5"/><path d="M8.5 15h3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/></svg>,
+  <svg key="sign" width="20" height="20" viewBox="0 0 20 20" fill="none"><path d="M3 14c2-4 4-6 5-6s1.5 1 2 2c1-2 2-4 3.5-4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/><path d="M3 17h14" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/></svg>,
+  <svg key="qr" width="20" height="20" viewBox="0 0 20 20" fill="none"><rect x="2" y="2" width="6" height="6" stroke="currentColor" strokeWidth="1.4"/><rect x="12" y="2" width="6" height="6" stroke="currentColor" strokeWidth="1.4"/><rect x="2" y="12" width="6" height="6" stroke="currentColor" strokeWidth="1.4"/><rect x="13.5" y="13.5" width="2.5" height="2.5" fill="currentColor"/></svg>,
 ];
 
+const stepDetails = ["CH · DE · AT", "WhatsApp · Push", "QR · SEPA · ZUGFeRD"];
+const stepNums = ["01", "02", "03"];
+
 export default function LandingHowItWorks() {
+  const { landing: t } = useT();
+
+  const steps = [
+    { title: t.how1_t, copy: t.how1_d },
+    { title: t.how2_t, copy: t.how2_d },
+    { title: t.how3_t, copy: t.how3_d },
+  ];
+
   return (
     <section className="py-24 sm:py-32" id="ablauf">
       <div className="landing-shell">
 
-        {/* Header */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
@@ -45,22 +32,14 @@ export default function LandingHowItWorks() {
           transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
           className="mx-auto max-w-xl text-center"
         >
-          <div className="section-kicker">Ablauf</div>
-          <h2 className="section-title mt-5">
-            Weniger Schritte.{" "}
-            <span style={{ color: "var(--color-primary)" }}>Weniger Papierkram.</span>
-          </h2>
-          <p className="section-copy mt-5">
-            Drei Schritte. Kein Training. Kein Setup.
-            Direkt loslegen, wo die Information entsteht.
-          </p>
+          <div className="section-kicker">{t.sec_how_eyebrow}</div>
+          <h2 className="section-title mt-5">{t.sec_how_title}</h2>
         </motion.div>
 
-        {/* Steps */}
         <div className="mt-14 grid gap-4 lg:grid-cols-3">
           {steps.map((step, i) => (
             <motion.article
-              key={step.n}
+              key={i}
               initial={{ opacity: 0, y: 24 }}
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true, margin: "-60px" }}
@@ -71,30 +50,27 @@ export default function LandingHowItWorks() {
                 border: "1px solid rgba(255,255,255,0.06)",
               }}
             >
-              {/* Step number watermark */}
               <div
                 className="absolute right-4 top-3 text-6xl font-bold leading-none select-none"
                 style={{ color: "rgba(255,255,255,0.03)", fontFamily: "var(--font-display)" }}
                 aria-hidden="true"
               >
-                {step.n}
+                {stepNums[i]}
               </div>
 
-              {/* Icon */}
               <div
                 className="inline-flex h-10 w-10 items-center justify-center rounded-xl"
                 style={{ background: "rgba(200,121,61,0.10)", color: "var(--color-primary)" }}
               >
-                {step.icon}
+                {stepIcons[i]}
               </div>
 
-              {/* Detail tag */}
               <div
                 className="mt-4 inline-flex items-center gap-1.5 rounded-md px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.12em]"
                 style={{ background: "rgba(255,255,255,0.04)", color: "var(--color-text-soft)" }}
               >
                 <span style={{ color: "var(--color-primary)", fontSize: "6px" }}>&#9679;</span>
-                {step.detail}
+                {stepDetails[i]}
               </div>
 
               <h3
