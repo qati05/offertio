@@ -11,6 +11,7 @@ import OfflineBanner from "@/components/OfflineBanner";
 import PwaInstallPrompt from "@/components/PwaInstallPrompt";
 import PlanExpiryBanner from "@/components/PlanExpiryBanner";
 import CommandPalette from "@/components/CommandPalette";
+import ShortcutsOverlay from "@/components/ShortcutsOverlay";
 import { I18nProvider, useT } from "@/lib/i18n";
 import type { Profile } from "@/lib/types";
 import { OffertioIcon } from "@/components/OffertioLogo";
@@ -256,6 +257,7 @@ function AppLayoutInner({ children }: { children: React.ReactNode }) {
       <OfflineBanner />
       <PwaInstallPrompt />
       <CommandPalette />
+      <ShortcutsOverlay />
 
       {/* ── Desktop Sidebar (hidden in Focus Mode) ─────── */}
       <AnimatePresence initial={false}>

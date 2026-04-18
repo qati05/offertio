@@ -1681,12 +1681,19 @@ export default function DokumentNeuPage() {
           value={kunde.email}
           onChange={(e) => updateKunde("email", e.target.value)}
           ref={emailInputRef}
+          aria-invalid={fieldErrors.kundeEmail || undefined}
+          aria-describedby={fieldErrors.kundeEmail ? "kunde-email-error" : undefined}
           style={
             fieldErrors.kundeEmail
               ? { borderColor: "var(--color-error)", boxShadow: "0 0 0 4px var(--color-error-soft)" }
               : undefined
           }
         />
+        {fieldErrors.kundeEmail && (
+          <div id="kunde-email-error" className="field-error-hint">
+            Bitte E-Mail prüfen — Beispiel: name@firma.ch
+          </div>
+        )}
         {profil?.land === "DE" && dokumentTyp === "rechnung" && (
           <input
             className="input-field"
