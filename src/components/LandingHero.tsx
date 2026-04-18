@@ -4,12 +4,7 @@ import Link from "next/link";
 import { motion, AnimatePresence } from "framer-motion";
 import { useEffect, useState } from "react";
 import { trackCtaClick } from "@/lib/analytics";
-
-const proofPoints = [
-  "Swiss QR-Rechnung & ZUGFeRD",
-  "Per WhatsApp senden",
-  "14 Tage gratis testen",
-];
+import { useLang } from "@/components/LangContext";
 
 const DOCS = [
   { nr: "OF-2026-019", kunde: "Baumann Elektro AG", betrag: "CHF 2'340.00", status: "Gesendet", statusColor: "#A8622E", statusBg: "rgba(200,121,61,0.08)", typ: "OF" },
@@ -368,6 +363,7 @@ function SuccessScene() {
 // ─── Main Component ───────────────────────────────────────────────────────────
 
 export default function LandingHero() {
+  const { t } = useLang();
   const [step, setStep] = useState(0);
   const [charCount, setCharCount] = useState(0);
   const [highlightBtn, setHighlightBtn] = useState(false);
@@ -427,7 +423,7 @@ export default function LandingHero() {
               transition={{ duration: 0.5, delay: 0.1, ease: [0.16, 1, 0.3, 1] }}
               className="landing-chip"
             >
-              CH · DE · AT
+              {t.hero_chip}
             </motion.span>
 
             <motion.h1
@@ -443,12 +439,11 @@ export default function LandingHero() {
                 fontFamily: "var(--font-display)",
               }}
             >
-              Vom Einsatz{" "}
+              {t.hero_title_a}
               <br />
-              zur Offerte.{" "}
-              <span style={{ color: "var(--color-primary)" }}>
-                In Minuten.
-              </span>
+              {t.hero_title_b}
+              <br />
+              <em style={{ fontStyle: "italic", color: "var(--color-primary)", fontWeight: 400 }}>{t.hero_title_c}</em>
             </motion.h1>
 
             <motion.p
@@ -462,8 +457,7 @@ export default function LandingHero() {
                 color: "var(--color-text-muted)",
               }}
             >
-              Offerten und Rechnungen direkt nach dem Termin. Mit Swiss QR-Rechnung,
-              ZUGFeRD und WhatsApp-Versand — kein Büroabend mehr.
+              {t.hero_sub}
             </motion.p>
 
             <motion.div
@@ -477,13 +471,13 @@ export default function LandingHero() {
                 className="cta-primary px-7"
                 onClick={() => trackCtaClick("hero_primary")}
               >
-                14 Tage gratis testen
+                {t.hero_cta_primary}
                 <svg width="14" height="14" viewBox="0 0 14 14" fill="none" className="ml-1">
                   <path d="M3 7h8m0 0L7.5 3.5M11 7l-3.5 3.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
                 </svg>
               </Link>
               <a href="#ablauf" className="cta-secondary px-7">
-                So funktioniert es
+                {t.hero_cta_secondary}
               </a>
             </motion.div>
 
@@ -503,7 +497,7 @@ export default function LandingHero() {
                 }}
               >
                 <span className="h-1.5 w-1.5 rounded-full bg-[#1A7F42] animate-pulse inline-block" />
-                14 Tage Pro gratis — keine Kreditkarte
+                {t.hero_proof2}
               </div>
             </motion.div>
 
@@ -513,7 +507,7 @@ export default function LandingHero() {
               transition={{ duration: 0.6, delay: 0.8 }}
               className="mt-5 flex flex-wrap gap-x-5 gap-y-2"
             >
-              {proofPoints.map((point) => (
+              {[t.hero_proof1, t.hero_proof2, t.hero_proof3].map((point) => (
                 <div
                   key={point}
                   className="flex items-center gap-2 text-sm"

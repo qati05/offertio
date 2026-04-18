@@ -1,11 +1,7 @@
-import Link from "next/link";
+"use client";
 
-const nav = [
-  { label: "Produkt", href: "/#produkt" },
-  { label: "Ablauf", href: "/#ablauf" },
-  { label: "Preise", href: "/#preise" },
-  { label: "FAQ", href: "/#faq" },
-];
+import Link from "next/link";
+import { useLang } from "@/components/LangContext";
 
 const legal = [
   { label: "Impressum", href: "/impressum" },
@@ -14,6 +10,14 @@ const legal = [
 ];
 
 export default function LandingFooter() {
+  const { t } = useLang();
+
+  const nav = [
+    { label: t.nav_product, href: "/#produkt" },
+    { label: t.nav_how, href: "/#ablauf" },
+    { label: t.nav_pricing, href: "/#preise" },
+    { label: t.nav_faq, href: "/#faq" },
+  ];
   return (
     <footer className="pb-8 pt-4">
       <div className="landing-shell">
@@ -43,7 +47,7 @@ export default function LandingFooter() {
                 </span>
               </div>
               <p className="mt-4 max-w-xs text-sm leading-6" style={{ color: "var(--color-text-muted)" }}>
-                Weniger Büroarbeit, schnellere Dokumente und ein professioneller Auftritt direkt vom Handy.
+                {t.footer_tag}
               </p>
             </div>
 
@@ -53,7 +57,7 @@ export default function LandingFooter() {
                 className="text-[11px] font-semibold uppercase tracking-[0.14em]"
                 style={{ color: "var(--color-text-soft)" }}
               >
-                Produkt
+                {t.nav_product}
               </h4>
               <ul className="mt-3 space-y-2">
                 {nav.map((link) => (
@@ -100,8 +104,8 @@ export default function LandingFooter() {
             className="mt-7 flex flex-col gap-2 border-t pt-5 text-xs sm:flex-row sm:items-center sm:justify-between"
             style={{ borderColor: "rgba(255,255,255,0.05)", color: "var(--color-text-soft)" }}
           >
-            <div>&copy; {new Date().getFullYear()} Offertio. Alle Rechte vorbehalten.</div>
-            <div>Gemacht für Betriebe, die lieber arbeiten als Papier nachziehen.</div>
+            <div>{t.footer_meta}</div>
+            <div>{t.footer_tag}</div>
           </div>
         </div>
       </div>

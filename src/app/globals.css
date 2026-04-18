@@ -67,8 +67,9 @@
   --shadow-inner-card: inset 0 1px 0 rgba(255,255,255,0.50);
 
   /* ── Typography ──────────────────────────────────── */
-  --font-display: var(--font-bricolage), "Bricolage Grotesque", sans-serif;
-  --font-sans: var(--font-dm-sans), "DM Sans", sans-serif;
+  --font-display: var(--font-fraunces), "Fraunces", Georgia, serif;
+  --font-sans: var(--font-dm-sans), "DM Sans", -apple-system, sans-serif;
+  --font-mono: var(--font-jetbrains), "JetBrains Mono", ui-monospace, monospace;
 
   /* ── Animation State ─────────────────────────────── */
   --scroll-progress: 0;

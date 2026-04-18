@@ -2,36 +2,12 @@
 
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-
-const items = [
-  {
-    q: "Kann ich Offerten wirklich per WhatsApp senden?",
-    a: "Ja. Ein Tap öffnet WhatsApp mit einer fertigen Nachricht und einem sicheren Link zum PDF. Der Kunde bekommt die Offerte in demselben Chat, in dem er dich kontaktiert hat — nicht im SPAM-Ordner. Der Link ist 7 Tage gültig, genug für die typische Rückmeldung.",
-  },
-  {
-    q: "Wird die Swiss QR-Rechnung richtig erkannt?",
-    a: "Ja. Offertio erzeugt den Swiss QR-Code nach ISO 20022 mit QR-IBAN und QRR-Referenz — also genau so, wie ihn alle Schweizer Banken im E-Banking scannen. Kein Einzahlungsschein, kein manuelles Tippen der Referenz.",
-  },
-  {
-    q: "Funktioniert das auch für Deutschland und Österreich?",
-    a: "Ja. Für DE erzeugen wir ZUGFeRD 2.3 BASIC (Factur-X) als hybride PDF mit eingebettetem XML — pflichtkonform für die E-Rechnungspflicht. Für AT setzen wir die UID-Schwellen (€400/€10.000) und Pflichtfelder nach §11 öUStG automatisch. Du arbeitest mit einem Profil für alle drei Länder.",
-  },
-  {
-    q: "Was kostet der 14-Tage-Test?",
-    a: "Nichts. Keine Kreditkarte, keine automatische Verlängerung. 14 Tage lang alle Pro-Funktionen — danach automatisch Free (5 Dokumente/Monat) oder Upgrade. Du entscheidest, wenn du es real erlebt hast.",
-  },
-  {
-    q: "Brauche ich technisches Wissen?",
-    a: "Nein. Wenn du eine WhatsApp-Nachricht schreiben kannst, kannst du Offertio bedienen. Als PWA läuft es direkt im Browser — kein App-Store, keine Installation, kein Training.",
-  },
-  {
-    q: "Muss ich sofort Pro kaufen?",
-    a: "Nein. Nach dem 14-Tage-Test kannst du kostenlos weiter mit 5 Dokumenten/Monat arbeiten. Pro ergibt erst Sinn, wenn es fester Teil deines Betriebs wird — das merkst du selbst.",
-  },
-];
+import { useLang } from "@/components/LangContext";
 
 export default function LandingFaq() {
+  const { t } = useLang();
   const [open, setOpen] = useState<number | null>(0);
+  const items = t.faq;
 
   return (
     <section className="py-24 sm:py-32" id="faq">
@@ -46,18 +22,16 @@ export default function LandingFaq() {
             className="lg:sticky lg:top-28 lg:self-start"
           >
             <div className="section-kicker">FAQ</div>
-            <h2 className="section-title mt-5">Häufige Fragen, ehrliche Antworten.</h2>
-            <p className="section-copy mt-5 max-w-xs">
-              Nah an der Realität kleiner Betriebe. Nicht an Marketing-Wunschdenken.
-            </p>
+            <h2 className="section-title mt-5">{t.faq_title}</h2>
           </motion.div>
 
           <div className="space-y-2">
             {items.map((item, i) => {
               const isOpen = open === i;
+              const [q, a] = item;
               return (
                 <motion.article
-                  key={item.q}
+                  key={q}
                   initial={{ opacity: 0, y: 16 }}
                   whileInView={{ opacity: 1, y: 0 }}
                   viewport={{ once: true, margin: "-40px" }}
@@ -79,7 +53,7 @@ export default function LandingFaq() {
                       className="text-[15px] font-semibold leading-snug"
                       style={{ color: "var(--color-text)" }}
                     >
-                      {item.q}
+                      {q}
                     </span>
                     <span
                       className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-md transition-all duration-300"
@@ -109,7 +83,7 @@ export default function LandingFaq() {
                         transition={{ duration: 0.3, ease: [0.16, 1, 0.3, 1] }}
                       >
                         <p className="px-5 pb-4 text-sm leading-7" style={{ color: "var(--color-text-muted)" }}>
-                          {item.a}
+                          {a}
                         </p>
                       </motion.div>
                     )}
