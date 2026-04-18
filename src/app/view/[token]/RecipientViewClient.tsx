@@ -151,24 +151,15 @@ export default function RecipientViewClient({
           borderBottom: "1px solid rgba(26,25,22,0.08)",
         }}
       >
-        <div
-          style={{
-            maxWidth: "760px",
-            margin: "0 auto",
-            padding: "0 20px",
-            height: "52px",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-            gap: "12px",
-          }}
-        >
-          <div style={{ fontSize: "13px", color: "#6B6760", minWidth: 0 }}>
+        <div className="rv-topbar">
+          <div className="rv-topbar-label">
             <span style={{ fontWeight: 500, color: "#1A1916" }}>{label}</span>
             {" von "}
             <strong>{firmenname}</strong>
-            {" an "}
-            <strong>{doc.kundenname}</strong>
+            <span className="rv-topbar-to">
+              {" an "}
+              <strong>{doc.kundenname}</strong>
+            </span>
           </div>
 
           <div style={{ display: "flex", alignItems: "center", gap: "8px", flexShrink: 0 }}>
@@ -225,7 +216,7 @@ export default function RecipientViewClient({
       </div>
 
       {/* Document paper */}
-      <div style={{ maxWidth: "760px", margin: "0 auto", padding: "24px 16px 60px" }}>
+      <div className="rv-paper-wrap">
         <div
           style={{
             background: "#FFFFFF",
@@ -235,16 +226,7 @@ export default function RecipientViewClient({
           }}
         >
           {/* Document header */}
-          <div
-            style={{
-              padding: "32px 36px 24px",
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "flex-start",
-              gap: "24px",
-              borderBottom: "1px solid rgba(26,25,22,0.06)",
-            }}
-          >
+          <div className="rv-doc-header">
             <div>
               {logoUrl ? (
                 // eslint-disable-next-line @next/next/no-img-element
@@ -311,7 +293,7 @@ export default function RecipientViewClient({
           </div>
 
           {/* To block */}
-          <div style={{ padding: "20px 36px", borderBottom: "1px solid rgba(26,25,22,0.06)" }}>
+          <div className="rv-to-block">
             <div style={{ fontSize: "10px", fontWeight: 600, letterSpacing: "0.12em", color: "#9E9A94", textTransform: "uppercase", marginBottom: "6px" }}>
               An
             </div>
@@ -320,7 +302,7 @@ export default function RecipientViewClient({
 
           {/* PDF embed — primary content view */}
           {pdfUrl && (
-            <div style={{ padding: "0 36px 28px" }}>
+            <div className="rv-pdf-block">
               <div style={{ paddingTop: "20px", marginBottom: "4px" }}>
                 <span style={{ fontSize: "11px", color: "#9E9A94", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.1em" }}>
                   Dokument
@@ -369,29 +351,19 @@ export default function RecipientViewClient({
           )}
 
           {/* Totals summary */}
-          <div
-            style={{
-              padding: "16px 36px 20px",
-              borderTop: "1px solid rgba(26,25,22,0.06)",
-              display: "flex",
-              justifyContent: "flex-end",
-            }}
-          >
-            <div style={{ fontSize: "14px" }}>
-              <span style={{ color: "#6B6760", marginRight: "16px" }}>Gesamtbetrag</span>
-              <span style={{ fontWeight: 700, fontSize: "18px" }}>
-                {fmtCurrency(doc.betrag, firmenLand)}
-              </span>
-            </div>
+          <div className="rv-totals">
+            <span style={{ color: "#6B6760", fontSize: "14px" }}>Gesamtbetrag</span>
+            <span style={{ fontWeight: 700, fontSize: "18px", marginLeft: "16px" }}>
+              {fmtCurrency(doc.betrag, firmenLand)}
+            </span>
           </div>
 
           {/* Sign / reject block — only for offerte */}
           {isOfferte && (
             <div
+              className="rv-sign-block"
               style={{
-                margin: "0 24px 28px",
                 borderRadius: "12px",
-                padding: "28px",
                 background:
                   decision === "signed"
                     ? "rgba(34,197,94,0.05)"
@@ -643,17 +615,7 @@ export default function RecipientViewClient({
           )}
 
           {/* Footer */}
-          <div
-            style={{
-              padding: "16px 36px",
-              borderTop: "1px solid rgba(26,25,22,0.06)",
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
-              fontSize: "11px",
-              color: "#9E9A94",
-            }}
-          >
+          <div className="rv-footer">
             <div>{firmenname}</div>
             <div>
               Erstellt mit{" "}
@@ -667,6 +629,85 @@ export default function RecipientViewClient({
 
       <style>{`
         @keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+
+        .rv-topbar {
+          max-width: 760px;
+          margin: 0 auto;
+          padding: 10px 16px;
+          min-height: 52px;
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 12px;
+        }
+        .rv-topbar-label {
+          font-size: 13px;
+          color: #6B6760;
+          min-width: 0;
+          overflow: hidden;
+          text-overflow: ellipsis;
+          white-space: nowrap;
+        }
+
+        .rv-paper-wrap {
+          max-width: 760px;
+          margin: 0 auto;
+          padding: 24px 16px 60px;
+        }
+        .rv-doc-header {
+          padding: 32px 36px 24px;
+          display: flex;
+          justify-content: space-between;
+          align-items: flex-start;
+          gap: 24px;
+          border-bottom: 1px solid rgba(26,25,22,0.06);
+        }
+        .rv-to-block {
+          padding: 20px 36px;
+          border-bottom: 1px solid rgba(26,25,22,0.06);
+        }
+        .rv-pdf-block { padding: 0 36px 28px; }
+        .rv-totals {
+          padding: 16px 36px 20px;
+          border-top: 1px solid rgba(26,25,22,0.06);
+          display: flex;
+          justify-content: flex-end;
+        }
+        .rv-sign-block {
+          margin: 0 24px 28px;
+          padding: 28px;
+        }
+        .rv-footer {
+          padding: 16px 36px;
+          border-top: 1px solid rgba(26,25,22,0.06);
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          font-size: 11px;
+          color: #9E9A94;
+          gap: 12px;
+          flex-wrap: wrap;
+        }
+
+        @media (max-width: 640px) {
+          .rv-topbar { padding: 8px 14px; gap: 8px; }
+          .rv-topbar-label { font-size: 12px; }
+          .rv-topbar-to { display: none; }
+
+          .rv-paper-wrap { padding: 16px 12px 48px; }
+          .rv-doc-header {
+            padding: 20px 18px 16px;
+            flex-direction: column;
+            gap: 14px;
+            align-items: stretch;
+          }
+          .rv-doc-header > div:last-child { text-align: left !important; }
+          .rv-to-block { padding: 14px 18px; }
+          .rv-pdf-block { padding: 0 18px 20px; }
+          .rv-totals { padding: 14px 18px 18px; justify-content: space-between; align-items: baseline; }
+          .rv-sign-block { margin: 0 14px 20px; padding: 18px 16px; }
+          .rv-footer { padding: 14px 18px; font-size: 10px; }
+        }
       `}</style>
     </div>
   );
