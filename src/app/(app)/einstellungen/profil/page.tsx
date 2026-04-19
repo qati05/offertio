@@ -648,7 +648,7 @@ export default function ProfilPage() {
           <p style={{ fontSize: 12, color: "var(--color-text-muted)", marginBottom: 16 }}>
             Wähle das Design für deine Offerten und Rechnungen.
           </p>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
+          <div className="pdf-template-grid">
             {(
               [
                 { id: "classic", name: "Classic", desc: "Klar & professionell" },
