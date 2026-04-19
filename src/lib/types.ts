@@ -105,7 +105,7 @@ export interface DokumentHistorie {
   id?: string;
   typ: DokumentTyp;
   nummer: string;
-  objekt: string;
+  objekt?: string;
   kundenname: string;
   customer_id?: string | null;
   kunde_email?: string | null;

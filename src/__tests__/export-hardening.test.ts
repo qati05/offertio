@@ -208,7 +208,7 @@ describe("buildDokumentCsv — boundary conditions", () => {
   });
 
   it("all status values are preserved verbatim in CSV", () => {
-    const statuses = ["entwurf", "gesendet", "bezahlt", "angenommen", "abgelaufen", "ueberfaellig"];
+    const statuses = ["entwurf", "gesendet", "bezahlt", "angenommen", "abgelaufen", "ueberfaellig"] as const;
     for (const status of statuses) {
       const csv = buildDokumentCsv([makeDoc({ status })], "CHF");
       expect(csv).toContain(status);
