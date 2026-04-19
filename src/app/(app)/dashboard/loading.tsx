@@ -10,7 +10,7 @@ export default function DashboardLoading() {
         </div>
 
         {/* Tile skeletons */}
-        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 48 }}>
+        <div className="dash-tiles">
           <div className="skeleton" style={{ height: 120, borderRadius: 16 }} />
           <div className="skeleton" style={{ height: 120, borderRadius: 16 }} />
         </div>

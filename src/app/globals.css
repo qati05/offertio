@@ -596,6 +596,20 @@ html { overflow-x: hidden; max-width: 100vw; }
   }
 
   /* ── Dashboard Action Tiles ─────────────────────── */
+  .dash-tiles {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-bottom: 48px;
+  }
+  @media (max-width: 480px) {
+    .dash-tiles {
+      grid-template-columns: 1fr;
+      gap: 10px;
+      margin-bottom: 36px;
+    }
+  }
+
   .dash-tile {
     display: block;
     border-radius: var(--radius-xl);
@@ -1853,6 +1867,17 @@ html { overflow-x: hidden; max-width: 100vw; }
 
   @media (max-width: 560px) {
     .form-row {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  .pdf-template-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+  @media (max-width: 480px) {
+    .pdf-template-grid {
       grid-template-columns: 1fr;
     }
   }

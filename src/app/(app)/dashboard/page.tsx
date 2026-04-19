@@ -263,7 +263,7 @@ export default function DashboardPage() {
           initial={{ opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.4, delay: 0.12, ease }}
-          style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 48 }}
+          className="dash-tiles"
         >
           {/* Primary — Offerte */}
           <Link href="/dokument/neu" className="dash-tile dash-tile-primary">
