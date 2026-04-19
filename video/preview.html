@@ -1,0 +1,99 @@
+﻿<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <title>Beat Preview</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body { background: #09090B; color: #F0EDE8; font-family: system-ui, sans-serif; }
+    body { display: flex; flex-direction: column; min-height: 100vh; }
+    .scaler { width: 100%; aspect-ratio: 1920/1080; position: relative; overflow: hidden; background:#000; }
+    iframe { width: 1920px; height: 1080px; border: 0; transform-origin: top left; position:absolute; top:0; left:0; background:#09090B; }
+    header { display:flex; gap:12px; padding:10px 14px; background:#14130F; align-items:center; flex-wrap:wrap; }
+    header button { background:#1f1d18; color:#F0EDE8; border:1px solid #3a342c; padding:8px 12px; border-radius:6px; cursor:pointer; font-size: 13px; }
+    header button.active { background:#C8793D; border-color:#C8793D; color: #09090B; }
+    header label { font-size: 12px; color:#918A80; }
+    header input[type=range] { width: 320px; }
+    #time { font-variant-numeric: tabular-nums; font-weight: 600; color:#F0EDE8; }
+  </style>
+</head>
+<body>
+  <header>
+    <button data-beat="1" class="active">Beat 1 — Hook</button>
+    <button data-beat="2">Beat 2 — App Demo</button>
+    <button data-beat="3">Beat 3 — One Click</button>
+    <button data-beat="4">Beat 4 — DACH</button>
+    <button data-beat="5">Beat 5 — CTA</button>
+    <label>Zeit: <span id="time">0.00</span>s</label>
+    <input id="scrubber" type="range" min="0" max="4" step="0.05" value="0">
+    <button id="play">Play</button>
+  </header>
+  <div class="scaler" id="scaler">
+    <iframe id="frame" src="about:blank"></iframe>
+  </div>
+  <script>
+    const BEATS = {
+      1: { id: 'beat-1-hook', dur: 4 },
+      2: { id: 'beat-2-demo', dur: 13 },
+      3: { id: 'beat-3-one-click', dur: 8 },
+      4: { id: 'beat-4-dach', dur: 6 },
+      5: { id: 'beat-5-cta', dur: 8 },
+    };
+    const frame = document.getElementById('frame');
+    const scaler = document.getElementById('scaler');
+    const scrubber = document.getElementById('scrubber');
+    const timeEl = document.getElementById('time');
+    const playBtn = document.getElementById('play');
+    let rafId = null;
+
+    function fit() {
+      const r = scaler.getBoundingClientRect();
+      const s = r.width / 1920;
+      frame.style.transform = `scale(${s})`;
+      scaler.style.height = (1080 * s) + 'px';
+    }
+    window.addEventListener('resize', fit);
+
+    function loadBeat(n) {
+      if (rafId) cancelAnimationFrame(rafId);
+      document.querySelectorAll('[data-beat]').forEach(b =>
+        b.classList.toggle('active', b.dataset.beat === String(n)));
+      const beat = BEATS[n];
+      scrubber.max = beat.dur;
+      scrubber.value = 0;
+      timeEl.textContent = '0.00';
+      frame.src = `host.html?beat=${beat.id}`;
+      fit();
+    }
+
+    function seek(t) {
+      timeEl.textContent = t.toFixed(2);
+      try {
+        const w = frame.contentWindow;
+        const tl = w && w.__activeTimeline;
+        if (tl) tl.seek(t);
+      } catch (e) {}
+    }
+
+    scrubber.addEventListener('input', e => seek(+e.target.value));
+
+    document.querySelectorAll('[data-beat]').forEach(b =>
+      b.addEventListener('click', () => loadBeat(b.dataset.beat)));
+
+    playBtn.addEventListener('click', () => {
+      const start = performance.now();
+      const from = +scrubber.value;
+      const dur = +scrubber.max;
+      function step(now) {
+        const t = Math.min(dur, from + (now - start) / 1000);
+        scrubber.value = t;
+        seek(t);
+        if (t < dur) rafId = requestAnimationFrame(step);
+      }
+      rafId = requestAnimationFrame(step);
+    });
+
+    loadBeat(1);
+  </script>
+</body>
+</html>

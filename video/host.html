@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <title>Beat Host</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body, #root { background: #09090B; width: 1920px; height: 1080px; overflow: hidden; }
+    #root > div { width: 100%; height: 100%; }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+  <script src="gsap.min.js"></script>
+  <script>
+    (async () => {
+      const params = new URLSearchParams(location.search);
+      const beat = params.get('beat') || 'beat-1-hook';
+      const src = `compositions/${beat}.html`;
+      const res = await fetch(src);
+      const html = await res.text();
+      const parser = new DOMParser();
+      const doc = parser.parseFromString(html, 'text/html');
+      const tpl = doc.querySelector('template');
+      const content = tpl.content.cloneNode(true);
+      const scripts = Array.from(content.querySelectorAll('script'));
+      scripts.forEach(s => s.remove());
+      document.getElementById('root').appendChild(content);
+      window.__timelines = {};
+      for (const s of scripts) {
+        if (s.src) continue;
+        const g = document.createElement('script');
+        g.textContent = s.textContent;
+        document.body.appendChild(g);
+      }
+      window.__activeTimeline = window.__timelines[beat] || null;
+    })();
+  </script>
+</body>
+</html>

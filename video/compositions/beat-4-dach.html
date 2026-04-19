@@ -66,9 +66,17 @@
       opacity: 0;
     }
 
-    [data-composition-id="beat-4-dach"] .flag-emoji {
-      font-size: 56px;
-      line-height: 1;
+    [data-composition-id="beat-4-dach"] .flag-svg {
+      width: 96px;
+      height: 64px;
+      border-radius: 6px;
+      overflow: hidden;
+      box-shadow: 0 6px 20px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.06);
+      display: block;
+    }
+
+    [data-composition-id="beat-4-dach"] .flag-svg.ch {
+      width: 64px;
     }
 
     [data-composition-id="beat-4-dach"] .flag-name {
@@ -141,17 +149,28 @@
   <div class="scene-content">
     <div class="flags-row">
       <div class="flag-card" id="flag-ch">
-        <span class="flag-emoji">🇨🇭</span>
+        <svg class="flag-svg ch" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg" aria-label="Flag of Switzerland">
+          <rect width="32" height="32" fill="#D52B1E"/>
+          <rect x="13" y="6" width="6" height="20" fill="#FFFFFF"/>
+          <rect x="6" y="13" width="20" height="6" fill="#FFFFFF"/>
+        </svg>
         <div class="flag-name">Schweiz</div>
         <div class="flag-detail">QR-Rechnung · CHF</div>
       </div>
       <div class="flag-card" id="flag-de">
-        <span class="flag-emoji">🇩🇪</span>
+        <svg class="flag-svg de" viewBox="0 0 5 3" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg" aria-label="Flag of Germany">
+          <rect width="5" height="1" fill="#000000"/>
+          <rect y="1" width="5" height="1" fill="#DD0000"/>
+          <rect y="2" width="5" height="1" fill="#FFCE00"/>
+        </svg>
         <div class="flag-name">Deutschland</div>
         <div class="flag-detail">ZUGFeRD · SEPA · EUR</div>
       </div>
       <div class="flag-card" id="flag-at">
-        <span class="flag-emoji">🇦🇹</span>
+        <svg class="flag-svg at" viewBox="0 0 3 2" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg" aria-label="Flag of Austria">
+          <rect width="3" height="2" fill="#ED2939"/>
+          <rect y="0.667" width="3" height="0.667" fill="#FFFFFF"/>
+        </svg>
         <div class="flag-name">Österreich</div>
         <div class="flag-detail">SEPA · EUR</div>
       </div>
