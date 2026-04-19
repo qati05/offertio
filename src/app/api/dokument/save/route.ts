@@ -121,18 +121,30 @@ export async function POST(request: NextRequest) {
       return json({ error: "Objektbezeichnung zu lang." }, 400);
     }
 
-    // DE/AT legal requirement: Rechnungen must include Leistungsdatum
-    if (typ === "rechnung" && !leistungsdatum) {
-      // Look up the user's country to enforce the rule
+    // DE/AT legal requirements — look up the user's country once for all rules.
+    let issuerLand: string = "CH";
+    if (typ === "rechnung") {
       const { data: userProfile } = await supabase
         .from("profiles")
         .select("land")
         .eq("id", user.id)
         .maybeSingle();
-      const land = userProfile?.land || "CH";
-      if (land === "DE" || land === "AT") {
+      issuerLand = userProfile?.land || "CH";
+
+      // Rechnungen must include Leistungsdatum in DE/AT
+      if (!leistungsdatum && (issuerLand === "DE" || issuerLand === "AT")) {
         return json({
           error: "Leistungsdatum ist für Rechnungen in DE/AT gesetzlich erforderlich.",
+        }, 400);
+      }
+
+      // AT §11 Abs. 1 Z 8 UStG: invoices ≥ EUR 10.000 gross require the
+      // recipient's UID. Enforce at the API boundary, not only in the Zod schema,
+      // so clients cannot bypass by omitting the field client-side.
+      const recipientUid = typeof kunde?.uid_mwst === "string" ? kunde.uid_mwst.trim() : "";
+      if (issuerLand === "AT" && betragNum >= 10_000 && !recipientUid) {
+        return json({
+          error: "Für österreichische Rechnungen ab EUR 10.000 ist die UID des Empfängers gesetzlich erforderlich.",
         }, 400);
       }
     }
@@ -178,8 +190,9 @@ export async function POST(request: NextRequest) {
       .select("id")
       .single();
 
-    if (customerError) {
-      logger.error("customer-upsert", customerError);
+    if (customerError || !customerRecord) {
+      logger.error("customer-upsert", customerError ?? new Error("customerRecord missing"));
+      return json({ error: "Fehler beim Speichern des Kunden." }, 500);
     }
 
     // 1. Upload PDF to Storage
@@ -244,7 +257,7 @@ export async function POST(request: NextRequest) {
       nummer: resolvedNummer,
       objekt,
       kundenname: customerSnapshot.name,
-      customer_id: customerRecord?.id ?? null,
+      customer_id: customerRecord.id,
       kunde_email: customerSnapshot.email,
       kunde_adresse: customerSnapshot.adresse,
       kunde_adresse2: customerSnapshot.adresse2,
