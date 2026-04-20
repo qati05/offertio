@@ -9,6 +9,7 @@
 
 import { create } from "xmlbuilder2";
 import type { OfferteData } from "./types";
+import { addDaysIso } from "./dates";
 
 /** Format a YYYY-MM-DD string to YYYYMMDD for CII date fields */
 function toCiiDate(isoDate: string): string {
@@ -49,11 +50,13 @@ export function buildZugferdXml(data: OfferteData, leistungsdatum?: string): str
   const buyerName = (kunde.firma?.trim() || kunde.name) ?? "";
 
   // ── Payment due date (BT-9) ──────────────────────────────────────────────
-  // Derived from invoice date + payment terms days (profil.zahlungsfrist, default 30)
+  // Derived from invoice date + payment terms days (profil.zahlungsfrist,
+  // default 30). addDaysIso keeps the calculation in local-time components
+  // so `2025-03-30 + 2 days` stays `2025-04-01` regardless of the server's
+  // TZ (a plain `new Date(datum)` would parse as UTC midnight and a later
+  // toISOString() could silently drop a day).
   const zahlungsfristTage = profil.zahlungsfrist ?? 30;
-  const dueDateObj = new Date(datum);
-  dueDateObj.setDate(dueDateObj.getDate() + zahlungsfristTage);
-  const dueDate = dueDateObj.toISOString().split("T")[0];
+  const dueDate = addDaysIso(datum, zahlungsfristTage);
 
   // ── Country codes ────────────────────────────────────────────────────────
   // Seller country always matches the profile land (DE for ZUGFeRD invoices)

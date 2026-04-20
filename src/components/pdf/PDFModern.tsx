@@ -8,6 +8,7 @@ import {
 } from "@react-pdf/renderer";
 import type { Profile, Position, KundenInfo, RabattInfo, DokumentTyp } from "@/lib/types";
 import { getDachConfig, getKleinunternehmerHinweis } from "@/lib/dach";
+import { formatSwissDate } from "@/lib/dates";
 
 function fmt(n: number) {
   return n.toLocaleString("de-CH", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -143,7 +144,7 @@ export default function PDFModern({
   const mwstBetrag = preisMode === "exkl" ? r2(nettoNachRabatt * (mwstSatz / 100)) : r2(grossNachRabatt - nettoNachRabatt);
   const total = preisMode === "exkl" ? r2(nettoNachRabatt + mwstBetrag) : grossNachRabatt;
 
-  const fmtDate = (d: string) => new Date(d).toLocaleDateString("de-CH", { day: "2-digit", month: "2-digit", year: "numeric" });
+  const fmtDate = formatSwissDate;
   const datumF = fmtDate(datum);
   const gueltigBisF = gueltigBis ? fmtDate(gueltigBis) : "";
 

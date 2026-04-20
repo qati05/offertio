@@ -8,6 +8,7 @@
 } from "@react-pdf/renderer";
 import type { Profile, Position, KundenInfo, RabattInfo, DokumentTyp } from "@/lib/types";
 import { getDachConfig, getKleinunternehmerHinweis } from "@/lib/dach";
+import { formatSwissDate } from "@/lib/dates";
 import PDFModern from "./pdf/PDFModern";
 import PDFMinimal from "./pdf/PDFMinimal";
 import PDFProfessionell from "./pdf/PDFProfessionell";
@@ -319,12 +320,7 @@ export default function OffertePDF(props: OffertePDFProps) {
     : grossNachRabatt;
   const subtotal = grossSubtotal; // kept for compatibility
 
-  const fmtDate = (d: string) =>
-    new Date(d).toLocaleDateString("de-CH", {
-      day: "2-digit",
-      month: "2-digit",
-      year: "numeric",
-    });
+  const fmtDate = formatSwissDate;
 
   const datumFormatiert = fmtDate(datum);
   const gueltigBisFormatiert = gueltigBis ? fmtDate(gueltigBis) : "";

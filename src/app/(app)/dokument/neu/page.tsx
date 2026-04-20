@@ -1845,9 +1845,11 @@ export default function DokumentNeuPage() {
                 step="0.5"
                 min="0"
                 value={pos.menge}
-                onChange={(e) =>
-                  updatePos(i, "menge", parseFloat(e.target.value) || 0)
-                }
+                onChange={(e) => {
+                  const raw = parseFloat(e.target.value);
+                  const safe = Number.isFinite(raw) && raw >= 0 ? raw : 0;
+                  updatePos(i, "menge", safe);
+                }}
                 aria-label={`Menge Position ${i + 1}`}
               />
               <input
@@ -1857,9 +1859,11 @@ export default function DokumentNeuPage() {
                 step="0.01"
                 min="0"
                 value={pos.preis}
-                onChange={(e) =>
-                  updatePos(i, "preis", parseFloat(e.target.value) || 0)
-                }
+                onChange={(e) => {
+                  const raw = parseFloat(e.target.value);
+                  const safe = Number.isFinite(raw) && raw >= 0 ? raw : 0;
+                  updatePos(i, "preis", safe);
+                }}
                 aria-label={`Preis Position ${i + 1}`}
               />
               {positionen.length > 1 ? (
