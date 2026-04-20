@@ -316,7 +316,10 @@ describe("document save hardening", () => {
   });
 
   it("rejects AT Rechnungen ≥ EUR 10.000 without recipient UID (§11 Abs. 1 Z 8 UStG)", async () => {
-    serverProfileMock.mockResolvedValueOnce({ data: { land: "AT" }, error: null });
+    serverProfileMock.mockResolvedValueOnce({
+      data: { land: "AT", uid_mwst: "ATU12345678", kleinunternehmer: false },
+      error: null,
+    });
 
     const { POST } = await import("@/app/api/dokument/save/route");
 
@@ -340,7 +343,10 @@ describe("document save hardening", () => {
   });
 
   it("accepts AT Rechnungen below EUR 10.000 without recipient UID", async () => {
-    serverProfileMock.mockResolvedValueOnce({ data: { land: "AT" }, error: null });
+    serverProfileMock.mockResolvedValueOnce({
+      data: { land: "AT", uid_mwst: "ATU12345678", kleinunternehmer: false },
+      error: null,
+    });
 
     const { POST } = await import("@/app/api/dokument/save/route");
 
@@ -359,6 +365,57 @@ describe("document save hardening", () => {
 
     // Should pass the UID check and proceed to insert (which fails in the mock),
     // yielding 500 — NOT 400 from the UID guard.
+    expect(response.status).not.toBe(400);
+  });
+
+  it("rejects AT Rechnungen when seller has no UID and is not Kleinunternehmer (§11 Abs. 1 Z 6 UStG)", async () => {
+    serverProfileMock.mockResolvedValueOnce({
+      data: { land: "AT", uid_mwst: null, kleinunternehmer: false },
+      error: null,
+    });
+
+    const { POST } = await import("@/app/api/dokument/save/route");
+
+    const response = await POST(
+      sameOriginPost("/api/dokument/save", {
+        pdfBase64: Buffer.from("%PDF-1.4\n").toString("base64"),
+        typ: "rechnung",
+        nummer: "RE-2026-012",
+        kundenname: "Kleinkunde",
+        kunde: { name: "Kleinkunde" },
+        betrag: 500,
+        datum: "2026-04-11",
+        leistungsdatum: "2026-04-11",
+      }),
+    );
+    const body = await response.json();
+
+    expect(response.status).toBe(400);
+    expect(body.error).toMatch(/eigene UID|§11/i);
+    expect(uploadMock).not.toHaveBeenCalled();
+  });
+
+  it("accepts AT Rechnungen when seller is Kleinunternehmer (no seller UID required)", async () => {
+    serverProfileMock.mockResolvedValueOnce({
+      data: { land: "AT", uid_mwst: null, kleinunternehmer: true },
+      error: null,
+    });
+
+    const { POST } = await import("@/app/api/dokument/save/route");
+
+    const response = await POST(
+      sameOriginPost("/api/dokument/save", {
+        pdfBase64: Buffer.from("%PDF-1.4\n").toString("base64"),
+        typ: "rechnung",
+        nummer: "RE-2026-013",
+        kundenname: "Kleinkunde",
+        kunde: { name: "Kleinkunde" },
+        betrag: 500,
+        datum: "2026-04-11",
+        leistungsdatum: "2026-04-11",
+      }),
+    );
+
     expect(response.status).not.toBe(400);
   });
 });

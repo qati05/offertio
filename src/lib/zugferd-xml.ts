@@ -49,6 +49,17 @@ export function buildZugferdXml(data: OfferteData, leistungsdatum?: string): str
   const deliveryDate = leistungsdatum ?? datum;
   const buyerName = (kunde.firma?.trim() || kunde.name) ?? "";
 
+  // ── VAT category code + mandatory exemption reason (BT-120) ──────────────
+  // EN 16931 requires ExemptionReason whenever CategoryCode is "E" (exempt)
+  // or "Z" (zero-rated). Validators (Peppol, Mustangproject, FeRD) reject
+  // invoices where an exempt/zero line is missing the human-readable reason.
+  const vatCategoryCode = profil.kleinunternehmer ? "E" : mwstSatz === 0 ? "Z" : "S";
+  const vatExemptionReason = profil.kleinunternehmer
+    ? "Steuerbefreit nach §19 UStG (Kleinunternehmer)"
+    : mwstSatz === 0
+      ? "Nullsatz"
+      : null;
+
   // ── Payment due date (BT-9) ──────────────────────────────────────────────
   // Derived from invoice date + payment terms days (profil.zahlungsfrist,
   // default 30). addDaysIso keeps the calculation in local-time components
@@ -124,7 +135,10 @@ export function buildZugferdXml(data: OfferteData, leistungsdatum?: string): str
     // "E" = exempt (§19 UStG Kleinunternehmer, no right of input deduction for buyer)
     // "Z" = zero-rated (taxable but at 0%, e.g. exports)
     // "S" = standard-rated
-    lineTax.ele("ram:CategoryCode").txt(profil.kleinunternehmer ? "E" : mwstSatz === 0 ? "Z" : "S");
+    lineTax.ele("ram:CategoryCode").txt(vatCategoryCode);
+    if (vatExemptionReason) {
+      lineTax.ele("ram:ExemptionReason").txt(vatExemptionReason);
+    }
     lineTax.ele("ram:RateApplicablePercent").txt(String(mwstSatz));
 
     lineSettlement
@@ -217,8 +231,11 @@ export function buildZugferdXml(data: OfferteData, leistungsdatum?: string): str
   const tradeTax = settlement.ele("ram:ApplicableTradeTax");
   tradeTax.ele("ram:CalculatedAmount").txt(money(taxAmount));
   tradeTax.ele("ram:TypeCode").txt("VAT");
+  if (vatExemptionReason) {
+    tradeTax.ele("ram:ExemptionReason").txt(vatExemptionReason);
+  }
   tradeTax.ele("ram:BasisAmount").txt(money(taxBasis));
-  tradeTax.ele("ram:CategoryCode").txt(profil.kleinunternehmer ? "E" : mwstSatz === 0 ? "Z" : "S");
+  tradeTax.ele("ram:CategoryCode").txt(vatCategoryCode);
   tradeTax.ele("ram:RateApplicablePercent").txt(String(mwstSatz));
 
   // Payment terms — BT-9 (due date) + human-readable description

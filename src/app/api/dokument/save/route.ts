@@ -173,7 +173,7 @@ export async function POST(request: NextRequest) {
     if (typ === "rechnung") {
       const { data: userProfile } = await supabase
         .from("profiles")
-        .select("land")
+        .select("land, uid_mwst, kleinunternehmer")
         .eq("id", user.id)
         .maybeSingle();
       issuerLand = userProfile?.land || "CH";
@@ -182,6 +182,15 @@ export async function POST(request: NextRequest) {
       if (!leistungsdatum && (issuerLand === "DE" || issuerLand === "AT")) {
         return json({
           error: "Leistungsdatum ist für Rechnungen in DE/AT gesetzlich erforderlich.",
+        }, 400);
+      }
+
+      // AT §11 Abs. 1 Z 6 UStG: seller UID is mandatory on every invoice unless
+      // the seller qualifies as Kleinunternehmer (§6 Abs. 1 Z 27 UStG).
+      const sellerUid = typeof userProfile?.uid_mwst === "string" ? userProfile.uid_mwst.trim() : "";
+      if (issuerLand === "AT" && !userProfile?.kleinunternehmer && !sellerUid) {
+        return json({
+          error: "Für österreichische Rechnungen ist die eigene UID-Nummer im Profil gesetzlich erforderlich (§11 UStG).",
         }, 400);
       }
 
