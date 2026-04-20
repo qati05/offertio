@@ -100,10 +100,38 @@ export function isSafeDocumentIdentifier(value: unknown, maxLength = 50): value 
   );
 }
 
+const IPV4_RE = /^(25[0-5]|2[0-4]\d|[01]?\d?\d)(\.(25[0-5]|2[0-4]\d|[01]?\d?\d)){3}$/;
+// Intentionally loose: accepts the full IPv6 grammar including zone IDs and
+// IPv4-mapped forms. Rejects obvious junk (spaces, letters beyond hex, etc.).
+const IPV6_RE = /^[0-9a-f:]+(?:%[0-9a-z]+)?$/i;
+
+function isIpLike(value: string): boolean {
+  if (!value) return false;
+  return IPV4_RE.test(value) || (value.includes(":") && IPV6_RE.test(value));
+}
+
+/**
+ * Extract the client IP from proxy headers safely.
+ *
+ * `x-forwarded-for` is the primary header (Vercel, most reverse proxies put
+ * the real client IP in the first position), but it is technically
+ * client-settable — a malicious client could send
+ * "x-forwarded-for: attacker.example" and have the proxy append the real IP,
+ * poisoning rate-limit buckets. We therefore validate that the first entry
+ * actually looks like an IP address before trusting it, and fall back to
+ * `x-real-ip` (also validated) otherwise.
+ */
 export function getClientIp(headers: Headers): string {
   const forwarded = headers.get("x-forwarded-for");
-  if (forwarded) return forwarded.split(",")[0].trim();
-  return headers.get("x-real-ip") || "unknown";
+  if (forwarded) {
+    const first = forwarded.split(",")[0]?.trim() ?? "";
+    if (isIpLike(first)) return first;
+  }
+
+  const real = headers.get("x-real-ip")?.trim();
+  if (real && isIpLike(real)) return real;
+
+  return "unknown";
 }
 
 export function isAllowedOrigin(requestUrl: string, origin: string | null): boolean {

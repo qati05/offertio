@@ -3,6 +3,7 @@ import { getSupabaseAdmin } from "@/lib/supabase-admin";
 import { rateLimitAsync } from "@/lib/rate-limit";
 import { logger } from "@/lib/logger";
 import { publicViewError, type PublicViewLocale } from "@/lib/public-view-i18n";
+import { getClientIp, isValidUUID } from "@/lib/security";
 
 const SIGNED_URL_TTL = 60 * 60; // 1 hour (enough to view, short to limit leakage)
 
@@ -20,14 +21,6 @@ function json(body: unknown, status = 200, extra?: HeadersInit) {
   });
 }
 
-function getClientIp(req: NextRequest): string {
-  return (
-    req.headers.get("x-forwarded-for")?.split(",")[0].trim() ??
-    req.headers.get("x-real-ip") ??
-    "unknown"
-  );
-}
-
 /**
  * GET /api/public/view?token=<share_token>
  *
@@ -38,7 +31,7 @@ function getClientIp(req: NextRequest): string {
  */
 export async function GET(request: NextRequest) {
   const locale = pickLocale(request);
-  const ip = getClientIp(request);
+  const ip = getClientIp(request.headers);
   const rl = await rateLimitAsync(`public-view:${ip}`, 30, 60_000);
   if (!rl.ok) {
     return json({ error: publicViewError("rate_limited", locale) }, 429, {
@@ -47,7 +40,7 @@ export async function GET(request: NextRequest) {
   }
 
   const token = request.nextUrl.searchParams.get("token");
-  if (!token || !/^[0-9a-f-]{36}$/.test(token)) {
+  if (!token || !isValidUUID(token)) {
     return json({ error: publicViewError("invalid_token", locale) }, 400);
   }
 

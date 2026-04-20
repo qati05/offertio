@@ -137,6 +137,18 @@ export async function POST(request: NextRequest) {
   if (!Array.isArray(invoiceData.positionen) || invoiceData.positionen.length === 0) {
     return json({ error: "invoiceData.positionen darf nicht leer sein." }, 400);
   }
+  // Leistungsdatum maps to ZUGFeRD BT-72 (ActualDeliverySupplyChainEvent). A
+  // malformed value would still serialise but produce an invoice that fails
+  // schema validation at the recipient, so reject obvious garbage upfront.
+  if (leistungsdatum !== undefined) {
+    if (
+      typeof leistungsdatum !== "string" ||
+      !/^\d{4}-\d{2}-\d{2}$/.test(leistungsdatum) ||
+      Number.isNaN(Date.parse(leistungsdatum))
+    ) {
+      return json({ error: "leistungsdatum muss ein ISO-Datum (YYYY-MM-DD) sein." }, 400);
+    }
+  }
 
   const { data: serverProfile, error: profileError } = await supabase
     .from("profiles")

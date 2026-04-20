@@ -154,5 +154,29 @@ describe("security.ts", () => {
       const headers = new Headers({ "x-real-ip": "9.9.9.9" });
       expect(getClientIp(headers)).toBe("9.9.9.9");
     });
+
+    it("rejects a spoofed hostname in x-forwarded-for and falls back to x-real-ip", () => {
+      // A malicious client can prepend a bogus value to x-forwarded-for; the
+      // proxy then appends the real IP. Without validation we would bucket
+      // the rate limit against the attacker-controlled string.
+      const headers = new Headers({
+        "x-forwarded-for": "attacker.example, 203.0.113.5",
+        "x-real-ip": "203.0.113.5",
+      });
+      expect(getClientIp(headers)).toBe("203.0.113.5");
+    });
+
+    it("accepts IPv6 addresses", () => {
+      const headers = new Headers({ "x-forwarded-for": "2001:db8::1" });
+      expect(getClientIp(headers)).toBe("2001:db8::1");
+    });
+
+    it("returns 'unknown' when every candidate is invalid", () => {
+      const headers = new Headers({
+        "x-forwarded-for": "javascript:alert(1)",
+        "x-real-ip": "' OR 1=1",
+      });
+      expect(getClientIp(headers)).toBe("unknown");
+    });
   });
 });
