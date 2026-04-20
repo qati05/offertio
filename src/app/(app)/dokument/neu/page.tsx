@@ -1683,6 +1683,7 @@ export default function DokumentNeuPage() {
             placeholder="Adresse"
             value={kunde.adresse}
             onChange={(e) => updateKunde("adresse", e.target.value)}
+            autoComplete="street-address"
             style={{ marginBottom: 0 }}
           />
         </div>
@@ -1692,6 +1693,7 @@ export default function DokumentNeuPage() {
             placeholder="Adresszeile 2 (z.Hd. Herr Müller, 3. OG links)"
             value={kunde.adresse2}
             onChange={(e) => updateKunde("adresse2", e.target.value)}
+            autoComplete="address-line2"
             style={{ marginBottom: 0 }}
           />
         </div>
@@ -1701,6 +1703,8 @@ export default function DokumentNeuPage() {
             placeholder="PLZ"
             value={kunde.plz}
             onChange={(e) => updateKunde("plz", e.target.value)}
+            inputMode="numeric"
+            autoComplete="postal-code"
             style={{ marginBottom: 0, maxWidth: 90 }}
           />
           <input
@@ -1708,12 +1712,15 @@ export default function DokumentNeuPage() {
             placeholder="Ort"
             value={kunde.ort}
             onChange={(e) => updateKunde("ort", e.target.value)}
+            autoComplete="address-level2"
             style={{ marginBottom: 0 }}
           />
         </div>
         <input
           className="input-field"
           type="email"
+          inputMode="email"
+          autoComplete="email"
           placeholder="E-Mail (für Versand)"
           value={kunde.email}
           onChange={(e) => updateKunde("email", e.target.value)}
@@ -1727,7 +1734,12 @@ export default function DokumentNeuPage() {
           }
         />
         {fieldErrors.kundeEmail && (
-          <div id="kunde-email-error" className="field-error-hint">
+          <div
+            id="kunde-email-error"
+            className="field-error-hint"
+            role="alert"
+            aria-live="polite"
+          >
             Bitte E-Mail prüfen — Beispiel: name@firma.ch
           </div>
         )}
@@ -1829,29 +1841,38 @@ export default function DokumentNeuPage() {
               <input
                 className="pos-input"
                 type="number"
+                inputMode="decimal"
                 step="0.5"
                 min="0"
                 value={pos.menge}
                 onChange={(e) =>
                   updatePos(i, "menge", parseFloat(e.target.value) || 0)
                 }
+                aria-label={`Menge Position ${i + 1}`}
               />
               <input
                 className="pos-input"
                 type="number"
+                inputMode="decimal"
                 step="0.01"
                 min="0"
                 value={pos.preis}
                 onChange={(e) =>
                   updatePos(i, "preis", parseFloat(e.target.value) || 0)
                 }
+                aria-label={`Preis Position ${i + 1}`}
               />
               {positionen.length > 1 ? (
-                <button className="pos-del" onClick={() => removePosition(i)}>
-                  ×
+                <button
+                  type="button"
+                  className="pos-del"
+                  onClick={() => removePosition(i)}
+                  aria-label={`Position ${i + 1} entfernen`}
+                >
+                  <span aria-hidden="true">×</span>
                 </button>
               ) : (
-                <div style={{ width: 20 }} />
+                <div style={{ width: 44 }} aria-hidden="true" />
               )}
             </div>
           ))}
@@ -2227,6 +2248,7 @@ export default function DokumentNeuPage() {
             cursor: eRechnungLoading ? "not-allowed" : "pointer",
             opacity: eRechnungLoading ? 0.6 : 1,
           }}
+          aria-busy={eRechnungLoading || undefined}
         >
           {eRechnungLoading ? "E-Rechnung wird erstellt…" : "Als E-Rechnung herunterladen (ZUGFeRD)"}
         </button>
@@ -2239,6 +2261,7 @@ export default function DokumentNeuPage() {
           style={{ width: "100%", padding: "14px 0", fontSize: 15 }}
           onClick={handleSend}
           disabled={sending || (!downloadPdf && !sharePdf && !whatsappPdf && !emailPdf) || serverAllowed === false}
+          aria-busy={sending || undefined}
         >
           {sending ? "Wird gesendet…" : sendBtnLabel}
         </button>

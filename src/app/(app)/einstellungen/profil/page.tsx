@@ -443,6 +443,7 @@ export default function ProfilPage() {
               onChange={(event) => update("firmenname", event.target.value)}
               placeholder="Musterfirma GmbH"
               required
+              autoComplete="organization"
             />
           </div>
           <div className="form-row">
@@ -454,6 +455,7 @@ export default function ProfilPage() {
                 onChange={(event) => update("vorname", event.target.value)}
                 placeholder="Max"
                 required
+                autoComplete="given-name"
               />
             </div>
             <div className="form-group">
@@ -464,6 +466,7 @@ export default function ProfilPage() {
                 onChange={(event) => update("nachname", event.target.value)}
                 placeholder="Muster"
                 required
+                autoComplete="family-name"
               />
             </div>
           </div>
@@ -474,6 +477,7 @@ export default function ProfilPage() {
               value={form.adresse}
               onChange={(event) => update("adresse", event.target.value)}
               placeholder="Musterstrasse 12"
+              autoComplete="street-address"
             />
           </div>
           <div className="form-row">
@@ -485,6 +489,8 @@ export default function ProfilPage() {
                 onChange={(event) => update("plz", event.target.value)}
                 placeholder={dachConfig.plzDigits === 5 ? "10115" : "8000"}
                 maxLength={dachConfig.plzDigits === 5 ? 5 : 4}
+                inputMode="numeric"
+                autoComplete="postal-code"
               />
             </div>
             <div className="form-group">
@@ -494,6 +500,7 @@ export default function ProfilPage() {
                 value={form.ort}
                 onChange={(event) => update("ort", event.target.value)}
                 placeholder={dachConfig.land === "DE" ? "Berlin" : dachConfig.land === "AT" ? "Wien" : "Zürich"}
+                autoComplete="address-level2"
               />
             </div>
           </div>
@@ -501,6 +508,9 @@ export default function ProfilPage() {
             <label className="form-label">Telefon</label>
             <input
               className="field field-full"
+              type="tel"
+              inputMode="tel"
+              autoComplete="tel"
               value={form.telefon}
               onChange={(event) => update("telefon", event.target.value)}
               placeholder="+41 79 123 45 67"
@@ -558,16 +568,24 @@ export default function ProfilPage() {
         <div className="app-card" style={{ maxWidth: 640, marginBottom: 20 }}>
           <div className="app-card-title">{t("profile.payment")}</div>
           <div className="form-group">
-            <label className="form-label">IBAN</label>
+            <label className="form-label" htmlFor="profil-iban">IBAN</label>
             <input
+              id="profil-iban"
               className="field field-full"
               value={form.iban}
               onChange={(event) => update("iban", event.target.value)}
               placeholder={`${dachConfig.ibanPrefix}XX XXXX XXXX XXXX XXXX X`}
               style={ibanError ? { borderColor: "var(--color-error)" } : undefined}
+              aria-invalid={ibanError ? true : undefined}
+              aria-describedby={ibanError ? "profil-iban-error" : undefined}
             />
             {ibanError ? (
-              <span style={{ fontSize: 11, color: "var(--color-error)", marginTop: 4, display: "block" }}>
+              <span
+                id="profil-iban-error"
+                role="alert"
+                aria-live="polite"
+                style={{ fontSize: 11, color: "var(--color-error)", marginTop: 4, display: "block" }}
+              >
                 {ibanError}
               </span>
             ) : (

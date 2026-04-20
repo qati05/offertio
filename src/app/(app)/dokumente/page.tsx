@@ -313,9 +313,11 @@ export default function DokumentePage() {
             <button
               type="button"
               onClick={() => setShowExport(!showExport)}
+              aria-label={showExport ? "CSV-Export schliessen" : "CSV-Export öffnen"}
+              aria-expanded={showExport}
               title="CSV Export"
               style={{
-                width: 40, height: 40,
+                width: 44, height: 44,
                 borderRadius: 12,
                 border: "1px solid var(--app-border)",
                 background: showExport ? "var(--app-card-muted)" : "transparent",
@@ -325,7 +327,7 @@ export default function DokumentePage() {
                 transition: "all 0.15s ease",
               }}
             >
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                 <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4" />
                 <polyline points="7 10 12 15 17 10" />
                 <line x1="12" y1="15" x2="12" y2="3" />
