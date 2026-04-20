@@ -264,33 +264,37 @@ export async function POST(request: NextRequest) {
     // --- Collision detection: ensure (user_id, nummer) is unique before insert ---
     // Two devices or a localStorage reset can produce the same nummer for the same user.
     // We resolve this transparently by appending a suffix (-1, -2, …) until we find a free slot.
-    const userId = user.id; // capture for use inside nested async function (TS narrowing)
-    async function hasNumberCollision(candidate: string, currentDocumentId?: string | null): Promise<boolean> {
+    //
+    // Single round-trip: fetch every nummer that starts with the candidate (the
+    // candidate itself plus any "<candidate>-N" suffixes) and compute the first
+    // free slot in memory. This avoids up to 100 sequential queries on a
+    // colliding save.
+    const userId = user.id;
+    async function resolveUniqueNummer(candidate: string, currentDocumentId?: string | null): Promise<string> {
       const { data, error } = await admin
         .from("dokumente")
-        .select("id")
+        .select("id, nummer")
         .eq("user_id", userId)
-        .eq("nummer", candidate)
-        .limit(2);
+        .like("nummer", `${candidate}%`)
+        .limit(200);
 
       if (error) {
         logger.error("dokument-save:number-check", error, { userId, candidate, currentDocumentId });
-        return true;
+        // Fail safe: timestamp suffix guarantees uniqueness even if we can't read the table.
+        return `${candidate}-${Date.now()}`;
       }
 
-      const collisions = (data || []).filter((doc) => doc.id !== currentDocumentId);
-      return collisions.length > 0;
-    }
+      const taken = new Set(
+        (data || [])
+          .filter((doc) => doc.id !== currentDocumentId)
+          .map((doc) => doc.nummer),
+      );
 
-    async function resolveUniqueNummer(candidate: string, currentDocumentId?: string | null): Promise<string> {
-      if (!(await hasNumberCollision(candidate, currentDocumentId))) return candidate;
-
-      // Collision detected — try suffixed variants
+      if (!taken.has(candidate)) return candidate;
       for (let suffix = 1; suffix <= 99; suffix++) {
         const suffixed = `${candidate}-${suffix}`;
-        if (!(await hasNumberCollision(suffixed, currentDocumentId))) return suffixed;
+        if (!taken.has(suffixed)) return suffixed;
       }
-      // Extremely unlikely: fall back to timestamp-based uniqueness
       return `${candidate}-${Date.now()}`;
     }
 

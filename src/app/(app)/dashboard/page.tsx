@@ -59,9 +59,13 @@ export default function DashboardPage() {
 
     const [profilRes, docsRes, limitRes] = await Promise.all([
       supabase.from("profiles").select("*").eq("id", user.id).maybeSingle(),
+      // Dashboard stats & recent list only need summary columns. Keep the
+      // heavy jsonb payload (positionen/rabatt/notiz) out of this query.
       supabase
         .from("dokumente")
-        .select("*")
+        .select(
+          "id, typ, nummer, objekt, kundenname, customer_id, kunde_email, kunde_adresse, kunde_adresse2, kunde_plz, kunde_ort, kunde_uid_mwst, betrag, datum, leistungsdatum, status, pdf_url, source_document_id, source_document_nummer, source_document_typ, converted_document_id, converted_document_nummer, converted_document_typ",
+        )
         .eq("user_id", user.id)
         .order("datum", { ascending: false })
         .limit(200),

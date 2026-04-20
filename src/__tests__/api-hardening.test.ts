@@ -113,6 +113,9 @@ function makeAdminMock() {
               eq: vi.fn(() => ({
                 limit: vi.fn(async () => ({ data: [], error: null })),
               })),
+              like: vi.fn(() => ({
+                limit: vi.fn(async () => ({ data: [], error: null })),
+              })),
             })),
           })),
           insert: vi.fn(() => {
