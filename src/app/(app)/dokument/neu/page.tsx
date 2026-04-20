@@ -221,11 +221,16 @@ export default function DokumentNeuPage() {
     if (customersRes.data) setCustomerRecords(customersRes.data as CustomerRecord[]);
 
     // 1-click conversion: load source offerte when "?from=<id>" is present.
+    // Loads customer + objekt + structured positionen so the user only has to
+    // review and send. positionen / mwst_satz / rabatt / notiz / preis_mode
+    // exist on dokumente as of migration 027 — older rows (saved before the
+    // migration) have an empty positionen array, in which case we keep the
+    // defaults the form was initialized with so nothing is lost.
     const fromId = searchParams.get("from");
     if (fromId && !sourceDocumentId) {
       const { data: src } = await supabase
         .from("dokumente")
-        .select("id, nummer, typ, objekt, kundenname, kunde_email, kunde_adresse, kunde_adresse2, kunde_plz, kunde_ort, kunde_uid_mwst, converted_document_id, converted_document_nummer")
+        .select("id, nummer, typ, objekt, kundenname, kunde_email, kunde_adresse, kunde_adresse2, kunde_plz, kunde_ort, kunde_uid_mwst, converted_document_id, converted_document_nummer, positionen, mwst_satz, rabatt, notiz, preis_mode")
         .eq("id", fromId)
         .eq("user_id", user.id)
         .maybeSingle();
@@ -243,10 +248,32 @@ export default function DokumentNeuPage() {
           email: (src.kunde_email as string) || "",
           uid_mwst: (src.kunde_uid_mwst as string) || "",
         });
+
+        const carriedPositionen = Array.isArray(src.positionen) ? (src.positionen as Position[]) : [];
+        let carriedItemCount = 0;
+        if (carriedPositionen.length > 0) {
+          setPositionen(carriedPositionen.map((p) => ({ ...p })));
+          carriedItemCount = carriedPositionen.length;
+        }
+        if (src.mwst_satz !== null && src.mwst_satz !== undefined) {
+          setMwstSatz(Number(src.mwst_satz));
+        }
+        if (src.rabatt && typeof src.rabatt === "object") {
+          setRabatt(src.rabatt as RabattInfo);
+        }
+        if (typeof src.notiz === "string" && src.notiz) {
+          setNotiz(src.notiz);
+        }
+        if (src.preis_mode === "exkl" || src.preis_mode === "inkl") {
+          setPreisMode(src.preis_mode);
+        }
+
         if (src.converted_document_id) {
           showToast(`Hinweis: Zu ${src.nummer} existiert bereits Rechnung ${src.converted_document_nummer || ""}.`);
+        } else if (carriedItemCount > 0) {
+          showToast(`Offerte ${src.nummer} übernommen — ${carriedItemCount} ${carriedItemCount === 1 ? "Position" : "Positionen"} bereit. Prüfen und senden.`);
         } else {
-          showToast(`Offerte ${src.nummer} übernommen — Positionen prüfen und senden.`);
+          showToast(`Offerte ${src.nummer} übernommen — Positionen ergänzen und senden.`);
         }
       }
     }
@@ -735,37 +762,8 @@ export default function DokumentNeuPage() {
         }
       }
 
-      if (whatsappPdf && !downloadedResult) {
-        // Safety-net download: if the WhatsApp signed-URL flow fails below
-        // (save rejected, storage not reachable), the user still has the
-        // file on their device and can attach it manually.
-        downloadBlob(blob, `${finalNummer}.pdf`);
-        downloadedResult = true;
-      }
-
-      if (emailPdf) {
-        // Download the PDF first so user can attach it
-        if (!downloadedResult) {
-          downloadBlob(blob, `${finalNummer}.pdf`);
-          downloadedResult = true;
-        }
-        // Open mailto: with pre-filled subject and body
-        const kundeEmail = kunde.email || "";
-        const subject = encodeURIComponent(
-          `${typLabel} ${finalNummer}${profil?.firmenname ? ` — ${profil.firmenname}` : ""}`
-        );
-        const body = encodeURIComponent(
-          `Guten Tag${kunde.name ? ` ${kunde.name}` : ""},\n\n` +
-          `anbei erhalten Sie ${typLabel === "Offerte" ? "unsere Offerte" : "unsere Rechnung"} ${finalNummer}.\n` +
-          `Bitte finden Sie das PDF im Anhang.\n\n` +
-          `Freundliche Grüsse\n${profil?.firmenname || profil?.vorname || ""}`
-        );
-        const mailto = `mailto:${encodeURIComponent(kundeEmail)}?subject=${subject}&body=${body}`;
-        window.open(mailto, "_self");
-        delivery = "email";
-      }
-
       let savedDocumentId: string | null = null;
+      let savedShareToken: string | null = null;
       let savedSourceDocumentNumber = sourceDocumentNumber;
       try {
         const saveRes = await fetch("/api/dokument/save", {
@@ -785,6 +783,13 @@ export default function DokumentNeuPage() {
             sourceDocumentId,
             sourceDocumentNummer: sourceDocumentNumber,
             sourceDocumentTyp: sourceDocumentId ? "offerte" : null,
+            // Carryover fields — let the next document (e.g. an invoice converted
+            // from this offerte) preload positionen without retyping.
+            positionen,
+            mwstSatz,
+            rabatt,
+            notiz,
+            preisMode,
           }),
         });
 
@@ -801,6 +806,7 @@ export default function DokumentNeuPage() {
             savedSourceDocumentNumber = saveData.document?.source_document_nummer || sourceDocumentNumber;
             savedCustomerId = saveData.document?.customer_id || null;
             finalNummer = saveData.document?.nummer || nummer;
+            savedShareToken = saveData.document?.share_token || null;
           }
         }
       } catch (e) {
@@ -808,45 +814,70 @@ export default function DokumentNeuPage() {
         cloudSaved = false;
       }
 
-      // WhatsApp send: request a signed URL and open wa.me with a prefilled
-      // message. Ordering matters — we need savedDocumentId from the save
-      // call above, but we also pre-opened waWindow synchronously so the
-      // user's click gesture still counts toward popup-blocker policy.
+      // Build the recipient view URL once. Recipients open this branded page
+      // (signed PDF + accept/sign for offers, payment info for invoices) instead
+      // of receiving a raw PDF attachment. Lets the sender deliver via their own
+      // email account or WhatsApp without us needing email-domain verification.
+      const publicViewUrl =
+        cloudSaved && savedShareToken && typeof window !== "undefined"
+          ? `${window.location.origin}/view/${savedShareToken}`
+          : null;
+
+      // Fallback: cloud save failed but the user still wants to send via
+      // email or WhatsApp. Drop the PDF on their device so they can attach
+      // it manually. This is the only path that surfaces an unexpected file
+      // in Downloads — the happy path stays clean.
+      if ((emailPdf || whatsappPdf) && !publicViewUrl && !downloadedResult) {
+        downloadBlob(blob, `${finalNummer}.pdf`);
+        downloadedResult = true;
+      }
+
+      if (emailPdf) {
+        const kundeEmail = kunde.email || "";
+        const firmaSignatur = profil?.firmenname || profil?.vorname || "";
+        const subject = encodeURIComponent(
+          `${typLabel} ${finalNummer}${profil?.firmenname ? ` — ${profil.firmenname}` : ""}`,
+        );
+
+        const lines = [`Guten Tag${kunde.name ? ` ${kunde.name}` : ""},`, ""];
+        if (publicViewUrl) {
+          lines.push(
+            `${typLabel === "Offerte" ? "Unsere Offerte" : "Unsere Rechnung"} ${finalNummer} können Sie hier ansehen, herunterladen${dokumentTyp === "offerte" ? " und direkt unterschreiben" : ""}:`,
+            "",
+            publicViewUrl,
+          );
+        } else {
+          // Fallback: cloud save failed — the safety-net above already
+          // dropped the PDF on the user's device for manual attachment.
+          lines.push(
+            `anbei erhalten Sie ${typLabel === "Offerte" ? "unsere Offerte" : "unsere Rechnung"} ${finalNummer}.`,
+            `Bitte finden Sie das PDF im Anhang.`,
+          );
+        }
+        lines.push("", "Freundliche Grüsse", firmaSignatur);
+
+        const body = encodeURIComponent(lines.join("\n"));
+        const mailto = `mailto:${encodeURIComponent(kundeEmail)}?subject=${subject}&body=${body}`;
+        window.open(mailto, "_self");
+        delivery = "email";
+      }
+
+      // WhatsApp send: open wa.me with a prefilled message that contains the
+      // recipient view link. Pre-opened waWindow keeps the user gesture intact
+      // for popup blockers — we just navigate it once the share URL is ready.
       if (whatsappPdf) {
         const firmaSignatur = profil?.firmenname || profil?.vorname || "";
         const greeting = kunde.name ? ` ${kunde.name}` : "";
         const typDescription =
           typLabel === "Offerte" ? "unsere Offerte" : "unsere Rechnung";
 
-        let signedUrl: string | null = null;
-        if (cloudSaved && savedDocumentId) {
-          try {
-            const shareRes = await fetch("/api/dokument/share", {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ id: savedDocumentId }),
-            });
-            if (shareRes.ok) {
-              const shareData = await shareRes.json();
-              if (typeof shareData?.url === "string") {
-                signedUrl = shareData.url;
-                if (typeof shareData?.nummer === "string" && shareData.nummer) {
-                  finalNummer = shareData.nummer;
-                }
-              }
-            }
-          } catch {
-            // Fall through — we'll send the message without a link.
-          }
-        }
-
         const messageLines = [
           `Guten Tag${greeting},`,
           "",
           `anbei ${typDescription} ${finalNummer}.`,
         ];
-        if (signedUrl) {
-          messageLines.push(signedUrl);
+        if (publicViewUrl) {
+          messageLines.push(publicViewUrl);
         } else {
           messageLines.push(
             "Das PDF liegt auf meinem Gerät bereit — ich hänge es direkt in WhatsApp an.",
@@ -871,7 +902,7 @@ export default function DokumentNeuPage() {
 
         delivery = "whatsapp";
 
-        if (!signedUrl) {
+        if (!publicViewUrl) {
           showToast(
             "WhatsApp geöffnet. Das PDF liegt auf deinem Gerät — bitte manuell anhängen.",
           );
@@ -954,6 +985,7 @@ export default function DokumentNeuPage() {
           kunde: { name: kunde.name, firma: kunde.firma, email: kunde.email },
           betrag: total,
           carryoverDraft,
+          shareToken: savedShareToken,
         })
       );
       const successParams = new URLSearchParams({
@@ -1032,6 +1064,11 @@ export default function DokumentNeuPage() {
           sourceDocumentNummer: sourceDocumentNumber,
           sourceDocumentTyp: sourceDocumentId ? "offerte" : null,
           existingDocumentId: cloudDraftId,
+          positionen,
+          mwstSatz,
+          rabatt,
+          notiz,
+          preisMode,
         }),
       });
 

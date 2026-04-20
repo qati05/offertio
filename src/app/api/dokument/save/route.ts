@@ -71,6 +71,11 @@ export async function POST(request: NextRequest) {
       sourceDocumentNumber,
       sourceDocumentTyp,
       existingDocumentId,
+      positionen,
+      mwstSatz,
+      rabatt,
+      notiz,
+      preisMode,
     } = await request.json();
 
     if (!pdfBase64 || !typ || !nummer || !kundenname || betrag === undefined || betrag === null || !datum) {
@@ -119,6 +124,48 @@ export async function POST(request: NextRequest) {
     }
     if (objekt !== undefined && objekt !== null && (typeof objekt !== "string" || objekt.length > 500)) {
       return json({ error: "Objektbezeichnung zu lang." }, 400);
+    }
+
+    // Validate carryover fields. These are optional — if absent, the document is
+    // saved without structured line items (legacy behavior). The PDF remains
+    // the source of truth for visual rendering; these columns enable
+    // 1-click conversion of an Offerte → Rechnung without retyping positions.
+    let normalizedPositionen: unknown[] | undefined;
+    if (positionen !== undefined && positionen !== null) {
+      if (!Array.isArray(positionen)) {
+        return json({ error: "Positionen müssen ein Array sein." }, 400);
+      }
+      if (positionen.length > 200) {
+        return json({ error: "Zu viele Positionen (max. 200)." }, 400);
+      }
+      normalizedPositionen = positionen;
+    }
+
+    let normalizedMwstSatz: number | undefined;
+    if (mwstSatz !== undefined && mwstSatz !== null) {
+      const v = Number(mwstSatz);
+      if (!Number.isFinite(v) || v < 0 || v > 100) {
+        return json({ error: "Ungültiger MWST-Satz." }, 400);
+      }
+      normalizedMwstSatz = v;
+    }
+
+    if (rabatt !== undefined && rabatt !== null && typeof rabatt !== "object") {
+      return json({ error: "Ungültiges Rabatt-Format." }, 400);
+    }
+
+    if (notiz !== undefined && notiz !== null) {
+      if (typeof notiz !== "string" || notiz.length > 4000) {
+        return json({ error: "Notiz ungültig oder zu lang." }, 400);
+      }
+    }
+
+    let normalizedPreisMode: "exkl" | "inkl" | undefined;
+    if (preisMode !== undefined && preisMode !== null) {
+      if (preisMode !== "exkl" && preisMode !== "inkl") {
+        return json({ error: "Ungültiger Preis-Modus." }, 400);
+      }
+      normalizedPreisMode = preisMode;
     }
 
     // DE/AT legal requirements — look up the user's country once for all rules.
@@ -251,7 +298,7 @@ export async function POST(request: NextRequest) {
     // ---
 
     const relationNumber = sourceDocumentNummer || sourceDocumentNumber || null;
-    const documentPayload = {
+    const documentPayload: Record<string, unknown> = {
       user_id: user.id,
       typ,
       nummer: resolvedNummer,
@@ -274,18 +321,27 @@ export async function POST(request: NextRequest) {
       source_document_typ: sourceDocumentTyp || null,
     };
 
+    // Only include carryover columns when the client actually sent them.
+    // Omitting (rather than setting null) lets the column DEFAULT '[]' apply
+    // for inserts and avoids overwriting existing values on partial updates.
+    if (normalizedPositionen !== undefined) documentPayload.positionen = normalizedPositionen;
+    if (normalizedMwstSatz !== undefined) documentPayload.mwst_satz = normalizedMwstSatz;
+    if (rabatt !== undefined && rabatt !== null) documentPayload.rabatt = rabatt;
+    if (notiz !== undefined && notiz !== null) documentPayload.notiz = notiz;
+    if (normalizedPreisMode !== undefined) documentPayload.preis_mode = normalizedPreisMode;
+
     const { data: insertedDocument, error: dbError } = existingDocumentId
       ? await admin
           .from("dokumente")
           .update(documentPayload)
           .eq("id", existingDocumentId)
           .eq("user_id", user.id)
-          .select("id, nummer, source_document_id, source_document_nummer, source_document_typ, customer_id")
+          .select("id, nummer, source_document_id, source_document_nummer, source_document_typ, customer_id, share_token")
           .single()
       : await admin
           .from("dokumente")
           .insert(documentPayload)
-          .select("id, nummer, source_document_id, source_document_nummer, source_document_typ, customer_id")
+          .select("id, nummer, source_document_id, source_document_nummer, source_document_typ, customer_id, share_token")
           .single();
 
     if (dbError) {
