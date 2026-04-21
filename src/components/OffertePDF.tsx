@@ -302,21 +302,27 @@ export default function OffertePDF(props: OffertePDFProps) {
     preisMode = "exkl",
   } = props;
   const grossSubtotal = positionen.reduce((sum, p) => sum + p.menge * p.preis, 0);
-  const rabattBetrag =
+  // All intermediate monetary values rounded to 2 decimals. Without this the
+  // total handed to the Swiss QR-bill (generated from profil+total upstream)
+  // could diverge by 1 cent from what the PDF displays — which Swiss banks
+  // reject when reconciling payment against the printed amount.
+  const r2 = (n: number) => Math.round(n * 100) / 100;
+  const rabattBetrag = r2(
     rabatt?.aktiv
       ? rabatt.modus === "chf"
         ? rabatt.wert
         : grossSubtotal * (rabatt.wert / 100)
-      : 0;
-  const grossNachRabatt = grossSubtotal - rabattBetrag;
+      : 0,
+  );
+  const grossNachRabatt = r2(grossSubtotal - rabattBetrag);
   const nettoNachRabatt = preisMode === "exkl"
     ? grossNachRabatt
-    : grossNachRabatt / (1 + mwstSatz / 100);
+    : r2(grossNachRabatt / (1 + mwstSatz / 100));
   const mwstBetrag = preisMode === "exkl"
-    ? nettoNachRabatt * (mwstSatz / 100)
-    : grossNachRabatt - nettoNachRabatt;
+    ? r2(nettoNachRabatt * (mwstSatz / 100))
+    : r2(grossNachRabatt - nettoNachRabatt);
   const total = preisMode === "exkl"
-    ? nettoNachRabatt + mwstBetrag
+    ? r2(nettoNachRabatt + mwstBetrag)
     : grossNachRabatt;
   const subtotal = grossSubtotal; // kept for compatibility
 
