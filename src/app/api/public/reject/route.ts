@@ -94,18 +94,28 @@ export async function POST(request: NextRequest) {
     return json({ error: publicViewError("cannot_reject_now", locale) }, 422);
   }
 
-  const { error: updateErr } = await admin
+  // Atomic transition: only flip the row when it is still "gesendet". Prevents
+  // a concurrent accept + reject from both "winning".
+  const { data: updated, error: updateErr } = await admin
     .from("dokumente")
     .update({
       status: "abgelehnt",
       rejected_at: new Date().toISOString(),
       rejection_reason: cleanReason,
     })
-    .eq("id", doc.id);
+    .eq("id", doc.id)
+    .eq("status", "gesendet")
+    .select("id")
+    .maybeSingle();
 
   if (updateErr) {
     logger.error("public-reject:db-update", updateErr);
     return json({ error: publicViewError("save_failed", locale) }, 500);
+  }
+
+  // Zero rows matched → another signer accepted or rejected it first.
+  if (!updated) {
+    return json({ ok: true, alreadyRejected: true });
   }
 
   logger.info("public-reject:rejected", "offerte rejected", { docId: doc.id, nummer: doc.nummer });

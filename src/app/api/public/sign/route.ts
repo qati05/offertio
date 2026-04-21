@@ -102,18 +102,29 @@ export async function POST(request: NextRequest) {
     return json({ error: publicViewError("cannot_sign_now", locale) }, 422);
   }
 
-  const { error: updateErr } = await admin
+  // Atomic transition: only flip the row when it is still "gesendet". Without
+  // the status predicate a concurrent signer could overwrite the first
+  // signature (TOCTOU between the read above and this update).
+  const { data: updated, error: updateErr } = await admin
     .from("dokumente")
     .update({
       status: "angenommen",
       signature_path: signature,
       signed_at: new Date().toISOString(),
     })
-    .eq("id", doc.id);
+    .eq("id", doc.id)
+    .eq("status", "gesendet")
+    .select("id")
+    .maybeSingle();
 
   if (updateErr) {
     logger.error("public-sign:db-update", updateErr);
     return json({ error: publicViewError("save_failed", locale) }, 500);
+  }
+
+  // Zero rows matched → someone else already signed or rejected it in parallel.
+  if (!updated) {
+    return json({ ok: true, alreadySigned: true });
   }
 
   logger.info("public-sign:accepted", "offerte accepted", { docId: doc.id, nummer: doc.nummer });
