@@ -128,6 +128,23 @@ export interface DokumentHistorie {
   converted_document_typ?: DokumentTyp | null;
 }
 
+export interface RecurringScheduleRecord {
+  id: string;
+  user_id: string;
+  template_dokument_id: string | null;
+  frequency: "weekly" | "monthly" | "quarterly" | "yearly";
+  next_generation_at: string;
+  last_generated_at: string | null;
+  end_date: string | null;
+  active: boolean;
+  created_at: string;
+  /** Present on list responses — joined from dokumente for UI labelling. */
+  template?: {
+    nummer: string;
+    kundenname: string;
+  } | null;
+}
+
 export interface OfferteData {
   nummer: string;
   datum: string;

@@ -247,6 +247,14 @@ export default function DokumentePage() {
                 → Rechnung aus Offerte erstellen
               </Link>
             )}
+          {!compact && isRechnung && doc.id && canEdit && (
+            <Link
+              href={`/einstellungen/wiederkehrend/neu?from=${encodeURIComponent(doc.id)}`}
+              className="convert-link mt-2"
+            >
+              → Als Serie anlegen
+            </Link>
+          )}
           {compact && (
             <div className="mt-0.5 text-xs font-medium" style={{ color: "var(--app-text)" }}>
               {doc.nummer}
