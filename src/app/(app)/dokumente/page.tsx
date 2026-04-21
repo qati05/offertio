@@ -9,7 +9,7 @@ import { createSupabaseBrowser } from "@/lib/supabase-browser";
 import { getDachConfig } from "@/lib/dach";
 import { buildDokumentCsv } from "@/lib/export";
 import { groupDocumentsByCustomer } from "@/lib/customer-folders";
-import { computeDocumentStatus, getStatus } from "@/lib/dokument-status";
+import { computeDocumentStatus, getStatus, MAHNSTUFE_SHORT, MAX_MAHNSTUFE, isMahnungCandidate } from "@/lib/dokument-status";
 import type { DokumentHistorie, Profile } from "@/lib/types";
 
 /** Status options available per document type */
@@ -78,7 +78,7 @@ export default function DokumentePage() {
       supabase
         .from("dokumente")
         .select(
-          "id, typ, nummer, objekt, kundenname, customer_id, kunde_email, kunde_adresse, kunde_adresse2, kunde_plz, kunde_ort, kunde_uid_mwst, betrag, datum, leistungsdatum, status, pdf_url, source_document_id, source_document_nummer, source_document_typ, converted_document_id, converted_document_nummer, converted_document_typ",
+          "id, typ, nummer, objekt, kundenname, customer_id, kunde_email, kunde_adresse, kunde_adresse2, kunde_plz, kunde_ort, kunde_uid_mwst, betrag, datum, leistungsdatum, status, payment_received_at, mahnstufe, last_mahnung_at, pdf_url, source_document_id, source_document_nummer, source_document_typ, converted_document_id, converted_document_nummer, converted_document_typ",
         )
         .eq("user_id", user.id)
         .order("datum", { ascending: false })
@@ -107,6 +107,71 @@ export default function DokumentePage() {
 
     setLoading(false);
   }
+
+  /** Mark a Rechnung as paid (quick action). */
+  const handleMarkPaid = useCallback(async (doc: DokumentHistorie) => {
+    if (!doc.id || source === "local") return;
+    setUpdatingId(doc.id);
+
+    const stamp = new Date().toISOString();
+    const optimistic = (prev: DokumentHistorie[]) =>
+      prev.map((d) =>
+        d.id === doc.id
+          ? { ...d, status: "bezahlt" as const, payment_received_at: stamp, mahnstufe: 0 }
+          : d,
+      );
+    const revert = (prev: DokumentHistorie[]) => prev.map((d) => (d.id === doc.id ? doc : d));
+
+    setHistory(optimistic);
+    try {
+      const res = await fetch("/api/dokument/mark-paid", {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: doc.id }),
+      });
+      if (!res.ok) setHistory(revert);
+    } catch {
+      setHistory(revert);
+    } finally {
+      setUpdatingId(null);
+    }
+  }, [source]);
+
+  /** Escalate to the next Mahnstufe for an overdue Rechnung. */
+  const handleMahnung = useCallback(async (doc: DokumentHistorie) => {
+    if (!doc.id || source === "local") return;
+    const nextStufe = Math.min((doc.mahnstufe ?? 0) + 1, MAX_MAHNSTUFE);
+    if (nextStufe <= (doc.mahnstufe ?? 0)) return;
+
+    setUpdatingId(doc.id);
+    const stamp = new Date().toISOString();
+    const optimistic = (prev: DokumentHistorie[]) =>
+      prev.map((d) =>
+        d.id === doc.id
+          ? {
+              ...d,
+              mahnstufe: nextStufe,
+              last_mahnung_at: stamp,
+              status: d.status === "gesendet" ? ("ueberfaellig" as const) : d.status,
+            }
+          : d,
+      );
+    const revert = (prev: DokumentHistorie[]) => prev.map((d) => (d.id === doc.id ? doc : d));
+
+    setHistory(optimistic);
+    try {
+      const res = await fetch("/api/dokument/mahnung", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: doc.id }),
+      });
+      if (!res.ok) setHistory(revert);
+    } catch {
+      setHistory(revert);
+    } finally {
+      setUpdatingId(null);
+    }
+  }, [source]);
 
   /** Update a single document's status via API, optimistically update UI. */
   const handleStatusChange = useCallback(
@@ -197,6 +262,10 @@ export default function DokumentePage() {
     const isUpdating = doc.id === updatingId;
     const options = statusOptionsFor(doc.typ);
     const canEdit = !!doc.id && source === "cloud";
+    const mahnstufe = doc.mahnstufe ?? 0;
+    const isPaid = !!doc.payment_received_at || doc.status === "bezahlt";
+    const canMahnen = isRechnung && canEdit && !isPaid && isMahnungCandidate(doc, zahlungsfrist) && mahnstufe < MAX_MAHNSTUFE;
+    const canMarkPaid = isRechnung && canEdit && !isPaid && doc.status !== "entwurf";
 
     return (
       <div
@@ -254,6 +323,70 @@ export default function DokumentePage() {
             >
               → Als Serie anlegen
             </Link>
+          )}
+          {!compact && mahnstufe > 0 && (
+            <div
+              className="mt-2 inline-flex items-center gap-1 text-xs font-semibold"
+              style={{
+                color: "#B91C1C",
+                background: "rgba(185,28,28,0.08)",
+                padding: "2px 8px",
+                borderRadius: 999,
+                width: "fit-content",
+              }}
+            >
+              ⚠ {MAHNSTUFE_SHORT[mahnstufe] || `Stufe ${mahnstufe}`} versendet
+            </div>
+          )}
+          {!compact && (canMarkPaid || canMahnen) && (
+            <div className="mt-2 flex items-center gap-2">
+              {canMarkPaid && (
+                <button
+                  type="button"
+                  className="mahnwesen-action-btn"
+                  onClick={() => void handleMarkPaid(doc)}
+                  disabled={isUpdating}
+                  style={{
+                    fontSize: 12,
+                    fontWeight: 600,
+                    padding: "4px 10px",
+                    borderRadius: 8,
+                    border: "1px solid rgba(26,127,66,0.3)",
+                    background: "rgba(26,127,66,0.06)",
+                    color: "#1A7F42",
+                    cursor: isUpdating ? "wait" : "pointer",
+                    opacity: isUpdating ? 0.6 : 1,
+                  }}
+                >
+                  ✓ Bezahlt
+                </button>
+              )}
+              {canMahnen && (
+                <button
+                  type="button"
+                  className="mahnwesen-action-btn"
+                  onClick={() => void handleMahnung(doc)}
+                  disabled={isUpdating}
+                  style={{
+                    fontSize: 12,
+                    fontWeight: 600,
+                    padding: "4px 10px",
+                    borderRadius: 8,
+                    border: "1px solid rgba(185,28,28,0.3)",
+                    background: "rgba(185,28,28,0.06)",
+                    color: "#B91C1C",
+                    cursor: isUpdating ? "wait" : "pointer",
+                    opacity: isUpdating ? 0.6 : 1,
+                  }}
+                >
+                  {mahnstufe === 0
+                    ? "Zahlungserinnerung senden"
+                    : mahnstufe === 1
+                      ? "1. Mahnung senden"
+                      : "2. Mahnung senden"}
+                </button>
+              )}
+            </div>
           )}
           {compact && (
             <div className="mt-0.5 text-xs font-medium" style={{ color: "var(--app-text)" }}>

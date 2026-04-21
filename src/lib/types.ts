@@ -119,6 +119,12 @@ export interface DokumentHistorie {
   /** Service/delivery date — mandatory for DE/AT invoices */
   leistungsdatum?: string | null;
   status: "entwurf" | "gesendet" | "angenommen" | "abgelaufen" | "bezahlt" | "ueberfaellig";
+  /** Paid timestamp (ISO). NULL until the user marks the invoice paid. */
+  payment_received_at?: string | null;
+  /** Reminder stage: 0 = none, 1 = Zahlungserinnerung, 2 = 1. Mahnung, 3 = 2. Mahnung */
+  mahnstufe?: number | null;
+  /** Server-stamped ISO timestamp of the last Mahnstufe increment. */
+  last_mahnung_at?: string | null;
   pdf_url?: string;
   source_document_id?: string | null;
   source_document_nummer?: string | null;
