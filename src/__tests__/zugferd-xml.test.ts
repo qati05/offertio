@@ -206,6 +206,44 @@ describe("buildZugferdXml", () => {
     expect(xml).toContain("<ram:CategoryCode>Z</ram:CategoryCode>");
   });
 
+  it("uses VAT category E and emits ExemptionReason for Kleinunternehmer §19 UStG (EN 16931 BT-120)", () => {
+    const kleinunternehmerData: OfferteData = {
+      ...baseData,
+      mwstSatz: 0,
+      profil: { ...baseData.profil, kleinunternehmer: true },
+    };
+    const xml = buildZugferdXml(kleinunternehmerData);
+    // Line-level tax
+    expect(xml).toContain("<ram:CategoryCode>E</ram:CategoryCode>");
+    // Human-readable exemption reason must be present on both line and header levels
+    expect(xml).toContain("<ram:ExemptionReason>Steuerbefreit nach §19 UStG (Kleinunternehmer)</ram:ExemptionReason>");
+    // There are 3 line items + 1 header breakdown in baseData → 3 occurrences expected
+    const occurrences = xml.match(/<ram:ExemptionReason>/g)?.length ?? 0;
+    expect(occurrences).toBe(baseData.positionen.length + 1);
+  });
+
+  it("does NOT emit ExemptionReason for standard-rated invoices", () => {
+    const xml = buildZugferdXml(baseData);
+    expect(xml).not.toContain("<ram:ExemptionReason>");
+  });
+
+  it("emits ExemptionReason for zero-rated non-Kleinunternehmer invoices", () => {
+    const zeroRateData = { ...baseData, mwstSatz: 0 };
+    const xml = buildZugferdXml(zeroRateData);
+    expect(xml).toContain("<ram:ExemptionReason>Nullsatz</ram:ExemptionReason>");
+  });
+
+  it("computes dueDate via local-time arithmetic (no TZ drift across month boundary)", () => {
+    // datum 2026-03-30 + 2 day Zahlungsfrist = 2026-04-01 (not 2026-03-31 in UTC-)
+    const drift = {
+      ...baseData,
+      datum: "2026-03-30",
+      profil: { ...baseData.profil, zahlungsfrist: 2 },
+    };
+    const xml = buildZugferdXml(drift);
+    expect(xml).toContain("<udt:DateTimeString format=\"102\">20260401</udt:DateTimeString>");
+  });
+
   it("contains SEPA payment type code 58", () => {
     const xml = buildZugferdXml(baseData);
     expect(xml).toContain("<ram:TypeCode>58</ram:TypeCode>");
