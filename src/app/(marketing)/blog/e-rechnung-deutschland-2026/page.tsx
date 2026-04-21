@@ -1,10 +1,15 @@
 import Link from "next/link";
+import type { Metadata } from "next";
+import { SITE_URL, siteUrl } from "@/lib/site";
 
-export const metadata = {
+export const metadata: Metadata = {
   title:
     "E-Rechnung Pflicht Deutschland 2025/2026: Was gilt für Kleinunternehmer? | Offertio",
   description:
     "Ab 2025 gilt in Deutschland die E-Rechnungspflicht im B2B. Was bedeutet das für Kleinunternehmer und Selbstständige? Alle Fakten und Fristen.",
+  alternates: {
+    canonical: siteUrl("/blog/e-rechnung-deutschland-2026"),
+  },
 };
 
 export default function ERechnungDeutschlandPage() {
@@ -18,11 +23,11 @@ export default function ERechnungDeutschlandPage() {
     author: {
       "@type": "Organization",
       name: "Offertio",
-      url: "https://offertio.ch",
+      url: SITE_URL,
     },
     datePublished: "2026-04-09",
     dateModified: "2026-04-09",
-    image: "https://offertio.ch/og-image.jpg",
+    image: siteUrl("/offertio/og-image.png"),
     wordCount: 800,
   };
 

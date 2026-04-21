@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { headers } from "next/headers";
 import { Fraunces, DM_Sans, JetBrains_Mono } from "next/font/google";
 import CookieConsent from "@/components/CookieConsent";
+import { SITE_URL, siteUrl } from "@/lib/site";
 import "./globals.css";
 
 const fraunces = Fraunces({
@@ -27,6 +28,9 @@ const jetBrainsMono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
+  // metadataBase makes relative og:image / twitter:image URLs resolve correctly
+  // across environments; override via NEXT_PUBLIC_SITE_URL.
+  metadataBase: new URL(SITE_URL),
   title: "Offertio - Mobile-first Offerten und Rechnungen für DACH-Betriebe",
   description:
     "Offertio hilft kleinen Betrieben in CH, DE und AT, Offerten und Rechnungen ohne Bürochaos direkt vom Handy zu erstellen, weiterzugeben und professionell zu organisieren.",
@@ -36,7 +40,7 @@ export const metadata: Metadata = {
       "Mobile-first Offerten und Rechnungen für Handwerk, Reinigung und Servicebetriebe in CH, DE und AT. Mit QR, SEPA und DACH-Logik im Hintergrund.",
     images: [
       {
-        url: "https://offert.io/offertio/og-image.png",
+        url: siteUrl("/offertio/og-image.png"),
         width: 1200,
         height: 630,
         alt: "Offertio - mobile-first Offerten und Rechnungen",
@@ -51,14 +55,14 @@ export const metadata: Metadata = {
     title: "Offertio - Mobile-first Offerten und Rechnungen",
     description:
       "Weniger Büro, mehr Klarheit im Alltag: Offertio bringt Offerten und Rechnungen dorthin, wo kleine Betriebe wirklich arbeiten.",
-    images: ["https://offert.io/offertio/og-image.png"],
+    images: [siteUrl("/offertio/og-image.png")],
   },
   alternates: {
-    canonical: "https://offert.io",
+    canonical: SITE_URL,
     languages: {
-      "de-CH": "https://offert.io",
-      "de-DE": "https://offert.io",
-      "de-AT": "https://offert.io",
+      "de-CH": SITE_URL,
+      "de-DE": SITE_URL,
+      "de-AT": SITE_URL,
     },
   },
 };
@@ -96,7 +100,7 @@ export default async function RootLayout({
               "@context": "https://schema.org",
               "@type": "SoftwareApplication",
               name: "Offertio",
-              url: "https://offert.io",
+              url: SITE_URL,
               applicationCategory: "BusinessApplication",
               applicationSubCategory: "InvoicingApplication",
               operatingSystem: "Web, iOS, Android",
