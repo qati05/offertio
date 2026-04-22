@@ -49,6 +49,7 @@ type ServerProfile = Pick<
   | "plan"
   | "kleinunternehmer"
   | "pdf_template"
+  | "pdf_accent_color"
   | "created_at"
 > & { email?: string | null };
 
@@ -76,6 +77,7 @@ function profileFromServer(user: { id: string; email?: string | null }, profile:
     plan: profile.plan ?? "free",
     kleinunternehmer: profile.kleinunternehmer ?? false,
     pdf_template: profile.pdf_template,
+    pdf_accent_color: profile.pdf_accent_color ?? null,
     created_at: profile.created_at ?? new Date(0).toISOString(),
   };
 }
@@ -175,6 +177,7 @@ export async function POST(request: NextRequest) {
         "plan",
         "kleinunternehmer",
         "pdf_template",
+        "pdf_accent_color",
         "created_at",
       ].join(","),
     )

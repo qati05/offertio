@@ -12,6 +12,7 @@ import { formatSwissDate } from "@/lib/dates";
 import PDFModern from "./pdf/PDFModern";
 import PDFMinimal from "./pdf/PDFMinimal";
 import PDFProfessionell from "./pdf/PDFProfessionell";
+import PDFFarbig from "./pdf/PDFFarbig";
 
 const s = StyleSheet.create({
   page: {
@@ -274,13 +275,14 @@ interface OffertePDFProps {
   dokumentTyp?: DokumentTyp;
   currency?: string;
   preisMode?: "exkl" | "inkl";
-  template?: "classic" | "modern" | "minimal" | "professionell";
+  template?: "classic" | "modern" | "minimal" | "professionell" | "farbig";
 }
 
 export default function OffertePDF(props: OffertePDFProps) {
   if (props.template === "modern") return PDFModern(props);
   if (props.template === "minimal") return PDFMinimal(props);
   if (props.template === "professionell") return PDFProfessionell(props);
+  if (props.template === "farbig") return PDFFarbig(props);
 
   const {
     profil,

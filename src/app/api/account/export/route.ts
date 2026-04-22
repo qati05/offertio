@@ -46,7 +46,7 @@ export async function GET(request: NextRequest) {
         supabase
           .from("profiles")
           .select(
-            "email, firmenname, vorname, nachname, adresse, plz, ort, telefon, iban, bic, uid_mwst, steuernummer, fn_nr, land, sprache, beruf, zahlungsfrist, plan, onboarding_complete, pdf_template, kleinunternehmer, created_at",
+            "email, firmenname, vorname, nachname, adresse, plz, ort, telefon, iban, bic, uid_mwst, steuernummer, fn_nr, land, sprache, beruf, zahlungsfrist, plan, onboarding_complete, pdf_template, pdf_accent_color, kleinunternehmer, created_at",
           )
           .eq("id", user.id)
           .maybeSingle(),

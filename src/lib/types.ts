@@ -39,7 +39,14 @@ export interface Profile {
    */
   trial_ends_at?: string | null;
   onboarding_complete?: boolean;
-  pdf_template?: "classic" | "modern" | "minimal" | "professionell";
+  pdf_template?: "classic" | "modern" | "minimal" | "professionell" | "farbig";
+  /**
+   * Brand accent color for the "farbig" PDF template. Canonical `#rrggbb`
+   * lowercase — enforced both by client normalization (see `lib/pdf-colors`)
+   * and the `profiles_pdf_accent_color_chk` CHECK constraint. NULL means
+   * "use the offertio default orange".
+   */
+  pdf_accent_color?: string | null;
   /**
    * Kleinunternehmer / VAT-exempt flag.
    * CH: Art. 10 MWSTG (< CHF 100k revenue)

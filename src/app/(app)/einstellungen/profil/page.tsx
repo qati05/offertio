@@ -11,6 +11,7 @@ import { getRequiredTaxField, hasRequiredTaxId } from "@/lib/profile";
 import { useT, LOCALE_LABELS } from "@/lib/i18n";
 import type { Locale } from "@/lib/i18n";
 import type { Land } from "@/lib/types";
+import { DEFAULT_ACCENT, normalizeHex } from "@/lib/pdf-colors";
 
 /**
  * Validates an IBAN string for the given country prefix.
@@ -70,7 +71,12 @@ export default function ProfilPage() {
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [toast, setToast] = useState("");
-  const [pdfTemplate, setPdfTemplate] = useState<"classic" | "modern" | "minimal" | "professionell">("classic");
+  const [pdfTemplate, setPdfTemplate] = useState<"classic" | "modern" | "minimal" | "professionell" | "farbig">("classic");
+  // Accent color is only meaningful when pdf_template === "farbig". An empty
+  // string means "use the offertio default" (stored as NULL). Kept as the
+  // raw user input so typing half a hex doesn't reset the picker — we only
+  // normalize on save.
+  const [pdfAccentColor, setPdfAccentColor] = useState<string>("");
   const [logoUrl, setLogoUrl] = useState("");
   const [kleinunternehmer, setKleinunternehmer] = useState(false);
   const [form, setForm] = useState({
@@ -139,8 +145,11 @@ export default function ProfilPage() {
       if (data.sprache && data.sprache in LOCALE_LABELS) {
         setLocale(data.sprache as Locale);
       }
-      if (data.pdf_template && ["classic", "modern", "minimal", "professionell"].includes(data.pdf_template)) {
+      if (data.pdf_template && ["classic", "modern", "minimal", "professionell", "farbig"].includes(data.pdf_template)) {
         setPdfTemplate(data.pdf_template as typeof pdfTemplate);
+      }
+      if (typeof data.pdf_accent_color === "string") {
+        setPdfAccentColor(data.pdf_accent_color);
       }
       setKleinunternehmer(!!data.kleinunternehmer);
     }
@@ -313,11 +322,21 @@ export default function ProfilPage() {
     setToast("Profil gespeichert!");
     setTimeout(() => setToast(""), 4000);
 
-    // Save PDF template separately (requires DB column pdf_template in profiles)
+    // Save PDF template separately (requires DB column pdf_template in profiles).
+    // Accent color only applies to the "farbig" template — and we normalize to
+    // canonical #rrggbb before hitting the DB so the CHECK constraint never
+    // rejects a value the UI accepted.
     try {
-      await supabase.from("profiles").update({ pdf_template: pdfTemplate }).eq("id", user.id);
+      const normalized = normalizeHex(pdfAccentColor);
+      await supabase
+        .from("profiles")
+        .update({
+          pdf_template: pdfTemplate,
+          pdf_accent_color: pdfTemplate === "farbig" ? normalized : null,
+        })
+        .eq("id", user.id);
     } catch {
-      // Column may not exist yet — no-op
+      // Columns may not exist yet — no-op
     }
 
     if (isOnboarding) {
@@ -673,6 +692,7 @@ export default function ProfilPage() {
                 { id: "modern", name: "Modern", desc: "Dunkler Header, markant" },
                 { id: "minimal", name: "Minimal", desc: "Reduziert & elegant" },
                 { id: "professionell", name: "Professionell", desc: "Strukturiert & kräftig" },
+                { id: "farbig", name: "Farbig", desc: "Deine Markenfarbe, präsent" },
               ] as const
             ).map((t) => (
               <button
@@ -696,6 +716,50 @@ export default function ProfilPage() {
               </button>
             ))}
           </div>
+
+          {pdfTemplate === "farbig" && (
+            <div style={{ marginTop: 16, padding: "14px 16px", borderRadius: 12, background: "var(--color-surface-soft, rgba(0,0,0,0.02))", border: "1px solid var(--color-border)" }}>
+              <label className="form-label" style={{ display: "block", marginBottom: 8 }}>
+                Markenfarbe
+              </label>
+              <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
+                <input
+                  type="color"
+                  aria-label="Markenfarbe wählen"
+                  value={normalizeHex(pdfAccentColor) ?? DEFAULT_ACCENT}
+                  onChange={(e) => setPdfAccentColor(e.target.value.toLowerCase())}
+                  style={{
+                    width: 44, height: 44, padding: 0, border: "1px solid var(--color-border)",
+                    borderRadius: 10, background: "transparent", cursor: "pointer", flexShrink: 0,
+                  }}
+                />
+                <input
+                  type="text"
+                  inputMode="text"
+                  placeholder={DEFAULT_ACCENT}
+                  value={pdfAccentColor}
+                  onChange={(e) => setPdfAccentColor(e.target.value)}
+                  className="form-input"
+                  aria-label="Hex-Code der Markenfarbe"
+                  style={{ maxWidth: 160, fontFamily: "var(--font-mono, ui-monospace, SFMono-Regular, Menlo, monospace)" }}
+                />
+                <button
+                  type="button"
+                  onClick={() => setPdfAccentColor("")}
+                  style={{
+                    fontSize: 12, color: "var(--color-text-muted)", background: "transparent",
+                    border: "none", cursor: "pointer", padding: "6px 8px", textDecoration: "underline",
+                  }}
+                >
+                  Zurücksetzen
+                </button>
+              </div>
+              <p style={{ fontSize: 11, color: "var(--color-text-muted)", marginTop: 10, lineHeight: 1.5 }}>
+                Hex-Code (z.B. <code>#1a7f42</code>). Leer lassen für das offertio-Orange.
+                Die Farbe wird nur bei neu erstellten PDFs verwendet — bereits generierte Dokumente bleiben unverändert.
+              </p>
+            </div>
+          )}
         </div>
 
         <button type="submit" className="btn-primary" disabled={saving}>
