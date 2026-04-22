@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useRef } from "react";
 import Link from "next/link";
 import SignPad from "@/components/SignPad";
 
@@ -64,6 +64,11 @@ export default function RecipientViewClient({
   const [signaturePath, setSignaturePath] = useState("");
   const [decision, setDecision] = useState<Decision>(initialDecision(doc.status));
   const [submitting, setSubmitting] = useState(false);
+  // Synchronous lock — setSubmitting is async, so two rapid clicks in the
+  // same event-loop tick would otherwise both pass the `if (submitting)`
+  // gate and fire duplicate /sign or /reject requests. A ref toggles
+  // synchronously and closes that window.
+  const inFlightRef = useRef(false);
   const [error, setError] = useState<string | null>(null);
   const [showReject, setShowReject] = useState(false);
   const [rejectReason, setRejectReason] = useState("");
@@ -76,7 +81,8 @@ export default function RecipientViewClient({
   const canAct = signingEnabled && isOfferte && doc.status === "gesendet" && decision === "pending";
 
   const handleSign = useCallback(async () => {
-    if (!signaturePath || submitting) return;
+    if (!signaturePath || inFlightRef.current) return;
+    inFlightRef.current = true;
     setSubmitting(true);
     setError(null);
     try {
@@ -94,12 +100,14 @@ export default function RecipientViewClient({
     } catch {
       setError("Netzwerkfehler. Bitte versuche es nochmal.");
     } finally {
+      inFlightRef.current = false;
       setSubmitting(false);
     }
-  }, [token, signaturePath, submitting]);
+  }, [token, signaturePath]);
 
   const handleReject = useCallback(async () => {
-    if (submitting) return;
+    if (inFlightRef.current) return;
+    inFlightRef.current = true;
     setSubmitting(true);
     setError(null);
     try {
@@ -121,9 +129,10 @@ export default function RecipientViewClient({
     } catch {
       setError("Netzwerkfehler. Bitte versuche es nochmal.");
     } finally {
+      inFlightRef.current = false;
       setSubmitting(false);
     }
-  }, [token, submitting, rejectReason]);
+  }, [token, rejectReason]);
 
   const initials = firmenname
     .split(/\s+/)

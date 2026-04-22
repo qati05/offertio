@@ -71,6 +71,11 @@ export async function POST(request: NextRequest) {
       sourceDocumentNumber,
       sourceDocumentTyp,
       existingDocumentId,
+      positionen,
+      mwstSatz,
+      rabatt,
+      notiz,
+      preisMode,
     } = await request.json();
 
     if (!pdfBase64 || !typ || !nummer || !kundenname || betrag === undefined || betrag === null || !datum) {
@@ -121,18 +126,81 @@ export async function POST(request: NextRequest) {
       return json({ error: "Objektbezeichnung zu lang." }, 400);
     }
 
-    // DE/AT legal requirement: Rechnungen must include Leistungsdatum
-    if (typ === "rechnung" && !leistungsdatum) {
-      // Look up the user's country to enforce the rule
+    // Validate carryover fields. These are optional — if absent, the document is
+    // saved without structured line items (legacy behavior). The PDF remains
+    // the source of truth for visual rendering; these columns enable
+    // 1-click conversion of an Offerte → Rechnung without retyping positions.
+    let normalizedPositionen: unknown[] | undefined;
+    if (positionen !== undefined && positionen !== null) {
+      if (!Array.isArray(positionen)) {
+        return json({ error: "Positionen müssen ein Array sein." }, 400);
+      }
+      if (positionen.length > 200) {
+        return json({ error: "Zu viele Positionen (max. 200)." }, 400);
+      }
+      normalizedPositionen = positionen;
+    }
+
+    let normalizedMwstSatz: number | undefined;
+    if (mwstSatz !== undefined && mwstSatz !== null) {
+      const v = Number(mwstSatz);
+      if (!Number.isFinite(v) || v < 0 || v > 100) {
+        return json({ error: "Ungültiger MWST-Satz." }, 400);
+      }
+      normalizedMwstSatz = v;
+    }
+
+    if (rabatt !== undefined && rabatt !== null && typeof rabatt !== "object") {
+      return json({ error: "Ungültiges Rabatt-Format." }, 400);
+    }
+
+    if (notiz !== undefined && notiz !== null) {
+      if (typeof notiz !== "string" || notiz.length > 4000) {
+        return json({ error: "Notiz ungültig oder zu lang." }, 400);
+      }
+    }
+
+    let normalizedPreisMode: "exkl" | "inkl" | undefined;
+    if (preisMode !== undefined && preisMode !== null) {
+      if (preisMode !== "exkl" && preisMode !== "inkl") {
+        return json({ error: "Ungültiger Preis-Modus." }, 400);
+      }
+      normalizedPreisMode = preisMode;
+    }
+
+    // DE/AT legal requirements — look up the user's country once for all rules.
+    let issuerLand: string = "CH";
+    if (typ === "rechnung") {
       const { data: userProfile } = await supabase
         .from("profiles")
-        .select("land")
+        .select("land, uid_mwst, kleinunternehmer")
         .eq("id", user.id)
         .maybeSingle();
-      const land = userProfile?.land || "CH";
-      if (land === "DE" || land === "AT") {
+      issuerLand = userProfile?.land || "CH";
+
+      // Rechnungen must include Leistungsdatum in DE/AT
+      if (!leistungsdatum && (issuerLand === "DE" || issuerLand === "AT")) {
         return json({
           error: "Leistungsdatum ist für Rechnungen in DE/AT gesetzlich erforderlich.",
+        }, 400);
+      }
+
+      // AT §11 Abs. 1 Z 6 UStG: seller UID is mandatory on every invoice unless
+      // the seller qualifies as Kleinunternehmer (§6 Abs. 1 Z 27 UStG).
+      const sellerUid = typeof userProfile?.uid_mwst === "string" ? userProfile.uid_mwst.trim() : "";
+      if (issuerLand === "AT" && !userProfile?.kleinunternehmer && !sellerUid) {
+        return json({
+          error: "Für österreichische Rechnungen ist die eigene UID-Nummer im Profil gesetzlich erforderlich (§11 UStG).",
+        }, 400);
+      }
+
+      // AT §11 Abs. 1 Z 8 UStG: invoices ≥ EUR 10.000 gross require the
+      // recipient's UID. Enforce at the API boundary, not only in the Zod schema,
+      // so clients cannot bypass by omitting the field client-side.
+      const recipientUid = typeof kunde?.uid_mwst === "string" ? kunde.uid_mwst.trim() : "";
+      if (issuerLand === "AT" && betragNum >= 10_000 && !recipientUid) {
+        return json({
+          error: "Für österreichische Rechnungen ab EUR 10.000 ist die UID des Empfängers gesetzlich erforderlich.",
         }, 400);
       }
     }
@@ -178,8 +246,9 @@ export async function POST(request: NextRequest) {
       .select("id")
       .single();
 
-    if (customerError) {
-      logger.error("customer-upsert", customerError);
+    if (customerError || !customerRecord) {
+      logger.error("customer-upsert", customerError ?? new Error("customerRecord missing"));
+      return json({ error: "Fehler beim Speichern des Kunden." }, 500);
     }
 
     // 1. Upload PDF to Storage
@@ -204,33 +273,37 @@ export async function POST(request: NextRequest) {
     // --- Collision detection: ensure (user_id, nummer) is unique before insert ---
     // Two devices or a localStorage reset can produce the same nummer for the same user.
     // We resolve this transparently by appending a suffix (-1, -2, …) until we find a free slot.
-    const userId = user.id; // capture for use inside nested async function (TS narrowing)
-    async function hasNumberCollision(candidate: string, currentDocumentId?: string | null): Promise<boolean> {
+    //
+    // Single round-trip: fetch every nummer that starts with the candidate (the
+    // candidate itself plus any "<candidate>-N" suffixes) and compute the first
+    // free slot in memory. This avoids up to 100 sequential queries on a
+    // colliding save.
+    const userId = user.id;
+    async function resolveUniqueNummer(candidate: string, currentDocumentId?: string | null): Promise<string> {
       const { data, error } = await admin
         .from("dokumente")
-        .select("id")
+        .select("id, nummer")
         .eq("user_id", userId)
-        .eq("nummer", candidate)
-        .limit(2);
+        .like("nummer", `${candidate}%`)
+        .limit(200);
 
       if (error) {
         logger.error("dokument-save:number-check", error, { userId, candidate, currentDocumentId });
-        return true;
+        // Fail safe: timestamp suffix guarantees uniqueness even if we can't read the table.
+        return `${candidate}-${Date.now()}`;
       }
 
-      const collisions = (data || []).filter((doc) => doc.id !== currentDocumentId);
-      return collisions.length > 0;
-    }
+      const taken = new Set(
+        (data || [])
+          .filter((doc) => doc.id !== currentDocumentId)
+          .map((doc) => doc.nummer),
+      );
 
-    async function resolveUniqueNummer(candidate: string, currentDocumentId?: string | null): Promise<string> {
-      if (!(await hasNumberCollision(candidate, currentDocumentId))) return candidate;
-
-      // Collision detected — try suffixed variants
+      if (!taken.has(candidate)) return candidate;
       for (let suffix = 1; suffix <= 99; suffix++) {
         const suffixed = `${candidate}-${suffix}`;
-        if (!(await hasNumberCollision(suffixed, currentDocumentId))) return suffixed;
+        if (!taken.has(suffixed)) return suffixed;
       }
-      // Extremely unlikely: fall back to timestamp-based uniqueness
       return `${candidate}-${Date.now()}`;
     }
 
@@ -238,13 +311,13 @@ export async function POST(request: NextRequest) {
     // ---
 
     const relationNumber = sourceDocumentNummer || sourceDocumentNumber || null;
-    const documentPayload = {
+    const documentPayload: Record<string, unknown> = {
       user_id: user.id,
       typ,
       nummer: resolvedNummer,
       objekt,
       kundenname: customerSnapshot.name,
-      customer_id: customerRecord?.id ?? null,
+      customer_id: customerRecord.id,
       kunde_email: customerSnapshot.email,
       kunde_adresse: customerSnapshot.adresse,
       kunde_adresse2: customerSnapshot.adresse2,
@@ -261,18 +334,27 @@ export async function POST(request: NextRequest) {
       source_document_typ: sourceDocumentTyp || null,
     };
 
+    // Only include carryover columns when the client actually sent them.
+    // Omitting (rather than setting null) lets the column DEFAULT '[]' apply
+    // for inserts and avoids overwriting existing values on partial updates.
+    if (normalizedPositionen !== undefined) documentPayload.positionen = normalizedPositionen;
+    if (normalizedMwstSatz !== undefined) documentPayload.mwst_satz = normalizedMwstSatz;
+    if (rabatt !== undefined && rabatt !== null) documentPayload.rabatt = rabatt;
+    if (notiz !== undefined && notiz !== null) documentPayload.notiz = notiz;
+    if (normalizedPreisMode !== undefined) documentPayload.preis_mode = normalizedPreisMode;
+
     const { data: insertedDocument, error: dbError } = existingDocumentId
       ? await admin
           .from("dokumente")
           .update(documentPayload)
           .eq("id", existingDocumentId)
           .eq("user_id", user.id)
-          .select("id, nummer, source_document_id, source_document_nummer, source_document_typ, customer_id")
+          .select("id, nummer, source_document_id, source_document_nummer, source_document_typ, customer_id, share_token")
           .single()
       : await admin
           .from("dokumente")
           .insert(documentPayload)
-          .select("id, nummer, source_document_id, source_document_nummer, source_document_typ, customer_id")
+          .select("id, nummer, source_document_id, source_document_nummer, source_document_typ, customer_id, share_token")
           .single();
 
     if (dbError) {

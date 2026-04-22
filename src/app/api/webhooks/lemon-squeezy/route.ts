@@ -154,8 +154,15 @@ export async function POST(request: NextRequest) {
 
     if (eventName === "subscription_cancelled") {
       // Subscription cancelled but still active until period end.
+      // Use the event's own timestamp (cancelled_at / updated_at) instead of
+      // new Date() — otherwise a retried delivery would rewrite the cancel
+      // timestamp to "now" on every replay, breaking idempotency.
+      const cancelledAt: string | null =
+        (typeof attrs.cancelled_at === "string" && attrs.cancelled_at) ||
+        (typeof attrs.updated_at === "string" && attrs.updated_at) ||
+        new Date().toISOString();
       await updateProfile({
-        plan_cancelled_at: new Date().toISOString(),
+        plan_cancelled_at: cancelledAt,
         plan_expires_at: planExpiresAt,
         ls_subscription_id: lsSubscriptionId,
         ls_customer_id: lsCustomerId,

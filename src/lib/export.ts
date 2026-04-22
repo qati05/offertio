@@ -37,7 +37,7 @@ export function buildDokumentCsv(
     doc.nummer,
     doc.source_document_nummer || "",
     doc.kundenname,
-    doc.objekt,
+    doc.objekt ?? "",
     doc.datum,
     doc.leistungsdatum || "",
     doc.status,

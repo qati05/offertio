@@ -134,8 +134,16 @@ export async function POST(request: NextRequest) {
     .eq("id", user.id);
 
   if (updateError) {
+    // Profile row wasn't updated, so the uploaded file is orphaned relative to
+    // the DB. Remove it so we don't leak storage quota, then surface the error
+    // to the client — returning 200 here would make the UI show a logo that
+    // vanishes on next reload (classic silent-inconsistency bug).
     logger.error("logo:profile-update", updateError);
-    // Upload succeeded — return URL anyway so the UI can show it.
+    const { error: cleanupError } = await admin.storage.from("logos").remove([path]);
+    if (cleanupError) {
+      logger.error("logo:cleanup-after-profile-failure", cleanupError);
+    }
+    return json({ error: "Logo konnte nicht gespeichert werden. Bitte erneut versuchen." }, 500);
   }
 
   return json({ url: urlData.publicUrl });

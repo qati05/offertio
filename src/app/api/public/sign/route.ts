@@ -3,6 +3,7 @@ import { getSupabaseAdmin } from "@/lib/supabase-admin";
 import { rateLimitAsync } from "@/lib/rate-limit";
 import { logger } from "@/lib/logger";
 import { publicViewError, type PublicViewLocale } from "@/lib/public-view-i18n";
+import { getClientIp, isValidUUID } from "@/lib/security";
 
 const MAX_SIGNATURE_LEN = 50_000;
 
@@ -24,14 +25,6 @@ function json(body: unknown, status = 200, extra?: HeadersInit) {
   });
 }
 
-function getClientIp(req: NextRequest): string {
-  return (
-    req.headers.get("x-forwarded-for")?.split(",")[0].trim() ??
-    req.headers.get("x-real-ip") ??
-    "unknown"
-  );
-}
-
 /**
  * POST /api/public/sign
  *
@@ -50,7 +43,7 @@ export async function POST(request: NextRequest) {
     return json({ error: publicViewError("not_found", locale) }, 404);
   }
 
-  const ip = getClientIp(request);
+  const ip = getClientIp(request.headers);
   const rl = await rateLimitAsync(`public-sign:${ip}`, 5, 60_000);
   if (!rl.ok) {
     return json({ error: publicViewError("rate_limited", locale) }, 429, {
@@ -67,7 +60,7 @@ export async function POST(request: NextRequest) {
 
   const { token, signature } = (body || {}) as Record<string, unknown>;
 
-  if (typeof token !== "string" || !/^[0-9a-f-]{36}$/.test(token)) {
+  if (!isValidUUID(token)) {
     return json({ error: publicViewError("invalid_token", locale) }, 400);
   }
 
@@ -109,18 +102,29 @@ export async function POST(request: NextRequest) {
     return json({ error: publicViewError("cannot_sign_now", locale) }, 422);
   }
 
-  const { error: updateErr } = await admin
+  // Atomic transition: only flip the row when it is still "gesendet". Without
+  // the status predicate a concurrent signer could overwrite the first
+  // signature (TOCTOU between the read above and this update).
+  const { data: updated, error: updateErr } = await admin
     .from("dokumente")
     .update({
       status: "angenommen",
       signature_path: signature,
       signed_at: new Date().toISOString(),
     })
-    .eq("id", doc.id);
+    .eq("id", doc.id)
+    .eq("status", "gesendet")
+    .select("id")
+    .maybeSingle();
 
   if (updateErr) {
     logger.error("public-sign:db-update", updateErr);
     return json({ error: publicViewError("save_failed", locale) }, 500);
+  }
+
+  // Zero rows matched → someone else already signed or rejected it in parallel.
+  if (!updated) {
+    return json({ ok: true, alreadySigned: true });
   }
 
   logger.info("public-sign:accepted", "offerte accepted", { docId: doc.id, nummer: doc.nummer });

@@ -1,10 +1,15 @@
 import Link from "next/link";
+import type { Metadata } from "next";
+import { SITE_URL, siteUrl } from "@/lib/site";
 
-export const metadata = {
+export const metadata: Metadata = {
   title:
     "Swiss QR-Rechnung 2026: Alles für Schweizer Betriebe | Offertio",
   description:
     "Was ist die Swiss QR-Rechnung, wer braucht sie, und wie erstellt man sie korrekt? Vollständiger Guide für Schweizer Kleinbetriebe 2026.",
+  alternates: {
+    canonical: siteUrl("/blog/qr-rechnung-schweiz-2026"),
+  },
 };
 
 export default function QRRechnungSchweizPage() {
@@ -17,11 +22,11 @@ export default function QRRechnungSchweizPage() {
     author: {
       "@type": "Organization",
       name: "Offertio",
-      url: "https://offertio.ch",
+      url: SITE_URL,
     },
     datePublished: "2026-04-10",
     dateModified: "2026-04-10",
-    image: "https://offertio.ch/og-image.jpg",
+    image: siteUrl("/offertio/og-image.png"),
     wordCount: 750,
   };
 

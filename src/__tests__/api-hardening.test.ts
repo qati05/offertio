@@ -12,6 +12,7 @@ const exportCustomersMock = vi.fn();
 const exportVorlagenMock = vi.fn();
 const buildZugferdXmlMock = vi.fn();
 const embedZugferdXmlMock = vi.fn();
+const customerUpsertMock = vi.fn();
 
 vi.mock("server-only", () => ({}));
 
@@ -99,10 +100,7 @@ function makeAdminMock() {
         return {
           upsert: vi.fn(() => ({
             select: vi.fn(() => ({
-              single: vi.fn(async () => ({
-                data: { id: "customer-1" },
-                error: null,
-              })),
+              single: vi.fn(async () => customerUpsertMock()),
             })),
           })),
         };
@@ -113,6 +111,9 @@ function makeAdminMock() {
           select: vi.fn(() => ({
             eq: vi.fn(() => ({
               eq: vi.fn(() => ({
+                limit: vi.fn(async () => ({ data: [], error: null })),
+              })),
+              like: vi.fn(() => ({
                 limit: vi.fn(async () => ({ data: [], error: null })),
               })),
             })),
@@ -219,6 +220,7 @@ beforeEach(() => {
   exportDokumenteMock.mockResolvedValue({ data: [], error: null });
   exportCustomersMock.mockResolvedValue({ data: [], error: null });
   exportVorlagenMock.mockResolvedValue({ data: [], error: null });
+  customerUpsertMock.mockReturnValue({ data: { id: "customer-1" }, error: null });
 });
 
 describe("account delete hardening", () => {
@@ -286,6 +288,135 @@ describe("document save hardening", () => {
     expect(uploadMock).toHaveBeenCalledOnce();
     expect(removeMock).toHaveBeenCalledOnce();
     expect(removeMock.mock.calls[0][0][0]).toMatch(/^user-1\/OF-2026-001_\d+\.pdf$/);
+  });
+
+  it("fails with 500 when customer upsert errors instead of saving with null customer_id", async () => {
+    // Regression: the route previously logged customerError and continued,
+    // creating a dokument with customer_id=null (silent data-integrity loss).
+    customerUpsertMock.mockReturnValue({ data: null, error: new Error("upsert failed") });
+
+    const { POST } = await import("@/app/api/dokument/save/route");
+
+    const response = await POST(
+      sameOriginPost("/api/dokument/save", {
+        pdfBase64: Buffer.from("%PDF-1.4\n").toString("base64"),
+        typ: "offerte",
+        nummer: "OF-2026-002",
+        kundenname: "Muster AG",
+        betrag: 123.45,
+        datum: "2026-04-11",
+      }),
+    );
+    const body = await response.json();
+
+    expect(response.status).toBe(500);
+    expect(body.error).toMatch(/Kunden/i);
+    // PDF upload must not happen when customer upsert fails.
+    expect(uploadMock).not.toHaveBeenCalled();
+  });
+
+  it("rejects AT Rechnungen ≥ EUR 10.000 without recipient UID (§11 Abs. 1 Z 8 UStG)", async () => {
+    serverProfileMock.mockResolvedValueOnce({
+      data: { land: "AT", uid_mwst: "ATU12345678", kleinunternehmer: false },
+      error: null,
+    });
+
+    const { POST } = await import("@/app/api/dokument/save/route");
+
+    const response = await POST(
+      sameOriginPost("/api/dokument/save", {
+        pdfBase64: Buffer.from("%PDF-1.4\n").toString("base64"),
+        typ: "rechnung",
+        nummer: "RE-2026-010",
+        kundenname: "Alpenbau GmbH",
+        kunde: { name: "Alpenbau GmbH" },
+        betrag: 12_500,
+        datum: "2026-04-11",
+        leistungsdatum: "2026-04-11",
+      }),
+    );
+    const body = await response.json();
+
+    expect(response.status).toBe(400);
+    expect(body.error).toMatch(/UID/i);
+    expect(uploadMock).not.toHaveBeenCalled();
+  });
+
+  it("accepts AT Rechnungen below EUR 10.000 without recipient UID", async () => {
+    serverProfileMock.mockResolvedValueOnce({
+      data: { land: "AT", uid_mwst: "ATU12345678", kleinunternehmer: false },
+      error: null,
+    });
+
+    const { POST } = await import("@/app/api/dokument/save/route");
+
+    const response = await POST(
+      sameOriginPost("/api/dokument/save", {
+        pdfBase64: Buffer.from("%PDF-1.4\n").toString("base64"),
+        typ: "rechnung",
+        nummer: "RE-2026-011",
+        kundenname: "Kleinkunde",
+        kunde: { name: "Kleinkunde" },
+        betrag: 500,
+        datum: "2026-04-11",
+        leistungsdatum: "2026-04-11",
+      }),
+    );
+
+    // Should pass the UID check and proceed to insert (which fails in the mock),
+    // yielding 500 — NOT 400 from the UID guard.
+    expect(response.status).not.toBe(400);
+  });
+
+  it("rejects AT Rechnungen when seller has no UID and is not Kleinunternehmer (§11 Abs. 1 Z 6 UStG)", async () => {
+    serverProfileMock.mockResolvedValueOnce({
+      data: { land: "AT", uid_mwst: null, kleinunternehmer: false },
+      error: null,
+    });
+
+    const { POST } = await import("@/app/api/dokument/save/route");
+
+    const response = await POST(
+      sameOriginPost("/api/dokument/save", {
+        pdfBase64: Buffer.from("%PDF-1.4\n").toString("base64"),
+        typ: "rechnung",
+        nummer: "RE-2026-012",
+        kundenname: "Kleinkunde",
+        kunde: { name: "Kleinkunde" },
+        betrag: 500,
+        datum: "2026-04-11",
+        leistungsdatum: "2026-04-11",
+      }),
+    );
+    const body = await response.json();
+
+    expect(response.status).toBe(400);
+    expect(body.error).toMatch(/eigene UID|§11/i);
+    expect(uploadMock).not.toHaveBeenCalled();
+  });
+
+  it("accepts AT Rechnungen when seller is Kleinunternehmer (no seller UID required)", async () => {
+    serverProfileMock.mockResolvedValueOnce({
+      data: { land: "AT", uid_mwst: null, kleinunternehmer: true },
+      error: null,
+    });
+
+    const { POST } = await import("@/app/api/dokument/save/route");
+
+    const response = await POST(
+      sameOriginPost("/api/dokument/save", {
+        pdfBase64: Buffer.from("%PDF-1.4\n").toString("base64"),
+        typ: "rechnung",
+        nummer: "RE-2026-013",
+        kundenname: "Kleinkunde",
+        kunde: { name: "Kleinkunde" },
+        betrag: 500,
+        datum: "2026-04-11",
+        leistungsdatum: "2026-04-11",
+      }),
+    );
+
+    expect(response.status).not.toBe(400);
   });
 });
 

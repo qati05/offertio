@@ -8,9 +8,11 @@
 } from "@react-pdf/renderer";
 import type { Profile, Position, KundenInfo, RabattInfo, DokumentTyp } from "@/lib/types";
 import { getDachConfig, getKleinunternehmerHinweis } from "@/lib/dach";
+import { formatSwissDate } from "@/lib/dates";
 import PDFModern from "./pdf/PDFModern";
 import PDFMinimal from "./pdf/PDFMinimal";
 import PDFProfessionell from "./pdf/PDFProfessionell";
+import PDFFarbig from "./pdf/PDFFarbig";
 
 const s = StyleSheet.create({
   page: {
@@ -273,13 +275,14 @@ interface OffertePDFProps {
   dokumentTyp?: DokumentTyp;
   currency?: string;
   preisMode?: "exkl" | "inkl";
-  template?: "classic" | "modern" | "minimal" | "professionell";
+  template?: "classic" | "modern" | "minimal" | "professionell" | "farbig";
 }
 
 export default function OffertePDF(props: OffertePDFProps) {
   if (props.template === "modern") return PDFModern(props);
   if (props.template === "minimal") return PDFMinimal(props);
   if (props.template === "professionell") return PDFProfessionell(props);
+  if (props.template === "farbig") return PDFFarbig(props);
 
   const {
     profil,
@@ -301,30 +304,31 @@ export default function OffertePDF(props: OffertePDFProps) {
     preisMode = "exkl",
   } = props;
   const grossSubtotal = positionen.reduce((sum, p) => sum + p.menge * p.preis, 0);
-  const rabattBetrag =
+  // All intermediate monetary values rounded to 2 decimals. Without this the
+  // total handed to the Swiss QR-bill (generated from profil+total upstream)
+  // could diverge by 1 cent from what the PDF displays — which Swiss banks
+  // reject when reconciling payment against the printed amount.
+  const r2 = (n: number) => Math.round(n * 100) / 100;
+  const rabattBetrag = r2(
     rabatt?.aktiv
       ? rabatt.modus === "chf"
         ? rabatt.wert
         : grossSubtotal * (rabatt.wert / 100)
-      : 0;
-  const grossNachRabatt = grossSubtotal - rabattBetrag;
+      : 0,
+  );
+  const grossNachRabatt = r2(grossSubtotal - rabattBetrag);
   const nettoNachRabatt = preisMode === "exkl"
     ? grossNachRabatt
-    : grossNachRabatt / (1 + mwstSatz / 100);
+    : r2(grossNachRabatt / (1 + mwstSatz / 100));
   const mwstBetrag = preisMode === "exkl"
-    ? nettoNachRabatt * (mwstSatz / 100)
-    : grossNachRabatt - nettoNachRabatt;
+    ? r2(nettoNachRabatt * (mwstSatz / 100))
+    : r2(grossNachRabatt - nettoNachRabatt);
   const total = preisMode === "exkl"
-    ? nettoNachRabatt + mwstBetrag
+    ? r2(nettoNachRabatt + mwstBetrag)
     : grossNachRabatt;
   const subtotal = grossSubtotal; // kept for compatibility
 
-  const fmtDate = (d: string) =>
-    new Date(d).toLocaleDateString("de-CH", {
-      day: "2-digit",
-      month: "2-digit",
-      year: "numeric",
-    });
+  const fmtDate = formatSwissDate;
 
   const datumFormatiert = fmtDate(datum);
   const gueltigBisFormatiert = gueltigBis ? fmtDate(gueltigBis) : "";

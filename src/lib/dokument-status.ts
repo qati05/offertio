@@ -104,3 +104,38 @@ export function countOpenActions(docs: DokumentHistorie[], zahlungsfristTage = 3
     return ["gesendet", "ueberfaellig"].includes(effective.status);
   }).length;
 }
+
+// ── Mahnstufe (payment reminder stage) ────────────────────────────────────────
+
+/** German-language label for each Mahnstufe. Stage 0 = not sent. */
+export const MAHNSTUFE_LABEL: Record<number, string> = {
+  0: "Keine Mahnung",
+  1: "Zahlungserinnerung",
+  2: "1. Mahnung",
+  3: "2. Mahnung",
+};
+
+/** Short badge label (compact variant used inside doc rows). */
+export const MAHNSTUFE_SHORT: Record<number, string> = {
+  1: "Erinnerung",
+  2: "1. Mahnung",
+  3: "2. Mahnung",
+};
+
+/** Maximum stage the UI offers — anything beyond goes to a collection agency. */
+export const MAX_MAHNSTUFE = 3;
+
+/**
+ * Is this invoice overdue and unpaid — i.e. a candidate for a Mahnung?
+ * Only meaningful for Rechnungen. Uses the effective status (after
+ * computeDocumentStatus) so freshly-overdue invoices are also flagged.
+ */
+export function isMahnungCandidate(
+  doc: DokumentHistorie,
+  zahlungsfristTage = 30,
+): boolean {
+  if (doc.typ !== "rechnung") return false;
+  if (doc.payment_received_at) return false;
+  const eff = computeDocumentStatus(doc, zahlungsfristTage);
+  return eff.status === "ueberfaellig" || eff.status === "gesendet";
+}

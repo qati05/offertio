@@ -9,6 +9,7 @@
 
 import { create } from "xmlbuilder2";
 import type { OfferteData } from "./types";
+import { addDaysIso } from "./dates";
 
 /** Format a YYYY-MM-DD string to YYYYMMDD for CII date fields */
 function toCiiDate(isoDate: string): string {
@@ -48,12 +49,25 @@ export function buildZugferdXml(data: OfferteData, leistungsdatum?: string): str
   const deliveryDate = leistungsdatum ?? datum;
   const buyerName = (kunde.firma?.trim() || kunde.name) ?? "";
 
+  // ── VAT category code + mandatory exemption reason (BT-120) ──────────────
+  // EN 16931 requires ExemptionReason whenever CategoryCode is "E" (exempt)
+  // or "Z" (zero-rated). Validators (Peppol, Mustangproject, FeRD) reject
+  // invoices where an exempt/zero line is missing the human-readable reason.
+  const vatCategoryCode = profil.kleinunternehmer ? "E" : mwstSatz === 0 ? "Z" : "S";
+  const vatExemptionReason = profil.kleinunternehmer
+    ? "Steuerbefreit nach §19 UStG (Kleinunternehmer)"
+    : mwstSatz === 0
+      ? "Nullsatz"
+      : null;
+
   // ── Payment due date (BT-9) ──────────────────────────────────────────────
-  // Derived from invoice date + payment terms days (profil.zahlungsfrist, default 30)
+  // Derived from invoice date + payment terms days (profil.zahlungsfrist,
+  // default 30). addDaysIso keeps the calculation in local-time components
+  // so `2025-03-30 + 2 days` stays `2025-04-01` regardless of the server's
+  // TZ (a plain `new Date(datum)` would parse as UTC midnight and a later
+  // toISOString() could silently drop a day).
   const zahlungsfristTage = profil.zahlungsfrist ?? 30;
-  const dueDateObj = new Date(datum);
-  dueDateObj.setDate(dueDateObj.getDate() + zahlungsfristTage);
-  const dueDate = dueDateObj.toISOString().split("T")[0];
+  const dueDate = addDaysIso(datum, zahlungsfristTage);
 
   // ── Country codes ────────────────────────────────────────────────────────
   // Seller country always matches the profile land (DE for ZUGFeRD invoices)
@@ -121,7 +135,10 @@ export function buildZugferdXml(data: OfferteData, leistungsdatum?: string): str
     // "E" = exempt (§19 UStG Kleinunternehmer, no right of input deduction for buyer)
     // "Z" = zero-rated (taxable but at 0%, e.g. exports)
     // "S" = standard-rated
-    lineTax.ele("ram:CategoryCode").txt(profil.kleinunternehmer ? "E" : mwstSatz === 0 ? "Z" : "S");
+    lineTax.ele("ram:CategoryCode").txt(vatCategoryCode);
+    if (vatExemptionReason) {
+      lineTax.ele("ram:ExemptionReason").txt(vatExemptionReason);
+    }
     lineTax.ele("ram:RateApplicablePercent").txt(String(mwstSatz));
 
     lineSettlement
@@ -214,8 +231,11 @@ export function buildZugferdXml(data: OfferteData, leistungsdatum?: string): str
   const tradeTax = settlement.ele("ram:ApplicableTradeTax");
   tradeTax.ele("ram:CalculatedAmount").txt(money(taxAmount));
   tradeTax.ele("ram:TypeCode").txt("VAT");
+  if (vatExemptionReason) {
+    tradeTax.ele("ram:ExemptionReason").txt(vatExemptionReason);
+  }
   tradeTax.ele("ram:BasisAmount").txt(money(taxBasis));
-  tradeTax.ele("ram:CategoryCode").txt(profil.kleinunternehmer ? "E" : mwstSatz === 0 ? "Z" : "S");
+  tradeTax.ele("ram:CategoryCode").txt(vatCategoryCode);
   tradeTax.ele("ram:RateApplicablePercent").txt(String(mwstSatz));
 
   // Payment terms — BT-9 (due date) + human-readable description

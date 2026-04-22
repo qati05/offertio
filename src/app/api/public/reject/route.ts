@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { getSupabaseAdmin } from "@/lib/supabase-admin";
 import { rateLimitAsync } from "@/lib/rate-limit";
 import { logger } from "@/lib/logger";
-import { stripControlChars } from "@/lib/security";
+import { getClientIp, isValidUUID, stripControlChars } from "@/lib/security";
 import { publicViewError, type PublicViewLocale } from "@/lib/public-view-i18n";
 
 const MAX_REASON_LEN = 1000;
@@ -21,14 +21,6 @@ function json(body: unknown, status = 200, extra?: HeadersInit) {
   });
 }
 
-function getClientIp(req: NextRequest): string {
-  return (
-    req.headers.get("x-forwarded-for")?.split(",")[0].trim() ??
-    req.headers.get("x-real-ip") ??
-    "unknown"
-  );
-}
-
 /**
  * POST /api/public/reject
  *
@@ -43,7 +35,7 @@ export async function POST(request: NextRequest) {
     return json({ error: publicViewError("not_found", locale) }, 404);
   }
 
-  const ip = getClientIp(request);
+  const ip = getClientIp(request.headers);
   const rl = await rateLimitAsync(`public-reject:${ip}`, 5, 60_000);
   if (!rl.ok) {
     return json({ error: publicViewError("rate_limited", locale) }, 429, {
@@ -60,7 +52,7 @@ export async function POST(request: NextRequest) {
 
   const { token, reason } = (body || {}) as Record<string, unknown>;
 
-  if (typeof token !== "string" || !/^[0-9a-f-]{36}$/.test(token)) {
+  if (!isValidUUID(token)) {
     return json({ error: publicViewError("invalid_token", locale) }, 400);
   }
 
@@ -102,18 +94,28 @@ export async function POST(request: NextRequest) {
     return json({ error: publicViewError("cannot_reject_now", locale) }, 422);
   }
 
-  const { error: updateErr } = await admin
+  // Atomic transition: only flip the row when it is still "gesendet". Prevents
+  // a concurrent accept + reject from both "winning".
+  const { data: updated, error: updateErr } = await admin
     .from("dokumente")
     .update({
       status: "abgelehnt",
       rejected_at: new Date().toISOString(),
       rejection_reason: cleanReason,
     })
-    .eq("id", doc.id);
+    .eq("id", doc.id)
+    .eq("status", "gesendet")
+    .select("id")
+    .maybeSingle();
 
   if (updateErr) {
     logger.error("public-reject:db-update", updateErr);
     return json({ error: publicViewError("save_failed", locale) }, 500);
+  }
+
+  // Zero rows matched → another signer accepted or rejected it first.
+  if (!updated) {
+    return json({ ok: true, alreadyRejected: true });
   }
 
   logger.info("public-reject:rejected", "offerte rejected", { docId: doc.id, nummer: doc.nummer });

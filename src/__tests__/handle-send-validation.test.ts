@@ -14,7 +14,7 @@
 import { describe, it, expect } from "vitest";
 import { getMissingProfileFieldsForDocument } from "@/lib/profile";
 import { getDachConfig } from "@/lib/dach";
-import type { Profile } from "@/lib/types";
+import type { Profile, DokumentTyp } from "@/lib/types";
 
 // ---------------------------------------------------------------------------
 // Shared base profiles per country
@@ -183,7 +183,7 @@ describe("Flow B: Offerte → Rechnung carryover draft", () => {
 
   it("carryover draft is null when dokumentTyp is rechnung (only offerte converts)", () => {
     // Simulate handleSend carryoverDraft logic: only offerte creates it
-    const dokumentTyp = "rechnung";
+    const dokumentTyp = "rechnung" as DokumentTyp;
     const carryoverDraft = dokumentTyp === "offerte"
       ? buildCarryoverDraft("doc-456", "RE-2026-001")
       : null;

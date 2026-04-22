@@ -39,7 +39,14 @@ export interface Profile {
    */
   trial_ends_at?: string | null;
   onboarding_complete?: boolean;
-  pdf_template?: "classic" | "modern" | "minimal" | "professionell";
+  pdf_template?: "classic" | "modern" | "minimal" | "professionell" | "farbig";
+  /**
+   * Brand accent color for the "farbig" PDF template. Canonical `#rrggbb`
+   * lowercase — enforced both by client normalization (see `lib/pdf-colors`)
+   * and the `profiles_pdf_accent_color_chk` CHECK constraint. NULL means
+   * "use the offertio default orange".
+   */
+  pdf_accent_color?: string | null;
   /**
    * Kleinunternehmer / VAT-exempt flag.
    * CH: Art. 10 MWSTG (< CHF 100k revenue)
@@ -105,7 +112,7 @@ export interface DokumentHistorie {
   id?: string;
   typ: DokumentTyp;
   nummer: string;
-  objekt: string;
+  objekt?: string;
   kundenname: string;
   customer_id?: string | null;
   kunde_email?: string | null;
@@ -119,6 +126,12 @@ export interface DokumentHistorie {
   /** Service/delivery date — mandatory for DE/AT invoices */
   leistungsdatum?: string | null;
   status: "entwurf" | "gesendet" | "angenommen" | "abgelaufen" | "bezahlt" | "ueberfaellig";
+  /** Paid timestamp (ISO). NULL until the user marks the invoice paid. */
+  payment_received_at?: string | null;
+  /** Reminder stage: 0 = none, 1 = Zahlungserinnerung, 2 = 1. Mahnung, 3 = 2. Mahnung */
+  mahnstufe?: number | null;
+  /** Server-stamped ISO timestamp of the last Mahnstufe increment. */
+  last_mahnung_at?: string | null;
   pdf_url?: string;
   source_document_id?: string | null;
   source_document_nummer?: string | null;
@@ -126,6 +139,23 @@ export interface DokumentHistorie {
   converted_document_id?: string | null;
   converted_document_nummer?: string | null;
   converted_document_typ?: DokumentTyp | null;
+}
+
+export interface RecurringScheduleRecord {
+  id: string;
+  user_id: string;
+  template_dokument_id: string | null;
+  frequency: "weekly" | "monthly" | "quarterly" | "yearly";
+  next_generation_at: string;
+  last_generated_at: string | null;
+  end_date: string | null;
+  active: boolean;
+  created_at: string;
+  /** Present on list responses — joined from dokumente for UI labelling. */
+  template?: {
+    nummer: string;
+    kundenname: string;
+  } | null;
 }
 
 export interface OfferteData {
