@@ -1203,6 +1203,7 @@ export default function DokumentNeuPage() {
         <UpgradeScreen
           email={profil.email}
           land={profil.land}
+          userId={profil.id}
           trialEndsAt={profil.trial_ends_at ?? null}
         />
       )}

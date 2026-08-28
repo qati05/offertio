@@ -18,12 +18,19 @@ import type { Land } from "@/lib/types";
 interface UpgradeScreenProps {
   email?: string;
   land?: Land;
+  /**
+   * The buyer's profile id. Forwarded to Lemon Squeezy as
+   * checkout[custom][user_id] — the webhook grants the plan only when it can
+   * read a valid UUID there and deliberately refuses to fall back to the
+   * email address, so omitting this means the customer pays and stays free.
+   */
+  userId?: string;
   /** ISO timestamp when the user's trial ends (null if no trial). */
   trialEndsAt?: string | null;
   onClose?: () => void;
 }
 
-export default function UpgradeScreen({ email, land, trialEndsAt, onClose }: UpgradeScreenProps) {
+export default function UpgradeScreen({ email, land, userId, trialEndsAt, onClose }: UpgradeScreenProps) {
   const [billing, setBilling] = useState<"monthly" | "yearly">("yearly");
   const [offlineHint, setOfflineHint] = useState(false);
   const { currency, prices } = getPricing(land);
@@ -124,7 +131,7 @@ export default function UpgradeScreen({ email, land, trialEndsAt, onClose }: Upg
           {checkoutReady ? (
             <>
               <a
-                href={getCheckoutUrl(checkoutType, email)}
+                href={getCheckoutUrl(checkoutType, email, userId)}
                 onClick={(event) => {
                   if (typeof navigator !== "undefined" && !navigator.onLine) {
                     event.preventDefault();
