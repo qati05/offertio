@@ -4,14 +4,15 @@ import { getKleinunternehmerHinweis } from "./dach";
 /**
  * Reverse charge — §13b UStG (Germany, domestic).
  *
- * Scope note, deliberately narrow: only §13b Abs. 2 Nr. 4 (Bauleistungen)
- * between two domestic German businesses is implemented. §13b Abs. 2 has a
- * further eleven categories; the one that is structurally identical and
- * commercially relevant here is Nr. 8 (Reinigung von Gebäuden und
- * Gebäudeteilen) — same "nachhaltig" test, same USt 1 TG evidence, only the
- * cited paragraph and the notice text differ. The catalogue below is keyed and
- * data-driven so adding it is a data change, not a rewrite, but it is NOT
- * enabled without an explicit decision.
+ * Scope, deliberately narrow: two of the twelve categories in §13b Abs. 2 are
+ * implemented, both between domestic German businesses —
+ *   Nr. 4  Bauleistungen
+ *   Nr. 8  Reinigung von Gebäuden und Gebäudeteilen
+ * They share one mechanism: the recipient owes the tax when they themselves
+ * sustainably perform services of that kind (§13b Abs. 5 S. 2, evidenced by a
+ * USt 1 TG certificate). Only the cited paragraph and the printed notice
+ * differ, which is why the catalogue is data-driven — a further category is a
+ * data change, not a rewrite. No other category is enabled without a decision.
  *
  * Also deliberately out of scope: CH as a third country from a German
  * perspective, the Austrian equivalents, and any automatic determination of
@@ -21,10 +22,13 @@ import { getKleinunternehmerHinweis } from "./dach";
  * guess it; the issuer asserts it.
  */
 
-export type Steuerfall = "standard" | "reverse_charge_13b_4";
+/** The reverse-charge cases the product supports. */
+export type ReverseChargeId = "reverse_charge_13b_4" | "reverse_charge_13b_8";
+
+export type Steuerfall = "standard" | ReverseChargeId;
 
 export interface ReverseChargeCase {
-  id: Steuerfall;
+  id: ReverseChargeId;
   /** The only country this case is valid for. */
   land: Land;
   /** Short label for the document form. */
@@ -41,7 +45,7 @@ export interface ReverseChargeCase {
   vatexCode: string;
 }
 
-export const REVERSE_CHARGE_CASES: Record<"reverse_charge_13b_4", ReverseChargeCase> = {
+export const REVERSE_CHARGE_CASES: Record<ReverseChargeId, ReverseChargeCase> = {
   reverse_charge_13b_4: {
     id: "reverse_charge_13b_4",
     land: "DE",
@@ -50,7 +54,22 @@ export const REVERSE_CHARGE_CASES: Record<"reverse_charge_13b_4", ReverseChargeC
       "Steuerschuldnerschaft des Leistungsempfängers (§ 13b Abs. 2 Nr. 4 i. V. m. Abs. 5 UStG)",
     vatexCode: "VATEX-EU-AE",
   },
+  reverse_charge_13b_8: {
+    id: "reverse_charge_13b_8",
+    land: "DE",
+    label: "Gebäudereinigung (§ 13b Abs. 2 Nr. 8 UStG)",
+    hinweis:
+      "Steuerschuldnerschaft des Leistungsempfängers (§ 13b Abs. 2 Nr. 8 i. V. m. Abs. 5 UStG)",
+    // The coded reason is "reverse charge" regardless of which national
+    // paragraph triggers it; the German specifics live in the text (BT-120).
+    vatexCode: "VATEX-EU-AE",
+  },
 };
+
+/** Every reverse-charge case available for a given country, for the UI. */
+export function getReverseChargeCasesForLand(land: Land | string | undefined): ReverseChargeCase[] {
+  return Object.values(REVERSE_CHARGE_CASES).filter((c) => c.land === land);
+}
 
 /** Look up a reverse-charge case, or null for the standard case / anything unknown. */
 export function getReverseChargeCase(steuerfall: unknown): ReverseChargeCase | null {

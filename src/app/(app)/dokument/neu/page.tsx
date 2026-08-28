@@ -11,7 +11,11 @@ import { findReusableCustomer, getCustomerDisplayName, mergeCustomerIntoDraft } 
 import { getDachConfig } from "@/lib/dach";
 import { isPro, FREE_LIMIT } from "@/lib/payment";
 import UpgradeScreen from "@/components/UpgradeScreen";
-import { REVERSE_CHARGE_CASES, type Steuerfall } from "@/lib/reverse-charge";
+import {
+  getReverseChargeCasesForLand,
+  getReverseChargeHinweis,
+  type Steuerfall,
+} from "@/lib/reverse-charge";
 import { roundToCents } from "@/lib/price-precision";
 import { formatMoney } from "@/lib/money-format";
 import { trackDocumentCreated } from "@/lib/analytics";
@@ -64,7 +68,8 @@ export default function DokumentNeuPage() {
    * line items reveal.
    */
   const reverseChargeVerfuegbar = profil?.land === "DE" && dokumentTyp === "rechnung";
-  const istReverseCharge = steuerfall === "reverse_charge_13b_4";
+  const istReverseCharge = steuerfall !== "standard";
+  const reverseChargeFaelle = getReverseChargeCasesForLand(profil?.land);
   const [preisMode, setPreisMode] = useState<"exkl" | "inkl">("exkl");
   const [notiz, setNotiz] = useState("");
   const [selectedVorlage, setSelectedVorlage] = useState<string | null>(null);
@@ -1592,30 +1597,43 @@ export default function DokumentNeuPage() {
           {/* §13b reverse charge — DE invoices only */}
           {reverseChargeVerfuegbar && (
             <div style={{ marginTop: 10, textAlign: "left" }}>
-              <label style={{ display: "flex", alignItems: "flex-start", gap: 8, cursor: "pointer", fontSize: 11, color: "var(--color-text-muted)" }}>
-                <input
-                  type="checkbox"
-                  checked={istReverseCharge}
+              <label style={{ display: "block", fontSize: 11, color: "var(--color-text-muted)" }}>
+                <span style={{ display: "block", marginBottom: 4 }}>Steuerfall</span>
+                <select
+                  value={steuerfall}
                   onChange={(e) => {
-                    const on = e.target.checked;
-                    setSteuerfall(on ? "reverse_charge_13b_4" : "standard");
+                    const value = e.target.value as Steuerfall;
+                    setSteuerfall(value);
                     // A reverse-charge invoice shows no VAT. Zeroing the rate here
                     // keeps the totals on screen honest; the PDF and the XML force
                     // it independently, so a stale value can never slip through.
-                    if (on) setMwstSatz(0);
+                    if (value !== "standard") setMwstSatz(0);
                     else {
                       setUst1tgDatum("");
                       setUst1tgReferenz("");
                     }
                   }}
-                  style={{ marginTop: 2 }}
-                />
-                <span>
-                  Reverse Charge — {REVERSE_CHARGE_CASES.reverse_charge_13b_4.label}
-                  <span style={{ display: "block", fontSize: 10, marginTop: 2 }}>
-                    Nur wenn dein Kunde selbst nachhaltig Bauleistungen erbringt. Die Rechnung
-                    weist dann keine USt. aus; du brauchst deine und seine USt-IdNr.
-                  </span>
+                  style={{
+                    width: "100%",
+                    fontSize: 11,
+                    padding: "4px 6px",
+                    borderRadius: 4,
+                    border: "1px solid var(--color-border)",
+                    background: "transparent",
+                    color: "var(--app-text)",
+                    fontFamily: "var(--font-sans)",
+                  }}
+                >
+                  <option value="standard">Normale Besteuerung</option>
+                  {reverseChargeFaelle.map((fall) => (
+                    <option key={fall.id} value={fall.id}>
+                      Reverse Charge — {fall.label}
+                    </option>
+                  ))}
+                </select>
+                <span style={{ display: "block", fontSize: 10, marginTop: 4 }}>
+                  Nur wenn dein Kunde die betreffenden Leistungen selbst nachhaltig erbringt.
+                  Die Rechnung weist dann keine USt. aus; du brauchst deine und seine USt-IdNr.
                 </span>
               </label>
 
@@ -2140,7 +2158,7 @@ export default function DokumentNeuPage() {
             {istReverseCharge ? (
               <div className="total-row">
                 <div className="total-label" style={{ fontSize: 12, lineHeight: 1.4 }}>
-                  {REVERSE_CHARGE_CASES.reverse_charge_13b_4.hinweis}
+                  {getReverseChargeHinweis(steuerfall)}
                 </div>
                 <div className="total-val">{cur} 0.00</div>
               </div>
@@ -2186,7 +2204,7 @@ export default function DokumentNeuPage() {
             {istReverseCharge ? (
               <div className="total-row">
                 <div className="total-label" style={{ color: "var(--color-text-muted)", fontSize: 11, lineHeight: 1.4 }}>
-                  {REVERSE_CHARGE_CASES.reverse_charge_13b_4.hinweis}
+                  {getReverseChargeHinweis(steuerfall)}
                 </div>
                 <div className="total-val" style={{ color: "var(--color-text-muted)", fontSize: 11 }}>
                   {cur} 0.00

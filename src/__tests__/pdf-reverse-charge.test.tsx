@@ -144,3 +144,18 @@ describe("reverse-charge PDF renders end to end", () => {
     expect(buffer).toBeTruthy();
   });
 });
+
+describe.each(TEMPLATES)("%s · §13b Nr. 8 (Gebäudereinigung)", (_name, Template) => {
+  const p = props({ steuerfall: "reverse_charge_13b_8" });
+
+  it("prints the Nr. 8 notice and not the Nr. 4 one", () => {
+    const text = renderText(Template as never, p);
+    expect(text).toContain("Steuerschuldnerschaft des Leistungsempfängers");
+    expect(text).toContain("Nr. 8");
+    expect(text).not.toContain("Nr. 4");
+  });
+
+  it("prints no VAT line", () => {
+    expect(renderText(Template as never, p)).not.toContain("19%");
+  });
+});

@@ -876,3 +876,43 @@ describe("document storno", () => {
     expect(response.status).toBe(400);
   });
 });
+
+describe("document save · §13b Nr. 8 is accepted like Nr. 4", () => {
+  const base = {
+    pdfBase64: Buffer.from("%PDF-1.4\n").toString("base64"),
+    typ: "rechnung",
+    nummer: "R-2026-300",
+    kundenname: "Hausverwaltung AG",
+    betrag: 900,
+    datum: "2026-03-01",
+    leistungsdatum: "2026-02-28",
+    kunde: { name: "Hausverwaltung AG", uid_mwst: "DE987654321" },
+  };
+
+  async function save(overrides: Record<string, unknown> = {}) {
+    const { POST } = await import("@/app/api/dokument/save/route");
+    const response = await POST(sameOriginPost("/api/dokument/save", { ...base, ...overrides }));
+    return { response, body: await response.json() };
+  }
+
+  it("accepts the Gebäudereinigung case", async () => {
+    const { response } = await save({ steuerfall: "reverse_charge_13b_8" });
+    expect(response.status).not.toBe(400);
+    expect(response.status).not.toBe(422);
+  });
+
+  it("applies the same VAT-id rules to it", async () => {
+    const { response, body } = await save({
+      steuerfall: "reverse_charge_13b_8",
+      kunde: { name: "Hausverwaltung AG" },
+    });
+    expect(response.status).toBe(422);
+    expect(body.code).toBe("buyer_vat_id_required");
+  });
+
+  it("still rejects a category that is not enabled", async () => {
+    // The other ten §13b Abs. 2 categories are deliberately not implemented.
+    const { response } = await save({ steuerfall: "reverse_charge_13b_2" });
+    expect(response.status).toBe(400);
+  });
+});

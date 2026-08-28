@@ -178,6 +178,18 @@ describe.skipIf(!runnable)("EN 16931 · official Schematron validation", () => {
         }),
       ],
       [
+        "reverse charge §13b Nr. 8 (Gebäudereinigung)",
+        invoice({ steuerfall: "reverse_charge_13b_8", mwstSatz: 0 }),
+      ],
+      [
+        "reverse charge §13b Nr. 8 with a discount",
+        invoice({
+          steuerfall: "reverse_charge_13b_8",
+          mwstSatz: 0,
+          rabatt: { aktiv: true, modus: "prozent", wert: 10 },
+        }),
+      ],
+      [
         "reverse charge §13b with a fixed discount",
         invoice({
           steuerfall: "reverse_charge_13b_4",

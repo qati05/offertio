@@ -198,3 +198,23 @@ describe("ZUGFeRD · standard invoices are unaffected", () => {
     expect(text(breakdown, "CategoryCode")).toBe("S");
   });
 });
+
+describe("ZUGFeRD · §13b Nr. 8 (Gebäudereinigung)", () => {
+  const xml = () =>
+    buildZugferdXml(rcInvoice({ steuerfall: "reverse_charge_13b_8" }), "2026-02-28");
+
+  it("maps to category AE exactly like Nr. 4", () => {
+    const doc = parse(xml());
+    expect(text(headerTax(doc)[0], "CategoryCode")).toBe("AE");
+    expect(num(headerTax(doc)[0], "CalculatedAmount")).toBe(0);
+    expect(num(summation(doc), "GrandTotalAmount")).toBe(5500);
+  });
+
+  it("cites Nr. 8 in the exemption reason, not Nr. 4", () => {
+    // A cleaning invoice quoting the construction paragraph is a wrong invoice.
+    const breakdown = headerTax(parse(xml()))[0];
+    expect(text(breakdown, "ExemptionReason")).toContain("Nr. 8");
+    expect(text(breakdown, "ExemptionReason")).not.toContain("Nr. 4");
+    expect(text(breakdown, "ExemptionReasonCode")).toBe("VATEX-EU-AE");
+  });
+});
