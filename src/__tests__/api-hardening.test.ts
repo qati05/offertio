@@ -522,3 +522,86 @@ describe("e-rechnung generation hardening", () => {
     expect(buildZugferdXmlMock).not.toHaveBeenCalled();
   });
 });
+
+describe("document save · §13b reverse charge guard", () => {
+  const base = {
+    pdfBase64: Buffer.from("%PDF-1.4\n").toString("base64"),
+    typ: "rechnung",
+    nummer: "R-2026-013",
+    kundenname: "General Bau AG",
+    betrag: 4000,
+    datum: "2026-03-01",
+    // DE invoices require a Leistungsdatum; supplied so the reverse-charge
+    // rules are what the assertions actually exercise.
+    leistungsdatum: "2026-02-28",
+    steuerfall: "reverse_charge_13b_4",
+    kunde: { name: "General Bau AG", uid_mwst: "DE987654321" },
+  };
+
+  async function save(overrides: Record<string, unknown> = {}) {
+    const { POST } = await import("@/app/api/dokument/save/route");
+    const response = await POST(
+      sameOriginPost("/api/dokument/save", { ...base, ...overrides }),
+    );
+    return { response, body: await response.json() };
+  }
+
+  it("rejects an unknown Steuerfall", async () => {
+    const { response } = await save({ steuerfall: "reverse_charge_made_up" });
+    expect(response.status).toBe(400);
+  });
+
+  it("rejects reverse charge on an Offerte", async () => {
+    // An Angebot creates no tax liability, so it cannot shift one.
+    const { response } = await save({ typ: "offerte" });
+    expect(response.status).toBe(422);
+  });
+
+  it("rejects a missing recipient VAT id", async () => {
+    // EN 16931 BR-AE-02 ff.: without both VAT ids the e-invoice is invalid,
+    // so the document is refused rather than produced and rejected later.
+    const { response, body } = await save({ kunde: { name: "General Bau AG" } });
+    expect(response.status).toBe(422);
+    expect(body.code).toBe("buyer_vat_id_required");
+  });
+
+  it("rejects an issuer without a USt-IdNr.", async () => {
+    serverProfileMock.mockResolvedValue({
+      data: { land: "DE", uid_mwst: "", kleinunternehmer: false },
+      error: null,
+    });
+    const { response, body } = await save();
+    expect(response.status).toBe(422);
+    expect(body.code).toBe("seller_vat_id_required");
+  });
+
+  it("rejects a Kleinunternehmer issuer", async () => {
+    serverProfileMock.mockResolvedValue({
+      data: { land: "DE", uid_mwst: "DE123456789", kleinunternehmer: true },
+      error: null,
+    });
+    const { response, body } = await save();
+    expect(response.status).toBe(422);
+    expect(body.code).toBe("kleinunternehmer_unsupported");
+  });
+
+  it("rejects reverse charge outside Germany", async () => {
+    serverProfileMock.mockResolvedValue({
+      data: { land: "CH", uid_mwst: "CHE-123.456.789", kleinunternehmer: false },
+      error: null,
+    });
+    const { response, body } = await save();
+    expect(response.status).toBe(422);
+    expect(body.code).toBe("land_not_supported");
+  });
+
+  it("rejects a malformed USt-1-TG date", async () => {
+    const { response } = await save({ ust1tgDatum: "28.02.2026" });
+    expect(response.status).toBe(400);
+  });
+
+  it("rejects an over-long USt-1-TG reference", async () => {
+    const { response } = await save({ ust1tgReferenz: "x".repeat(201) });
+    expect(response.status).toBe(400);
+  });
+});

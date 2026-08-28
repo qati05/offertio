@@ -3,7 +3,8 @@ import { json } from "@/lib/api-response";
 import { createSupabaseServer } from "@/lib/supabase-server";
 import { getSupabaseAdmin } from "@/lib/supabase-admin";
 import { getCustomerDisplayName, makePrimaryCustomerLookupKey } from "@/lib/customers";
-import { isAllowedOrigin, isValidBase64, isSafeDocumentIdentifier, isValidUUID } from "@/lib/security";
+import { checkReverseChargeEligibility, isReverseCharge, type Steuerfall } from "@/lib/reverse-charge";
+import { isAllowedOrigin, isValidBase64, isSafeDocumentIdentifier, isValidUUID, stripControlChars } from "@/lib/security";
 import { rateLimitAsync } from "@/lib/rate-limit";
 import { logger } from "@/lib/logger";
 import type { KundenInfo } from "@/lib/types";
@@ -70,6 +71,9 @@ export async function POST(request: NextRequest) {
       rabatt,
       notiz,
       preisMode,
+      steuerfall,
+      ust1tgDatum,
+      ust1tgReferenz,
     } = await request.json();
 
     if (!pdfBase64 || !typ || !nummer || !kundenname || betrag === undefined || betrag === null || !datum) {
@@ -164,12 +168,16 @@ export async function POST(request: NextRequest) {
 
     // DE/AT legal requirements — look up the user's country once for all rules.
     let issuerLand: string = "CH";
+    // Hoisted: the reverse-charge check below needs the same row, and reading
+    // the profile twice would invite the two checks to disagree.
+    let issuerProfile: { land?: string | null; uid_mwst?: string | null; kleinunternehmer?: boolean | null } | null = null;
     if (typ === "rechnung") {
       const { data: userProfile } = await supabase
         .from("profiles")
         .select("land, uid_mwst, kleinunternehmer")
         .eq("id", user.id)
         .maybeSingle();
+      issuerProfile = userProfile ?? null;
       issuerLand = userProfile?.land || "CH";
 
       // Rechnungen must include Leistungsdatum in DE/AT
@@ -196,6 +204,53 @@ export async function POST(request: NextRequest) {
         return json({
           error: "Für österreichische Rechnungen ab EUR 10.000 ist die UID des Empfängers gesetzlich erforderlich.",
         }, 400);
+      }
+    }
+
+    // ── Reverse charge (§13b UStG) ────────────────────────────────────────
+    // Validated at the API boundary, not only in the form: a reverse-charge
+    // invoice that is missing either VAT id produces an e-invoice the recipient's
+    // system will reject (EN 16931 BR-AE-02 ff.), and one issued for the wrong
+    // country or by a Kleinunternehmer is a tax question this application must
+    // not answer on the user's behalf.
+    let normalizedSteuerfall: Steuerfall = "standard";
+    let normalizedUst1tgDatum: string | null = null;
+    let normalizedUst1tgReferenz: string | null = null;
+
+    if (steuerfall !== undefined && steuerfall !== null && steuerfall !== "standard") {
+      if (typeof steuerfall !== "string" || !isReverseCharge(steuerfall)) {
+        return json({ error: "Unbekannter Steuerfall." }, 400);
+      }
+      if (typ !== "rechnung") {
+        return json({ error: "Reverse Charge ist nur für Rechnungen möglich." }, 422);
+      }
+
+      const eligibility = checkReverseChargeEligibility({
+        steuerfall,
+        land: issuerProfile?.land ?? undefined,
+        sellerVatId: issuerProfile?.uid_mwst,
+        buyerVatId: kunde?.uid_mwst,
+        kleinunternehmer: issuerProfile?.kleinunternehmer ?? undefined,
+      });
+      if (!eligibility.ok) {
+        return json({ error: eligibility.message, code: eligibility.code }, 422);
+      }
+
+      normalizedSteuerfall = steuerfall as Steuerfall;
+
+      // Issuer's own evidence for the §13b call. Optional; validated only for
+      // shape, since its content is a note about a paper certificate.
+      if (ust1tgDatum !== undefined && ust1tgDatum !== null && ust1tgDatum !== "") {
+        if (typeof ust1tgDatum !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(ust1tgDatum)) {
+          return json({ error: "USt-1-TG-Datum muss YYYY-MM-DD sein." }, 400);
+        }
+        normalizedUst1tgDatum = ust1tgDatum;
+      }
+      if (ust1tgReferenz !== undefined && ust1tgReferenz !== null && ust1tgReferenz !== "") {
+        if (typeof ust1tgReferenz !== "string" || ust1tgReferenz.length > 200) {
+          return json({ error: "USt-1-TG-Referenz ist zu lang (max. 200 Zeichen)." }, 400);
+        }
+        normalizedUst1tgReferenz = stripControlChars(ust1tgReferenz);
       }
     }
 
@@ -323,6 +378,9 @@ export async function POST(request: NextRequest) {
       leistungsdatum: leistungsdatum || null,
       pdf_url: fileName,
       status: normalizedStatus,
+      steuerfall: normalizedSteuerfall,
+      ust1tg_datum: normalizedUst1tgDatum,
+      ust1tg_referenz: normalizedUst1tgReferenz,
       source_document_id: sourceDocumentId || null,
       source_document_nummer: relationNumber,
       source_document_typ: sourceDocumentTyp || null,
