@@ -6,7 +6,6 @@ import {
   Image,
   StyleSheet,
 } from "@react-pdf/renderer";
-import type { Profile, Position, KundenInfo, RabattInfo, DokumentTyp } from "@/lib/types";
 import { getDachConfig, getKleinunternehmerHinweis } from "@/lib/dach";
 import { formatSwissDate } from "@/lib/dates";
 import type { PDFTemplateProps } from "./PDFModern";

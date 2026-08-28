@@ -20,7 +20,7 @@ function json(body: unknown, status = 200, extra?: Record<string, string>) {
  * Joins the template's nummer + kundenname so the UI can label each entry
  * without a second round-trip.
  */
-export async function GET(request: NextRequest) {
+export async function GET() {
   const supabase = await createSupabaseServer();
   const {
     data: { user },

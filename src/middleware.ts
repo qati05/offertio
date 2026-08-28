@@ -1,6 +1,5 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
-import { getDachConfig } from "@/lib/dach";
 
 function buildCsp(nonce: string): string {
   return [
