@@ -23,7 +23,6 @@ An acquiring operator would need control over:
 - source repository
 - deployment target / hosting configuration
 - Supabase project
-- Resend account and sender configuration
 - Lemon Squeezy products, webhook config, and billing settings
 - Upstash project if production rate limiting is enabled
 - analytics accounts, if used

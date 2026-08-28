@@ -29,7 +29,7 @@ Offertio currently covers:
 - `@react-pdf/renderer` for document PDFs
 - `pdf-lib` for post-processing and ZUGFeRD embedding
 - `Upstash Redis` for production rate limiting
-- `Resend` for transactional email sending
+- `mailto:` handoff for sending documents from the user's own email client
 - `Lemon Squeezy` for subscription checkout and webhooks
 - `Vitest` + Testing Library for unit and integration tests
 
@@ -120,7 +120,7 @@ Open [http://localhost:3000](http://localhost:3000).
 
 Offertio is designed so some services are optional:
 
-- Without `Resend`, the app falls back to client-side share/download behavior instead of server email sending.
+- Documents are sent from the user's own email client: the PDF downloads and a prefilled `mailto:` link opens. There is no server-side mail vendor to configure.
 - Without `Lemon Squeezy`, upgrade UI remains visible but checkout is not live.
 - Without `Upstash`, development uses an in-memory rate-limit fallback.
 - Without `GA4` or `Meta Pixel`, analytics helpers remain no-ops.

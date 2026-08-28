@@ -13,7 +13,6 @@ flowchart LR
   App --> Pdf["PDF Generation"]
   App --> Supabase["Supabase Auth + Postgres + Storage"]
   Api --> Supabase
-  Api --> Resend["Resend"]
   Api --> Lemon["Lemon Squeezy Webhooks"]
   Api --> Upstash["Upstash Redis"]
 ```
@@ -39,7 +38,6 @@ flowchart LR
 ### API surface
 
 - `/api/dokument/check-limit`
-- `/api/send-offerte`
 - `/api/e-rechnung/generate`
 - `/api/account/delete`
 - `/api/webhooks/lemon-squeezy`

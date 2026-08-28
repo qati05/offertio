@@ -66,11 +66,12 @@ Why portability is still decent:
 
 Migration cost would still be non-trivial because auth + storage migration would require execution effort.
 
-### 4.2 Resend
+### 4.2 Email
 
-Resend is used for transactional email sending.
+There is no email vendor. Documents are sent from the user's own mail client
+through a `mailto:` handoff.
 
-**Assessment:** replaceable vendor with relatively low switching cost.
+**Assessment:** no dependency, therefore no switching cost.
 
 ### 4.3 Lemon Squeezy
 

@@ -24,7 +24,6 @@ Core technologies:
 - Supabase Auth, Postgres, Storage
 - React PDF + pdf-lib
 - Upstash Redis
-- Resend
 - Lemon Squeezy
 - Vitest
 
@@ -83,9 +82,10 @@ Used for subscriptions and checkout. Replacing it would mainly affect:
 - webhook handling
 - plan reconciliation logic
 
-### Resend
+### Email
 
-Transactional email vendor. Replacement scope is limited to the mail route and operational setup.
+No vendor. Documents are sent from the user's own mail client via a `mailto:`
+handoff, so there is no mail dependency to replace or migrate.
 
 ### Upstash
 

@@ -27,12 +27,11 @@ The example source of truth is [`.env.local.example`](../.env.local.example).
 
 ### Email
 
-| Variable | Required | Purpose |
-| --- | --- | --- |
-| `RESEND_API_KEY` | Optional but required for server email | Enables `/api/send-offerte` server email sending |
-| `RESEND_FROM_EMAIL` | Recommended | Sender identity for outgoing mail |
-
-If `RESEND_API_KEY` is absent, the app falls back to client-side sharing instead of server mail delivery.
+No variables. Offertio sends nothing itself: the PDF is downloaded to the
+user's device and a prefilled `mailto:` link opens in their own mail client,
+where they attach the file and send. This is deliberate — the document leaves
+from the user's own address, so it lands in their Sent folder and does not
+depend on a mail vendor's deliverability or sender-domain setup.
 
 ### Rate limiting
 
@@ -84,9 +83,10 @@ Operational notes:
 - avoid out-of-band schema edits without backfilling a migration file
 - review Auth settings and security advisors regularly
 
-### Resend
+### Email
 
-Resend is used for sending generated documents by email. If disabled, the app still works but server-side send is downgraded.
+There is no email vendor. See the Email section above — sending happens in the
+user's own mail client via `mailto:`.
 
 ### Upstash Redis
 
@@ -163,14 +163,12 @@ Check:
 
 ### Email send failures
 
-Check:
+There is no server-side send path to fail. If a user reports that sending does
+not work, the cause is on their device:
 
-- `RESEND_API_KEY`
-- `RESEND_FROM_EMAIL`
-- sender domain verification in Resend
-- API logs for `/api/send-offerte`
-
-If Resend is absent, the route intentionally returns a fallback method rather than hard-failing the product.
+- no default mail client registered for `mailto:` links
+- the PDF download was blocked, so there is nothing to attach
+- a very long subject or body hitting the browser's `mailto:` length limit
 
 ### Upgrade flow failures
 
