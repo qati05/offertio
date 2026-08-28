@@ -4,6 +4,7 @@ import { createSupabaseServer } from "@/lib/supabase-server";
 import { getSupabaseAdmin } from "@/lib/supabase-admin";
 import { getCustomerDisplayName, makePrimaryCustomerLookupKey } from "@/lib/customers";
 import { checkContentEdit } from "@/lib/dokument-immutability";
+import { checkInvoiceRequirements } from "@/lib/invoice-requirements";
 import { FREE_LIMIT, hasActiveAccess } from "@/lib/payment";
 import { validatePositionen } from "@/lib/price-precision";
 import { checkReverseChargeEligibility, isReverseCharge, type Steuerfall } from "@/lib/reverse-charge";
@@ -190,30 +191,21 @@ export async function POST(request: NextRequest) {
       issuerProfile = userProfile ?? null;
       issuerLand = userProfile?.land || "CH";
 
-      // Rechnungen must include Leistungsdatum in DE/AT
-      if (!leistungsdatum && (issuerLand === "DE" || issuerLand === "AT")) {
-        return json({
-          error: "Leistungsdatum ist für Rechnungen in DE/AT gesetzlich erforderlich.",
-        }, 400);
-      }
-
-      // AT §11 Abs. 1 Z 6 UStG: seller UID is mandatory on every invoice unless
-      // the seller qualifies as Kleinunternehmer (§6 Abs. 1 Z 27 UStG).
-      const sellerUid = typeof userProfile?.uid_mwst === "string" ? userProfile.uid_mwst.trim() : "";
-      if (issuerLand === "AT" && !userProfile?.kleinunternehmer && !sellerUid) {
-        return json({
-          error: "Für österreichische Rechnungen ist die eigene UID-Nummer im Profil gesetzlich erforderlich (§11 UStG).",
-        }, 400);
-      }
-
-      // AT §11 Abs. 1 Z 8 UStG: invoices ≥ EUR 10.000 gross require the
-      // recipient's UID. Enforce at the API boundary, not only in the Zod schema,
-      // so clients cannot bypass by omitting the field client-side.
-      const recipientUid = typeof kunde?.uid_mwst === "string" ? kunde.uid_mwst.trim() : "";
-      if (issuerLand === "AT" && betragNum >= 10_000 && !recipientUid) {
-        return json({
-          error: "Für österreichische Rechnungen ab EUR 10.000 ist die UID des Empfängers gesetzlich erforderlich.",
-        }, 400);
+      // Country-specific mandatory fields, all in lib/invoice-requirements.
+      // Enforced at the API boundary rather than only in the form, so a client
+      // cannot bypass a statutory field by omitting it.
+      const requirements = checkInvoiceRequirements({
+        typ,
+        land: issuerLand,
+        betrag: betragNum,
+        mwstSatz: Number(mwstSatz ?? 0),
+        leistungsdatum,
+        sellerUid: userProfile?.uid_mwst,
+        recipientUid: kunde?.uid_mwst,
+        kleinunternehmer: userProfile?.kleinunternehmer,
+      });
+      if (!requirements.ok) {
+        return json({ error: requirements.message, code: requirements.code }, 400);
       }
     }
 

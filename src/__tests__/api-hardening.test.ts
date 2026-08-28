@@ -916,3 +916,70 @@ describe("document save · §13b Nr. 8 is accepted like Nr. 4", () => {
     expect(response.status).toBe(400);
   });
 });
+
+describe("document save · Swiss mandatory fields (Art. 26 MWSTG)", () => {
+  const base = {
+    pdfBase64: Buffer.from("%PDF-1.4\n").toString("base64"),
+    typ: "rechnung",
+    nummer: "R-2026-400",
+    kundenname: "Kunde AG",
+    betrag: 500,
+    datum: "2026-03-01",
+    mwstSatz: 8.1,
+  };
+
+  async function save(overrides: Record<string, unknown> = {}) {
+    const { POST } = await import("@/app/api/dokument/save/route");
+    const response = await POST(sameOriginPost("/api/dokument/save", { ...base, ...overrides }));
+    return { response, body: await response.json() };
+  }
+
+  it("refuses a Swiss invoice charging MWST without the issuer's UID", async () => {
+    // Art. 26 Abs. 2 lit. a MWSTG. Without the UID the recipient cannot deduct
+    // input tax, while the issuer has still charged and owes it.
+    serverProfileMock.mockResolvedValue({
+      data: { land: "CH", uid_mwst: "", kleinunternehmer: false },
+      error: null,
+    });
+    const { response, body } = await save();
+    expect(response.status).toBe(400);
+    expect(body.code).toBe("ch_seller_uid_required");
+  });
+
+  it("accepts it once the UID is present", async () => {
+    serverProfileMock.mockResolvedValue({
+      data: { land: "CH", uid_mwst: "CHE-123.456.789 MWST", kleinunternehmer: false },
+      error: null,
+    });
+    const { response } = await save();
+    expect(response.status).not.toBe(400);
+  });
+
+  it("does not block a Swiss Kleinunternehmer", async () => {
+    serverProfileMock.mockResolvedValue({
+      data: { land: "CH", uid_mwst: "", kleinunternehmer: true },
+      error: null,
+    });
+    const { response } = await save({ mwstSatz: 0 });
+    expect(response.status).not.toBe(400);
+  });
+
+  it("does not block a Swiss 0% invoice", async () => {
+    serverProfileMock.mockResolvedValue({
+      data: { land: "CH", uid_mwst: "", kleinunternehmer: false },
+      error: null,
+    });
+    const { response } = await save({ mwstSatz: 0 });
+    expect(response.status).not.toBe(400);
+  });
+
+  it("still enforces the Austrian rules after the consolidation", async () => {
+    serverProfileMock.mockResolvedValue({
+      data: { land: "AT", uid_mwst: "", kleinunternehmer: false },
+      error: null,
+    });
+    const { response, body } = await save({ mwstSatz: 20, leistungsdatum: "2026-02-28" });
+    expect(response.status).toBe(400);
+    expect(body.code).toBe("at_seller_uid_required");
+  });
+});
