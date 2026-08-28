@@ -15,6 +15,7 @@ import { json } from "@/lib/api-response";
 import { createSupabaseServer } from "@/lib/supabase-server";
 import { isAllowedOrigin, isValidBase64 } from "@/lib/security";
 import { rateLimitAsync } from "@/lib/rate-limit";
+import { checkSellerIdentifiable } from "@/lib/e-rechnung-eligibility";
 import { buildZugferdXml } from "@/lib/zugferd-xml";
 import { embedZugferdXml } from "@/lib/zugferd-embedder";
 import type { OfferteData, Profile } from "@/lib/types";
@@ -184,6 +185,16 @@ export async function POST(request: NextRequest) {
 
   if (serverProfile.land !== "DE") {
     return json({ error: "E-Rechnungen im ZUGFeRD-Format sind nur fuer deutsche Profile verfuegbar." }, 400);
+  }
+
+  // BR-CO-26: the seller must be identifiable through BT-29, BT-30 or BT-31.
+  // Only BT-31 is available here and it comes from the USt-IdNr; a Steuernummer
+  // goes out under schemeID "FC", which the rule does not accept. Refusing is
+  // deliberate — an e-invoice that fails validation is worse than none, because
+  // the PDF looks correct and the defect only surfaces at the recipient.
+  const sellerCheck = checkSellerIdentifiable(serverProfile);
+  if (!sellerCheck.ok) {
+    return json({ error: sellerCheck.message, code: sellerCheck.code }, 422);
   }
 
   const serverAuthoritativeInvoiceData: OfferteData = {

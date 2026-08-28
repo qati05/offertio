@@ -127,10 +127,11 @@ const KNOWN_GAPS: Record<string, { rules: string[]; why: string }> = {
     rules: ["BR-CO-26"],
     why:
       "A seller carrying only a Steuernummer (schemeID FC) fails BR-CO-26, which " +
-      "accepts BT-29, BT-30 or BT-31 (schemeID VA) — not FC. dach.ts treats " +
-      "Steuernummer and USt-IdNr. as interchangeable per §14 Abs. 4 Nr. 2 UStG, " +
-      "which holds for a paper invoice but not for an EN 16931 e-invoice. " +
-      "Reported, not yet fixed.",
+      "accepts BT-29, BT-30 or BT-31 (schemeID VA) — not FC. This is now REFUSED " +
+      "before generation by checkSellerIdentifiable, so the case is unreachable " +
+      "through the API. The expectation is kept as a regression guard: it pins " +
+      "WHY the refusal exists, so removing the guard shows up as a validation " +
+      "failure rather than as silently invalid output.",
   },
 };
 
@@ -192,7 +193,7 @@ describe.skipIf(!runnable)("EN 16931 · official Schematron validation", () => {
   });
 
   describe("known gaps — reported, awaiting a decision", () => {
-    it("seller with only a Steuernummer is not identifiable to EN 16931", () => {
+    it("seller with only a Steuernummer is not identifiable to EN 16931 (refused by the API)", () => {
       const xml = buildZugferdXml(
         invoice({ profil: { ...seller, uid_mwst: undefined } }),
         "2026-02-28",
