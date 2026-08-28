@@ -23,7 +23,7 @@ function buildCsp(nonce: string): string {
   ].join("; ");
 }
 
-function isPublicPath(path: string): boolean {
+export function isPublicPath(path: string): boolean {
   return (
     path === "/" ||
     path.startsWith("/login") ||
@@ -36,6 +36,13 @@ function isPublicPath(path: string): boolean {
     path.startsWith("/branchen") ||
     path.startsWith("/vergleich") ||
     path === "/preise" ||
+    // Recipient-facing surface: authorised by the document's share_token via
+    // the admin client, never by an auth cookie. Recipients are by definition
+    // not logged in, so these must bypass the session check.
+    // Trailing slashes are load-bearing — "/view" alone would also open
+    // "/viewer/…", "/api/public" would also open "/api/publications".
+    path.startsWith("/view/") ||
+    path.startsWith("/api/public/") ||
     path.startsWith("/api/webhooks/") ||
     path === "/api/health" ||
     path.startsWith("/_next/") ||
