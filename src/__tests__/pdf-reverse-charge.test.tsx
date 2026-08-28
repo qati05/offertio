@@ -109,9 +109,11 @@ describe.each(TEMPLATES)("%s · §13b reverse charge", (_name, Template) => {
     expect(text).not.toContain("(19");
   });
 
-  it("charges the net amount as the total", () => {
-    // Amounts are rendered with the app's Swiss-style separator.
-    expect(renderText(Template as never, p)).toContain("4'000.00");
+  it("charges the net amount as the total, in German format", () => {
+    // A German invoice must not print Swiss grouping (4'000.00).
+    const text = renderText(Template as never, p);
+    expect(text).toContain("4.000,00");
+    expect(text).not.toContain("4'000.00");
   });
 });
 

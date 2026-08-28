@@ -8,13 +8,11 @@ import {
 } from "@react-pdf/renderer";
 import type { Profile, Position, KundenInfo, RabattInfo, DokumentTyp } from "@/lib/types";
 import { getDachConfig } from "@/lib/dach";
+import { formatMoney } from "@/lib/money-format";
 import { getSteuerHinweis, getEffektiverMwstSatz, type Steuerfall } from "@/lib/reverse-charge";
 import { formatSwissDate } from "@/lib/dates";
 import { resolveAccentPalette } from "@/lib/pdf-colors";
 
-function fmt(n: number) {
-  return n.toLocaleString("de-CH", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-}
 function fmtIBAN(iban: string) {
   return iban.replace(/\s/g, "").replace(/(.{4})/g, "$1 ").trim();
 }
@@ -56,6 +54,10 @@ export default function PDFFarbig({
   // Reverse charge and Kleinunternehmer both print at 0%. Derived before any
   // totals are computed so every downstream amount uses the effective rate.
   const mwstSatz = getEffektiverMwstSatz(mwstSatzInput, profil, steuerfall);
+  // Amounts follow the issuer's country: 1'234.56 in CH, 1.234,56 in
+  // DE/AT. Bound here rather than module-level because the format
+  // depends on the document being rendered.
+  const fmt = (n: number) => formatMoney(n, profil.land);
   const { accent, accentDark, accentSoft, accentOnWhite } = resolveAccentPalette(profil.pdf_accent_color ?? null);
 
   const r2 = (n: number) => Math.round(n * 100) / 100;

@@ -8,6 +8,7 @@
 } from "@react-pdf/renderer";
 import type { Profile, Position, KundenInfo, RabattInfo, DokumentTyp } from "@/lib/types";
 import { getDachConfig } from "@/lib/dach";
+import { formatMoney } from "@/lib/money-format";
 import { getSteuerHinweis, getEffektiverMwstSatz, type Steuerfall } from "@/lib/reverse-charge";
 import { formatSwissDate } from "@/lib/dates";
 import PDFModern from "./pdf/PDFModern";
@@ -242,12 +243,6 @@ const s = StyleSheet.create({
   },
 });
 
-function formatAmount(n: number) {
-  return n.toLocaleString("de-CH", {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  });
-}
 
 function formatIBAN(iban: string) {
   const clean = iban.replace(/\s/g, "");
@@ -309,6 +304,10 @@ export default function OffertePDF(props: OffertePDFProps) {
   // Reverse charge and Kleinunternehmer both print at 0%. Derived before any
   // totals are computed so every downstream amount uses the effective rate.
   const mwstSatz = getEffektiverMwstSatz(mwstSatzInput, profil, steuerfall);
+  // Amounts follow the issuer's country: 1'234.56 in CH, 1.234,56 in
+  // DE/AT. Bound here rather than module-level because the format
+  // depends on the document being rendered.
+  const formatAmount = (n: number) => formatMoney(n, profil.land);
   const grossSubtotal = positionen.reduce((sum, p) => sum + p.menge * p.preis, 0);
   // All intermediate monetary values rounded to 2 decimals. Without this the
   // total handed to the Swiss QR-bill (generated from profil+total upstream)

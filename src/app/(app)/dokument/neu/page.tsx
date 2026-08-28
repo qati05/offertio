@@ -13,6 +13,7 @@ import { isPro, FREE_LIMIT } from "@/lib/payment";
 import UpgradeScreen from "@/components/UpgradeScreen";
 import { REVERSE_CHARGE_CASES, type Steuerfall } from "@/lib/reverse-charge";
 import { roundToCents } from "@/lib/price-precision";
+import { formatMoney } from "@/lib/money-format";
 import { trackDocumentCreated } from "@/lib/analytics";
 import { getMissingProfileFieldsForDocument } from "@/lib/profile";
 import { validateForRegion } from "@/lib/validation";
@@ -455,12 +456,9 @@ export default function DokumentNeuPage() {
     ? r2(nettoNachRabatt + mwstBetrag)
     : grossNachRabatt;
 
-  function fmtAmt(n: number) {
-    return n.toLocaleString("de-CH", {
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2,
-    });
-  }
+  // Same formatting as the PDF, so the totals on screen and on the document
+  // never disagree about how an amount is written.
+  const fmtAmt = (n: number) => formatMoney(n, profil?.land);
 
   const cur = currency; // shorthand
 
