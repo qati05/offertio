@@ -7,7 +7,8 @@
   StyleSheet,
 } from "@react-pdf/renderer";
 import type { Profile, Position, KundenInfo, RabattInfo, DokumentTyp } from "@/lib/types";
-import { getDachConfig, getKleinunternehmerHinweis } from "@/lib/dach";
+import { getDachConfig } from "@/lib/dach";
+import { getSteuerHinweis, getEffektiverMwstSatz, type Steuerfall } from "@/lib/reverse-charge";
 import { formatSwissDate } from "@/lib/dates";
 import PDFModern from "./pdf/PDFModern";
 import PDFMinimal from "./pdf/PDFMinimal";
@@ -263,6 +264,8 @@ interface OffertePDFProps {
   leistungsdatum?: string;
   objekt?: string;
   mwstSatz: number;
+  /** Tax treatment; a §13b case suppresses the VAT line and prints the notice. */
+  steuerfall?: Steuerfall;
   notiz: string;
   rabatt?: RabattInfo;
   qrCodeDataUrl?: string | null;
@@ -293,7 +296,7 @@ export default function OffertePDF(props: OffertePDFProps) {
     gueltigBis,
     leistungsdatum,
     objekt,
-    mwstSatz,
+    mwstSatz: mwstSatzInput, steuerfall,
     notiz,
     rabatt,
     qrCodeDataUrl,
@@ -303,6 +306,9 @@ export default function OffertePDF(props: OffertePDFProps) {
     currency = "CHF",
     preisMode = "exkl",
   } = props;
+  // Reverse charge and Kleinunternehmer both print at 0%. Derived before any
+  // totals are computed so every downstream amount uses the effective rate.
+  const mwstSatz = getEffektiverMwstSatz(mwstSatzInput, profil, steuerfall);
   const grossSubtotal = positionen.reduce((sum, p) => sum + p.menge * p.preis, 0);
   // All intermediate monetary values rounded to 2 decimals. Without this the
   // total handed to the Swiss QR-bill (generated from profil+total upstream)
@@ -364,10 +370,11 @@ export default function OffertePDF(props: OffertePDFProps) {
     (leistungsdatumRequired || (profil.land === "CH" && !!leistungsdatum?.trim()));
 
   // Kleinunternehmer / VAT-exempt: show legal notice instead of MWST lines
-  const isKleinunternehmer = !!profil.kleinunternehmer;
-  const kleinunternehmerHinweis = isKleinunternehmer
-    ? getKleinunternehmerHinweis(profil.land)
-    : null;
+  // A reverse-charge invoice shows no VAT and carries the §13b notice
+  // instead. One helper decides this for all five templates, so the same
+  // document cannot render correctly in one layout and wrongly in another.
+  const steuerHinweis = getSteuerHinweis(profil, steuerfall);
+  const zeigtSteuerHinweis = steuerHinweis !== null;
   // For DE/AT: fallback to invoice date with note if not provided (mandatory field, validated before PDF gen)
   // For CH: only shown when explicitly filled — no fallback needed
   const leistungsdatumDisplay = leistungsdatumFormatiert
@@ -510,10 +517,10 @@ export default function OffertePDF(props: OffertePDFProps) {
                   </Text>
                 </View>
               )}
-              {isKleinunternehmer ? (
+              {zeigtSteuerHinweis ? (
                 <View style={[s.summaryRow, { marginTop: 4 }]}>
                   <Text style={[s.summaryLabel, { color: "#777", fontSize: 8, flex: 1 }]}>
-                    {kleinunternehmerHinweis}
+                    {steuerHinweis}
                   </Text>
                 </View>
               ) : mwstSatz > 0 ? (
@@ -537,10 +544,10 @@ export default function OffertePDF(props: OffertePDFProps) {
                   </Text>
                 </View>
               )}
-              {isKleinunternehmer ? (
+              {zeigtSteuerHinweis ? (
                 <View style={[s.summaryRow, { marginTop: 4 }]}>
                   <Text style={[s.summaryLabel, { color: "#777", fontSize: 8, flex: 1 }]}>
-                    {kleinunternehmerHinweis}
+                    {steuerHinweis}
                   </Text>
                 </View>
               ) : mwstSatz > 0 ? (

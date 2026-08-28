@@ -1,3 +1,4 @@
+import type { Steuerfall } from "@/lib/reverse-charge";
 import {
   Document,
   Page,
@@ -7,7 +8,8 @@ import {
   StyleSheet,
 } from "@react-pdf/renderer";
 import type { Profile, Position, KundenInfo, RabattInfo, DokumentTyp } from "@/lib/types";
-import { getDachConfig, getKleinunternehmerHinweis } from "@/lib/dach";
+import { getDachConfig } from "@/lib/dach";
+import { getSteuerHinweis, getEffektiverMwstSatz } from "@/lib/reverse-charge";
 import { formatSwissDate } from "@/lib/dates";
 
 function fmt(n: number) {
@@ -117,6 +119,8 @@ export interface PDFTemplateProps {
   leistungsdatum?: string;
   objekt?: string;
   mwstSatz: number;
+  /** Tax treatment; a §13b case suppresses the VAT line and prints the notice. */
+  steuerfall?: Steuerfall;
   notiz: string;
   rabatt?: RabattInfo;
   qrCodeDataUrl?: string | null;
@@ -133,9 +137,12 @@ export interface PDFTemplateProps {
 
 export default function PDFModern({
   profil, kunde, positionen, nummer, datum, gueltigBis, leistungsdatum,
-  objekt, mwstSatz, notiz, rabatt, qrCodeDataUrl, qrReference, logoDataUrl,
+  objekt, mwstSatz: mwstSatzInput, steuerfall, notiz, rabatt, qrCodeDataUrl, qrReference, logoDataUrl,
   dokumentTyp = "offerte", currency = "CHF", preisMode = "exkl",
 }: PDFTemplateProps) {
+  // Reverse charge and Kleinunternehmer both print at 0%. Derived before any
+  // totals are computed so every downstream amount uses the effective rate.
+  const mwstSatz = getEffektiverMwstSatz(mwstSatzInput, profil, steuerfall);
   const r2 = (n: number) => Math.round(n * 100) / 100;
   const grossSubtotal = r2(positionen.reduce((s, p) => s + p.menge * p.preis, 0));
   const rabattBetrag = r2(rabatt?.aktiv ? (rabatt.modus === "chf" ? rabatt.wert : grossSubtotal * (rabatt.wert / 100)) : 0);
@@ -151,8 +158,11 @@ export default function PDFModern({
   const dachConfig = getDachConfig(profil.land);
   const { mwstTermLabel, pdfUidLabel, pdfMwstNrLabel, leistungsdatumRequired, hasQrBill: landHasQrBill } = dachConfig;
   const hasQR = landHasQrBill && !!qrCodeDataUrl;
-  const isKleinunternehmer = !!profil.kleinunternehmer;
-  const kleinunternehmerHinweis = isKleinunternehmer ? getKleinunternehmerHinweis(profil.land) : null;
+  // A reverse-charge invoice shows no VAT and carries the §13b notice
+  // instead. One helper decides this for all five templates, so the same
+  // document cannot render correctly in one layout and wrongly in another.
+  const steuerHinweis = getSteuerHinweis(profil, steuerfall);
+  const zeigtSteuerHinweis = steuerHinweis !== null;
   const typLabel = dokumentTyp === "rechnung" ? "Rechnung" : "Offerte";
   const dateEndLabel = dokumentTyp === "rechnung" ? "Zahlbar bis" : "Gültig bis";
   const displayUid = profil.land === "DE" ? (profil.steuernummer || "") : (profil.uid_mwst || "");
@@ -235,9 +245,9 @@ export default function PDFModern({
                     <Text style={[m.sValue, { color: "#22c55e" }]}>−{currency} {fmt(rabattBetrag)}</Text>
                   </View>
                 )}
-                {isKleinunternehmer ? (
+                {zeigtSteuerHinweis ? (
                   <View style={[m.summaryRow, { marginTop: 4 }]}>
-                    <Text style={[m.sLabel, { color: "#777", fontSize: 8, flex: 1 }]}>{kleinunternehmerHinweis}</Text>
+                    <Text style={[m.sLabel, { color: "#777", fontSize: 8, flex: 1 }]}>{steuerHinweis}</Text>
                   </View>
                 ) : mwstSatz > 0 ? (
                   <View style={m.summaryRow}>
@@ -258,9 +268,9 @@ export default function PDFModern({
                     <Text style={[m.sValue, { color: "#22c55e" }]}>−{currency} {fmt(rabattBetrag)}</Text>
                   </View>
                 )}
-                {isKleinunternehmer ? (
+                {zeigtSteuerHinweis ? (
                   <View style={[m.summaryRow, { marginTop: 4 }]}>
-                    <Text style={[m.sLabel, { color: "#777", fontSize: 8, flex: 1 }]}>{kleinunternehmerHinweis}</Text>
+                    <Text style={[m.sLabel, { color: "#777", fontSize: 8, flex: 1 }]}>{steuerHinweis}</Text>
                   </View>
                 ) : mwstSatz > 0 ? (
                   <View style={m.summaryRow}>

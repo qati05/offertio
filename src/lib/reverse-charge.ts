@@ -1,4 +1,5 @@
-import type { Land } from "./types";
+import type { Land, Profile } from "./types";
+import { getKleinunternehmerHinweis } from "./dach";
 
 /**
  * Reverse charge — §13b UStG (Germany, domestic).
@@ -146,4 +147,47 @@ export function checkReverseChargeEligibility(
   }
 
   return { ok: true };
+}
+
+// ── PDF rendering helpers ────────────────────────────────────────────────────
+// All five PDF templates duplicate the same totals block. These two functions
+// are the single place that decides which tax notice a document carries and at
+// which rate it is printed, so a reverse-charge invoice cannot come out correct
+// in one layout and wrong in another.
+
+/**
+ * The tax notice printed instead of a VAT line, or null for an ordinary
+ * invoice.
+ *
+ * Reverse charge takes precedence over the Kleinunternehmer notice. The
+ * combination is refused before a document is saved, so this only decides how
+ * a pre-existing record renders — and naming the party who owes the tax is
+ * safer than a §19 notice that would suggest nobody does.
+ */
+export function getSteuerHinweis(
+  profil: Pick<Profile, "land" | "kleinunternehmer">,
+  steuerfall: unknown,
+): string | null {
+  const rcCase = getReverseChargeCase(steuerfall);
+  if (rcCase) return rcCase.hinweis;
+  if (profil.kleinunternehmer) return getKleinunternehmerHinweis(profil.land);
+  return null;
+}
+
+/**
+ * The VAT rate a document is actually printed at.
+ *
+ * Forced to 0 for reverse charge and for Kleinunternehmer. For reverse charge
+ * this is not cosmetic: §14a Abs. 5 UStG disapplies the separate tax statement,
+ * and an invoice claiming reverse charge while showing VAT makes the issuer
+ * liable for that VAT under §14c UStG.
+ */
+export function getEffektiverMwstSatz(
+  mwstSatz: number,
+  profil: Pick<Profile, "kleinunternehmer">,
+  steuerfall: unknown,
+): number {
+  if (isReverseCharge(steuerfall)) return 0;
+  if (profil.kleinunternehmer) return 0;
+  return mwstSatz;
 }
