@@ -3,6 +3,7 @@ import { json } from "@/lib/api-response";
 import { createSupabaseServer } from "@/lib/supabase-server";
 import { getSupabaseAdmin } from "@/lib/supabase-admin";
 import { getCustomerDisplayName, makePrimaryCustomerLookupKey } from "@/lib/customers";
+import { checkContentEdit } from "@/lib/dokument-immutability";
 import { FREE_LIMIT, hasActiveAccess } from "@/lib/payment";
 import { validatePositionen } from "@/lib/price-precision";
 import { checkReverseChargeEligibility, isReverseCharge, type Steuerfall } from "@/lib/reverse-charge";
@@ -293,6 +294,41 @@ export async function POST(request: NextRequest) {
         if ((counter?.anzahl ?? 0) >= FREE_LIMIT) {
           return json({ error: "Monatslimit erreicht", remaining: 0 }, 403);
         }
+      }
+    }
+
+    // ── Immutability of issued invoices ───────────────────────────────────
+    // This endpoint replaces a document wholesale — amount, positions, number,
+    // customer and the PDF. Once an invoice has been sent the recipient holds a
+    // copy, so overwriting it would leave two parties with different documents
+    // under the same number. Corrections go through Storno plus a new invoice.
+    //
+    // Read the CURRENT row rather than trusting the status in the request body:
+    // the client sends the status it wants to write, not the one already
+    // stored, so believing it would let any caller unlock a sent invoice by
+    // simply posting status "entwurf".
+    if (existingDocumentId) {
+      const { data: existing, error: existingError } = await supabase
+        .from("dokumente")
+        .select("status, typ")
+        .eq("id", existingDocumentId)
+        .eq("user_id", user.id)
+        .maybeSingle();
+
+      if (existingError) {
+        logger.error("save:immutability-lookup", existingError);
+        return json({ error: "Datenbankfehler." }, 500);
+      }
+      if (!existing) {
+        return json({ error: "Dokument nicht gefunden." }, 404);
+      }
+
+      const editCheck = checkContentEdit({
+        typ: existing.typ ?? typ,
+        currentStatus: existing.status,
+      });
+      if (!editCheck.ok) {
+        return json({ error: editCheck.message, code: editCheck.code }, 409);
       }
     }
 

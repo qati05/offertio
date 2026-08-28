@@ -14,6 +14,8 @@ const buildZugferdXmlMock = vi.fn();
 const embedZugferdXmlMock = vi.fn();
 const customerUpsertMock = vi.fn();
 const dokumentCounterMock = vi.fn();
+const dokumentLookupMock = vi.fn();
+const dokumentUpdateMock = vi.fn();
 
 vi.mock("server-only", () => ({}));
 
@@ -45,6 +47,22 @@ vi.mock("@/lib/supabase-server", () => ({
             })),
           })),
         };
+      }
+
+      if (table === "dokumente") {
+        // Chainable enough for the immutability lookup and the Storno update.
+        const chain: Record<string, unknown> = {};
+        chain.select = vi.fn(() => chain);
+        chain.eq = vi.fn(() => chain);
+        chain.neq = vi.fn(() => chain);
+        chain.order = vi.fn(() => chain);
+        chain.limit = vi.fn(() => exportDokumenteMock());
+        chain.maybeSingle = vi.fn(() => dokumentLookupMock());
+        chain.update = vi.fn(() => {
+          chain.maybeSingle = vi.fn(() => dokumentUpdateMock());
+          return chain;
+        });
+        return chain;
       }
 
       const tableMocks: Record<string, ReturnType<typeof vi.fn>> = {
@@ -200,6 +218,8 @@ beforeEach(() => {
   rateLimitMock.mockResolvedValue({ ok: true });
   // Free plan, nothing used yet, unless a test says otherwise.
   dokumentCounterMock.mockResolvedValue({ data: { anzahl: 0 }, error: null });
+  dokumentLookupMock.mockResolvedValue({ data: null, error: null });
+  dokumentUpdateMock.mockResolvedValue({ data: null, error: null });
   serverProfileMock.mockResolvedValue({
     data: {
       email: "owner@server.test",
@@ -716,5 +736,143 @@ describe("document save · free-plan quota", () => {
     dokumentCounterMock.mockResolvedValue({ data: { anzahl: 500 }, error: null });
     const { response } = await save();
     expect(response.status).not.toBe(403);
+  });
+});
+
+describe("document save · issued invoices are immutable", () => {
+  const base = {
+    pdfBase64: Buffer.from("%PDF-1.4\n").toString("base64"),
+    typ: "rechnung",
+    nummer: "R-2026-100",
+    kundenname: "Muster AG",
+    betrag: 4000,
+    datum: "2026-03-01",
+    leistungsdatum: "2026-02-28",
+    existingDocumentId: "11111111-2222-4333-8444-555555555555",
+  };
+
+  async function save(overrides: Record<string, unknown> = {}) {
+    const { POST } = await import("@/app/api/dokument/save/route");
+    const response = await POST(sameOriginPost("/api/dokument/save", { ...base, ...overrides }));
+    return { response, body: await response.json() };
+  }
+
+  it("refuses to overwrite a sent invoice", async () => {
+    dokumentLookupMock.mockResolvedValue({ data: { status: "gesendet", typ: "rechnung" }, error: null });
+    const { response, body } = await save();
+    expect(response.status).toBe(409);
+    expect(body.code).toBe("invoice_issued");
+  });
+
+  it("refuses to overwrite a cancelled invoice", async () => {
+    dokumentLookupMock.mockResolvedValue({ data: { status: "storniert", typ: "rechnung" }, error: null });
+    const { response, body } = await save();
+    expect(response.status).toBe(409);
+    expect(body.code).toBe("invoice_cancelled");
+  });
+
+  it("ignores the status the client claims and reads the stored one", async () => {
+    // The bypass this closes: the request body carries the status the caller
+    // WANTS to write. Trusting it would let anyone unlock a sent invoice by
+    // posting status "entwurf".
+    dokumentLookupMock.mockResolvedValue({ data: { status: "gesendet", typ: "rechnung" }, error: null });
+    const { response } = await save({ status: "entwurf" });
+    expect(response.status).toBe(409);
+  });
+
+  it("still allows editing a draft invoice", async () => {
+    dokumentLookupMock.mockResolvedValue({ data: { status: "entwurf", typ: "rechnung" }, error: null });
+    const { response } = await save();
+    expect(response.status).not.toBe(409);
+  });
+
+  it("still allows revising a sent Offerte", async () => {
+    dokumentLookupMock.mockResolvedValue({ data: { status: "gesendet", typ: "offerte" }, error: null });
+    const { response } = await save({ typ: "offerte", nummer: "OF-2026-100" });
+    expect(response.status).not.toBe(409);
+  });
+
+  it("404s when the document does not belong to the user", async () => {
+    dokumentLookupMock.mockResolvedValue({ data: null, error: null });
+    const { response } = await save();
+    expect(response.status).toBe(404);
+  });
+});
+
+describe("document storno", () => {
+  const id = "11111111-2222-4333-8444-555555555555";
+
+  async function storno(body: Record<string, unknown> = {}) {
+    const { POST } = await import("@/app/api/dokument/storno/route");
+    const response = await POST(sameOriginPost("/api/dokument/storno", { id, ...body }));
+    return { response, payload: await response.json() };
+  }
+
+  it("cancels a sent invoice", async () => {
+    dokumentLookupMock.mockResolvedValue({
+      data: { id, typ: "rechnung", status: "gesendet", nummer: "R-2026-100" },
+      error: null,
+    });
+    dokumentUpdateMock.mockResolvedValue({
+      data: { id, nummer: "R-2026-100", status: "storniert", storniert_at: "2026-03-02T10:00:00.000Z" },
+      error: null,
+    });
+    const { response, payload } = await storno({ grund: "Falscher Betrag" });
+    expect(response.status).toBe(200);
+    expect(payload.document.status).toBe("storniert");
+  });
+
+  it("refuses to cancel a draft", async () => {
+    dokumentLookupMock.mockResolvedValue({
+      data: { id, typ: "rechnung", status: "entwurf", nummer: "R-2026-101" },
+      error: null,
+    });
+    const { response, payload } = await storno();
+    expect(response.status).toBe(409);
+    expect(payload.code).toBe("not_issued");
+  });
+
+  it("refuses to cancel an Offerte", async () => {
+    dokumentLookupMock.mockResolvedValue({
+      data: { id, typ: "offerte", status: "gesendet", nummer: "OF-2026-1" },
+      error: null,
+    });
+    const { response, payload } = await storno();
+    expect(response.status).toBe(409);
+    expect(payload.code).toBe("not_an_invoice");
+  });
+
+  it("refuses to cancel twice", async () => {
+    dokumentLookupMock.mockResolvedValue({
+      data: { id, typ: "rechnung", status: "storniert", nummer: "R-2026-100" },
+      error: null,
+    });
+    const { response, payload } = await storno();
+    expect(response.status).toBe(409);
+    expect(payload.code).toBe("already_cancelled");
+  });
+
+  it("reports a concurrent cancellation rather than overwriting it", async () => {
+    // Two tabs cancelling at once: the guarded WHERE clause matches no row the
+    // second time, so the first cancellation's timestamp survives.
+    dokumentLookupMock.mockResolvedValue({
+      data: { id, typ: "rechnung", status: "gesendet", nummer: "R-2026-100" },
+      error: null,
+    });
+    dokumentUpdateMock.mockResolvedValue({ data: null, error: null });
+    const { response, payload } = await storno();
+    expect(response.status).toBe(409);
+    expect(payload.code).toBe("already_cancelled");
+  });
+
+  it("rejects a malformed document id", async () => {
+    const { POST } = await import("@/app/api/dokument/storno/route");
+    const response = await POST(sameOriginPost("/api/dokument/storno", { id: "nope" }));
+    expect(response.status).toBe(400);
+  });
+
+  it("rejects an over-long reason", async () => {
+    const { response } = await storno({ grund: "x".repeat(301) });
+    expect(response.status).toBe(400);
   });
 });

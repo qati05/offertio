@@ -20,6 +20,7 @@ export type StatusKey =
   | "bezahlt"
   | "abgelaufen"
   | "ueberfaellig"
+  | "storniert"
   | "offen";
 
 export interface StatusConfig {
@@ -39,6 +40,8 @@ export const STATUS_MAP: Record<StatusKey, StatusConfig> = {
   bezahlt:      { label: "Erledigt",   color: "#1A7F42",               bg: "rgba(26,127,66,0.07)"   },
   abgelaufen:   { label: "Abgelaufen", color: "var(--app-text-muted)", bg: "rgba(107,114,128,0.07)" },
   ueberfaellig: { label: "Überfällig", color: "#B91C1C",               bg: "rgba(185,28,28,0.07)"   },
+  // Cancelled invoices keep their number forever and must never read as "open".
+  storniert:    { label: "Storniert",  color: "var(--app-text-muted)", bg: "rgba(107,114,128,0.07)" },
 };
 
 /** Resolves any status string to a StatusConfig, falling back to 'offen'. */
@@ -80,6 +83,8 @@ export function computeDocumentStatus(
   doc: DokumentHistorie,
   zahlungsfristTage: number = 30,
 ): DokumentHistorie {
+  // Only "gesendet" is ever auto-derived, so a cancelled invoice can never be
+  // re-derived into "ueberfaellig".
   if (doc.status !== "gesendet") return doc;
 
   const now = Date.now();
