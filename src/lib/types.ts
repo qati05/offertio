@@ -1,3 +1,5 @@
+import type { Steuerfall } from "./reverse-charge";
+
 export type DokumentTyp = "offerte" | "rechnung";
 export type Land = "CH" | "DE" | "AT";
 
@@ -168,4 +170,17 @@ export interface OfferteData {
   profil: Profile;
   /** Discount — must be included so ZUGFeRD XML totals match the PDF */
   rabatt?: RabattInfo;
+  /**
+   * Tax treatment of this document. "standard" unless the issuer explicitly
+   * declared a §13b reverse-charge case. See src/lib/reverse-charge.ts —
+   * whether §13b applies is a legal judgement the issuer makes, never inferred.
+   */
+  steuerfall?: Steuerfall;
+  /**
+   * Optional record of the recipient's USt 1 TG certificate (§13b Abs. 5 S. 2),
+   * kept purely as the issuer's own evidence. Not printed on the invoice and
+   * not part of the e-invoice — it is documentation, not a legal invoice field.
+   */
+  ust1tgDatum?: string | null;
+  ust1tgReferenz?: string | null;
 }
