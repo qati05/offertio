@@ -227,10 +227,16 @@ describe("buildZugferdXml", () => {
     expect(xml).not.toContain("<ram:ExemptionReason>");
   });
 
-  it("emits ExemptionReason for zero-rated non-Kleinunternehmer invoices", () => {
+  it("emits NO ExemptionReason for zero-rated non-Kleinunternehmer invoices", () => {
+    // BR-Z-10 forbids an exemption reason on category Z: zero-rated means
+    // taxable at 0%, so there is nothing to justify. This assertion previously
+    // required the opposite and therefore locked in a defect that made every
+    // 0% invoice fail EN 16931 validation. Confirmed against the official
+    // Schematron in en16931-schematron.test.ts.
     const zeroRateData = { ...baseData, mwstSatz: 0 };
     const xml = buildZugferdXml(zeroRateData);
-    expect(xml).toContain("<ram:ExemptionReason>Nullsatz</ram:ExemptionReason>");
+    expect(xml).toContain("<ram:CategoryCode>Z</ram:CategoryCode>");
+    expect(xml).not.toContain("<ram:ExemptionReason>");
   });
 
   it("computes dueDate via local-time arithmetic (no TZ drift across month boundary)", () => {
