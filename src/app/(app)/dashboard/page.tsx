@@ -17,6 +17,7 @@ import { trackUpgradeClick } from "@/lib/analytics";
 import { computeDocumentStatus, countOpenActions, getStatus, statusBadgeVariants } from "@/lib/dokument-status";
 import { getDachConfig } from "@/lib/dach";
 import DashboardInsights from "@/components/DashboardInsights";
+import { countDueSchedules } from "@/lib/recurring";
 import type { Profile, DokumentHistorie } from "@/lib/types";
 
 const FREE_DOCS = 5;
@@ -48,6 +49,8 @@ export default function DashboardPage() {
     (!localStorage.getItem("dokument-history") && !localStorage.getItem("offertio-profile-cache"))
   );
   const [serverRemaining, setServerRemaining] = useState<number | null>(null);
+  /** Recurring series whose generation date has passed. A count, never an amount. */
+  const [faelligeSerien, setFaelligeSerien] = useState(0);
   const [, setHistorySource] = useState<"local" | "cloud">("cloud");
 
   useEffect(() => { void loadData(); }, []);
@@ -57,7 +60,7 @@ export default function DashboardPage() {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
 
-    const [profilRes, docsRes, limitRes] = await Promise.all([
+    const [profilRes, docsRes, limitRes, recurringRes] = await Promise.all([
       supabase.from("profiles").select("*").eq("id", user.id).maybeSingle(),
       // Dashboard stats & recent list only need summary columns. Keep the
       // heavy jsonb payload (positionen/rabatt/notiz) out of this query.
@@ -70,7 +73,23 @@ export default function DashboardPage() {
         .order("datum", { ascending: false })
         .limit(200),
       fetch("/api/dokument/check-limit").catch(() => null),
+      fetch("/api/recurring").catch(() => null),
     ]);
+
+    // Recurring series never generate on their own — /api/recurring/run has to
+    // be pressed. Surfacing the count is what stops a series from silently
+    // producing nothing. A count only: no amount belongs on this screen.
+    if (recurringRes?.ok) {
+      try {
+        const recurringData = await recurringRes.json();
+        const heute = new Date();
+        const heuteIso = `${heute.getFullYear()}-${String(heute.getMonth() + 1).padStart(2, "0")}-${String(heute.getDate()).padStart(2, "0")}`;
+        setFaelligeSerien(countDueSchedules(recurringData?.schedules, heuteIso));
+      } catch {
+        // A malformed response must not take the dashboard down.
+        setFaelligeSerien(0);
+      }
+    }
 
     if (profilRes.data) {
       setProfil(profilRes.data as Profile);
@@ -197,6 +216,41 @@ export default function DashboardPage() {
                 ? "1 Dokument wartet auf Erledigung."
                 : `${openDocs.length} Dokumente warten auf Erledigung.`}
             </p>
+          </motion.div>
+        )}
+
+        {/* ── Fällige Serien ───────────────────────────── */}
+        {!loading && faelligeSerien > 0 && (
+          <motion.div
+            initial={{ opacity: 0, y: 6 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4, ease }}
+            style={{ marginBottom: 16 }}
+          >
+            <Link
+              href="/einstellungen/wiederkehrend"
+              style={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                gap: 12,
+                padding: "12px 14px",
+                borderRadius: 10,
+                border: "1px solid var(--color-border)",
+                background: "var(--color-surface)",
+                textDecoration: "none",
+                color: "var(--app-text)",
+              }}
+            >
+              <span style={{ fontSize: 13 }}>
+                {faelligeSerien === 1
+                  ? "1 wiederkehrende Rechnung ist fällig."
+                  : `${faelligeSerien} wiederkehrende Rechnungen sind fällig.`}
+              </span>
+              <span style={{ fontSize: 12, color: "var(--color-primary-strong)", whiteSpace: "nowrap" }}>
+                Jetzt erstellen →
+              </span>
+            </Link>
           </motion.div>
         )}
 

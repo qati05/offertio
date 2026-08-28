@@ -59,3 +59,36 @@ export function isDue(schedule: Pick<RecurringSchedule, "active" | "next_generat
   if (schedule.end_date && schedule.end_date < schedule.next_generation_at) return false;
   return schedule.next_generation_at <= today;
 }
+
+/**
+ * How many series are waiting to be generated on the given day.
+ *
+ * Generation is manual — /api/recurring/run fires only when someone presses the
+ * button on the settings page, and each press advances a series by exactly one
+ * period. Without a visible count, a user who has not opened that page simply
+ * gets no invoice and nothing says so.
+ *
+ * Returns a count, never an amount: no monetary value belongs in the dashboard
+ * overview (see src/__tests__/no-money-history.test.ts).
+ *
+ * Malformed rows are skipped rather than thrown on — a single odd record must
+ * not take the dashboard down.
+ */
+export function countDueSchedules(schedules: unknown, today: string): number {
+  if (!Array.isArray(schedules)) return 0;
+  let due = 0;
+  for (const entry of schedules) {
+    if (!entry || typeof entry !== "object") continue;
+    const { active, next_generation_at, end_date } = entry as Partial<RecurringSchedule>;
+    if (typeof next_generation_at !== "string") continue;
+    if (
+      isDue(
+        { active: active === true, next_generation_at, end_date: end_date ?? null },
+        today,
+      )
+    ) {
+      due++;
+    }
+  }
+  return due;
+}
