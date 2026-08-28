@@ -32,19 +32,35 @@ export function buildZugferdXml(data: OfferteData, leistungsdatum?: string): str
   const { profil, kunde, positionen, mwstSatz, nummer, datum, rabatt } = data;
 
   // ── Monetary totals ──────────────────────────────────────────────────────
-  const grossLineTotal = positionen.reduce((sum, p) => sum + p.menge * p.preis, 0);
+  // Line net amounts (BT-131) as they are actually printed on each line. The
+  // header total is summed from these rounded values, so BT-106 can never
+  // disagree with the lines by a rounding cent (BR-CO-10).
+  //
+  // KNOWN LIMITATION: the PDF (OffertePDF.tsx) sums the raw, unrounded line
+  // products instead. The two agree for any price with at most 2 decimals. For
+  // sub-cent unit prices (e.g. 2 × 0.005) the XML total can be one cent above
+  // the printed PDF total, because EN 16931 forces BT-106 to match the rounded
+  // line amounts the invoice actually shows. Deliberately not "fixed" here:
+  // aligning the PDF would change the amount handed to the Swiss QR-bill, which
+  // is outside this change. Constrain unit prices to 2 decimals on input to
+  // make the case unreachable.
+  const lineNetAmounts = positionen.map((p) => Number(money(p.menge * p.preis)));
+  const lineTotal = Number(money(lineNetAmounts.reduce((sum, v) => sum + v, 0))); // BT-106
 
-  // Apply discount so the XML totals match the PDF exactly.
+  // A discount is a document-level allowance (BG-20), NOT a silent deduction
+  // from BT-106. EN 16931 requires BT-106 to equal the sum of the line amounts
+  // (BR-CO-10) and the discount to be reported separately in BT-107 (BR-CO-11);
+  // the tax basis then follows from BT-109 = BT-106 − BT-107 + BT-108
+  // (BR-CO-13). Subtracting it from BT-106 instead makes every discounted
+  // invoice fail validation while still looking correct in the PDF.
   const rabattBetrag = rabatt?.aktiv
-    ? rabatt.modus === "chf"
-      ? rabatt.wert
-      : grossLineTotal * (rabatt.wert / 100)
-    : 0;
+    ? Number(money(rabatt.modus === "chf" ? rabatt.wert : lineTotal * (rabatt.wert / 100)))
+    : 0; // BT-92 / BT-107
+  const hasAllowance = rabattBetrag > 0;
 
-  const lineTotal = grossLineTotal - rabattBetrag;
-  const taxBasis = lineTotal;
-  const taxAmount = taxBasis * (mwstSatz / 100);
-  const grandTotal = taxBasis + taxAmount;
+  const taxBasis = Number(money(lineTotal - rabattBetrag)); // BT-109
+  const taxAmount = Number(money(taxBasis * (mwstSatz / 100))); // BT-110
+  const grandTotal = Number(money(taxBasis + taxAmount)); // BT-112
 
   const deliveryDate = leistungsdatum ?? datum;
   const buyerName = (kunde.firma?.trim() || kunde.name) ?? "";
@@ -108,7 +124,7 @@ export function buildZugferdXml(data: OfferteData, leistungsdatum?: string): str
 
   // ── Line items (BG-25) ───────────────────────────────────────────────────
   positionen.forEach((pos, index) => {
-    const lineNetAmount = pos.menge * pos.preis;
+    const lineNetAmount = lineNetAmounts[index];
     const line = tx.ele("ram:IncludedSupplyChainTradeLineItem");
 
     line
@@ -238,6 +254,31 @@ export function buildZugferdXml(data: OfferteData, leistungsdatum?: string): str
   tradeTax.ele("ram:CategoryCode").txt(vatCategoryCode);
   tradeTax.ele("ram:RateApplicablePercent").txt(String(mwstSatz));
 
+  // Document-level allowance (BG-20) — the discount.
+  // Position matters: the CII schema sequence for ApplicableHeaderTradeSettlement
+  // puts SpecifiedTradeAllowanceCharge after ApplicableTradeTax and before
+  // SpecifiedTradePaymentTerms. Emitting it elsewhere fails schema validation
+  // before any business rule is even evaluated.
+  if (hasAllowance) {
+    const allowance = settlement.ele("ram:SpecifiedTradeAllowanceCharge");
+    // false = allowance (deduction); true would mark a surcharge.
+    allowance.ele("ram:ChargeIndicator").ele("udt:Indicator").txt("false");
+    if (rabatt?.modus !== "chf") {
+      // Only a percentage discount has a meaningful rate and basis.
+      allowance.ele("ram:CalculationPercent").txt(String(rabatt?.wert ?? 0)); // BT-94
+      allowance.ele("ram:BasisAmount").txt(money(lineTotal)); // BT-93
+    }
+    allowance.ele("ram:ActualAmount").txt(money(rabattBetrag)); // BT-92
+    // BR-31: a document-level allowance must carry a reason.
+    allowance.ele("ram:Reason").txt("Rabatt"); // BT-97
+    // BT-95/BT-96: the allowance is taxed at the same category and rate as the
+    // invoice, otherwise the VAT breakdown no longer adds up.
+    const allowanceTax = allowance.ele("ram:CategoryTradeTax");
+    allowanceTax.ele("ram:TypeCode").txt("VAT");
+    allowanceTax.ele("ram:CategoryCode").txt(vatCategoryCode);
+    allowanceTax.ele("ram:RateApplicablePercent").txt(String(mwstSatz));
+  }
+
   // Payment terms — BT-9 (due date) + human-readable description
   const paymentTerms = settlement.ele("ram:SpecifiedTradePaymentTerms");
   paymentTerms
@@ -250,8 +291,14 @@ export function buildZugferdXml(data: OfferteData, leistungsdatum?: string): str
 
   // Monetary summation (BG-22)
   const summation = settlement.ele("ram:SpecifiedTradeSettlementHeaderMonetarySummation");
-  summation.ele("ram:LineTotalAmount").txt(money(lineTotal));
-  summation.ele("ram:TaxBasisTotalAmount").txt(money(taxBasis));
+  summation.ele("ram:LineTotalAmount").txt(money(lineTotal)); // BT-106
+  // BT-107. Sequence: LineTotal → ChargeTotal → AllowanceTotal → TaxBasisTotal.
+  // BT-108 (ChargeTotalAmount) is omitted; EN 16931 reads an absent charge
+  // total as 0, which is what BR-CO-13 needs here.
+  if (hasAllowance) {
+    summation.ele("ram:AllowanceTotalAmount").txt(money(rabattBetrag));
+  }
+  summation.ele("ram:TaxBasisTotalAmount").txt(money(taxBasis)); // BT-109
   summation.ele("ram:TaxTotalAmount", { currencyID: currencyCode }).txt(money(taxAmount));
   summation.ele("ram:GrandTotalAmount").txt(money(grandTotal));
   summation.ele("ram:DuePayableAmount").txt(money(grandTotal));
