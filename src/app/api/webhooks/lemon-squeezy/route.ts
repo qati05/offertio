@@ -7,11 +7,20 @@ import { logger } from "@/lib/logger";
 
 // Lemon Squeezy webhooks are well under 64 KB; reject anything larger.
 const MAX_BODY_BYTES = 64 * 1024; // 64 KB
+// Only subscription_* events drive the plan.
+//
+// `order_created` is deliberately NOT handled. Lemon Squeezy fires it alongside
+// subscription_created for the same purchase with no guaranteed ordering, and
+// its payload carries none of the fields the plan is derived from: the variant
+// name sits under first_order_item (not attributes.variant_name), there is no
+// renews_at, and data.id is an ORDER id rather than the subscription id. Acting
+// on it downgraded yearly customers to "pro_monthly", cleared plan_expires_at
+// and wrote an order id into ls_subscription_id, breaking the portal link.
+// The subscription_* events carry everything we need.
 const HANDLED_EVENTS = new Set([
   "subscription_created",
   "subscription_resumed",
   "subscription_updated",
-  "order_created",
   "subscription_cancelled",
   "subscription_expired",
 ]);
@@ -132,8 +141,7 @@ export async function POST(request: NextRequest) {
     if (
       eventName === "subscription_created" ||
       eventName === "subscription_resumed" ||
-      eventName === "subscription_updated" ||
-      eventName === "order_created"
+      eventName === "subscription_updated"
     ) {
       const billingInterval =
         attrs.first_subscription_item?.interval ||
