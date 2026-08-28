@@ -1,5 +1,8 @@
 # dependencies
 /node_modules
+# the video/ workspace installs gsap locally; the compositions load the
+# vendored video/gsap.min.js instead, so its node_modules is never needed
+video/node_modules/
 /.pnp
 .pnp.*
 .yarn/*
