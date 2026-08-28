@@ -9,7 +9,7 @@ import { peekNextNummer, commitNummer } from "@/lib/dokument-nummer";
 import { useOnlineStatus } from "@/components/OfflineBanner";
 import { findReusableCustomer, getCustomerDisplayName, mergeCustomerIntoDraft } from "@/lib/customers";
 import { getDachConfig } from "@/lib/dach";
-import { isPro } from "@/lib/payment";
+import { isPro, FREE_LIMIT } from "@/lib/payment";
 import UpgradeScreen from "@/components/UpgradeScreen";
 import { REVERSE_CHARGE_CASES, type Steuerfall } from "@/lib/reverse-charge";
 import { roundToCents } from "@/lib/price-precision";
@@ -1229,6 +1229,7 @@ export default function DokumentNeuPage() {
           land={profil.land}
           userId={profil.id}
           trialEndsAt={profil.trial_ends_at ?? null}
+          usedDocuments={freePlanRemaining !== null ? FREE_LIMIT - freePlanRemaining : undefined}
         />
       )}
 

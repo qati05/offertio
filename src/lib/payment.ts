@@ -74,39 +74,13 @@ export function hasActiveAccess(
 
 export const TRIAL_DAYS = 14;
 
-export function getMonthlyDocCount(): number {
-  if (typeof window === "undefined") return 0;
-  const key = getMonthKey();
-  return parseInt(localStorage.getItem(key) || "0", 10);
-}
-
-export function incrementMonthlyDocCount(): void {
-  if (typeof window === "undefined") return;
-  const key = getMonthKey();
-  const current = parseInt(localStorage.getItem(key) || "0", 10);
-  localStorage.setItem(key, String(current + 1));
-}
-
-export function canCreateDocument(
-  plan?: string,
-  trialEndsAt?: string | Date | null,
-): boolean {
-  if (hasActiveAccess(plan, trialEndsAt)) return true;
-  return getMonthlyDocCount() < FREE_LIMIT;
-}
-
-export function remainingFreeDocuments(
-  plan?: string,
-  trialEndsAt?: string | Date | null,
-): number {
-  if (hasActiveAccess(plan, trialEndsAt)) return Infinity;
-  return Math.max(0, FREE_LIMIT - getMonthlyDocCount());
-}
-
-function getMonthKey(): string {
-  const now = new Date();
-  return `offertio_docs_${now.getFullYear()}_${now.getMonth() + 1}`;
-}
+/**
+ * Free-plan usage is counted server-side in the `dokument_counter` table and
+ * enforced in /api/dokument/save. There is deliberately no client-side counter:
+ * a localStorage tally is a second source of truth that drifts the moment a
+ * user switches browser or clears site data, and it can never be authoritative
+ * anyway since the server has to enforce the limit regardless.
+ */
 
 // ── Lemon Squeezy checkout URLs ──
 

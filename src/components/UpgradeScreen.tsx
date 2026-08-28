@@ -8,7 +8,6 @@ import {
   PRO_FEATURES,
   FREE_LIMIT,
   TRIAL_DAYS,
-  getMonthlyDocCount,
   isInTrial,
   trialDaysRemaining,
 } from "@/lib/payment";
@@ -27,14 +26,18 @@ interface UpgradeScreenProps {
   userId?: string;
   /** ISO timestamp when the user's trial ends (null if no trial). */
   trialEndsAt?: string | null;
+  /** Documents used this month, from /api/dokument/check-limit. */
+  usedDocuments?: number;
   onClose?: () => void;
 }
 
-export default function UpgradeScreen({ email, land, userId, trialEndsAt, onClose }: UpgradeScreenProps) {
+export default function UpgradeScreen({ email, land, userId, trialEndsAt, usedDocuments, onClose }: UpgradeScreenProps) {
   const [billing, setBilling] = useState<"monthly" | "yearly">("yearly");
   const [offlineHint, setOfflineHint] = useState(false);
   const { currency, prices } = getPricing(land);
-  const docCount = getMonthlyDocCount();
+  // Supplied by the caller from /api/dokument/check-limit — the server is the
+  // only place the free-plan count is authoritative.
+  const docCount = usedDocuments ?? 0;
   const billingOptions: { key: "monthly" | "yearly"; label: string }[] = [
     { key: "monthly", label: "Monatlich" },
     { key: "yearly", label: "Jährlich" },

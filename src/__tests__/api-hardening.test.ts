@@ -13,6 +13,7 @@ const exportVorlagenMock = vi.fn();
 const buildZugferdXmlMock = vi.fn();
 const embedZugferdXmlMock = vi.fn();
 const customerUpsertMock = vi.fn();
+const dokumentCounterMock = vi.fn();
 
 vi.mock("server-only", () => ({}));
 
@@ -31,6 +32,16 @@ vi.mock("@/lib/supabase-server", () => ({
                   ? exportProfileMock()
                   : serverProfileMock();
               }),
+            })),
+          })),
+        };
+      }
+
+      if (table === "dokument_counter") {
+        return {
+          select: vi.fn(() => ({
+            eq: vi.fn(() => ({
+              eq: vi.fn(() => ({ maybeSingle: dokumentCounterMock })),
             })),
           })),
         };
@@ -187,6 +198,8 @@ beforeEach(() => {
   uploadMock.mockResolvedValue({ error: null });
   removeMock.mockResolvedValue({ error: null });
   rateLimitMock.mockResolvedValue({ ok: true });
+  // Free plan, nothing used yet, unless a test says otherwise.
+  dokumentCounterMock.mockResolvedValue({ data: { anzahl: 0 }, error: null });
   serverProfileMock.mockResolvedValue({
     data: {
       email: "owner@server.test",
@@ -653,5 +666,55 @@ describe("document save · money precision", () => {
       { bezeichnung: "A", einheit: "Std.", menge: 2, preis: 120.55 },
     ]);
     expect(response.status).not.toBe(400);
+  });
+});
+
+describe("document save · free-plan quota", () => {
+  const base = {
+    pdfBase64: Buffer.from("%PDF-1.4\n").toString("base64"),
+    typ: "offerte",
+    nummer: "OF-2026-060",
+    kundenname: "Muster AG",
+    betrag: 100,
+    datum: "2026-03-01",
+  };
+
+  async function save(overrides: Record<string, unknown> = {}) {
+    const { POST } = await import("@/app/api/dokument/save/route");
+    const response = await POST(sameOriginPost("/api/dokument/save", { ...base, ...overrides }));
+    return { response, body: await response.json() };
+  }
+
+  it("refuses a new document once the free quota is used up", async () => {
+    // The bypass this closes: the form asks /api/dokument/check-limit first,
+    // but a direct POST here previously created unlimited free documents.
+    dokumentCounterMock.mockResolvedValue({ data: { anzahl: 5 }, error: null });
+    const { response, body } = await save();
+    expect(response.status).toBe(403);
+    expect(body).toMatchObject({ remaining: 0 });
+  });
+
+  it("allows a new document while quota remains", async () => {
+    dokumentCounterMock.mockResolvedValue({ data: { anzahl: 4 }, error: null });
+    const { response } = await save();
+    expect(response.status).not.toBe(403);
+  });
+
+  it("does not charge quota for editing an existing document", async () => {
+    // Re-saving a draft is an edit. Charging for it would let a user lose
+    // access to a document they already created.
+    dokumentCounterMock.mockResolvedValue({ data: { anzahl: 99 }, error: null });
+    const { response } = await save({ existingDocumentId: "11111111-2222-4333-8444-555555555555" });
+    expect(response.status).not.toBe(403);
+  });
+
+  it("does not limit a paying customer", async () => {
+    serverProfileMock.mockResolvedValue({
+      data: { land: "CH", plan: "pro_monthly", uid_mwst: "CHE-1", kleinunternehmer: false },
+      error: null,
+    });
+    dokumentCounterMock.mockResolvedValue({ data: { anzahl: 500 }, error: null });
+    const { response } = await save();
+    expect(response.status).not.toBe(403);
   });
 });

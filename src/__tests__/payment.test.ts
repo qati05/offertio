@@ -7,10 +7,6 @@ import {
   isInTrial,
   trialDaysRemaining,
   hasActiveAccess,
-  getMonthlyDocCount,
-  incrementMonthlyDocCount,
-  canCreateDocument,
-  remainingFreeDocuments,
   getCheckoutUrl,
   isCheckoutConfigured,
   PRO_FEATURES,
@@ -84,88 +80,10 @@ describe("payment.ts", () => {
   });
 
   // ── Monthly doc count ──
-  describe("getMonthlyDocCount / incrementMonthlyDocCount", () => {
-    it("starts at 0", () => {
-      expect(getMonthlyDocCount()).toBe(0);
-    });
-
-    it("increments correctly", () => {
-      incrementMonthlyDocCount();
-      incrementMonthlyDocCount();
-      expect(getMonthlyDocCount()).toBe(2);
-    });
-
-    it("uses year_month key pattern", () => {
-      incrementMonthlyDocCount();
-      const now = new Date();
-      const key = `offertio_docs_${now.getFullYear()}_${now.getMonth() + 1}`;
-      expect(localStorage.getItem(key)).toBe("1");
-    });
-  });
 
   // ── canCreateDocument ──
-  describe("canCreateDocument", () => {
-    it("always true for pro_monthly", () => {
-      expect(canCreateDocument("pro_monthly")).toBe(true);
-    });
-
-    it("always true for pro_yearly", () => {
-      expect(canCreateDocument("pro_yearly")).toBe(true);
-    });
-
-    it("true for free when under limit", () => {
-      expect(canCreateDocument("free")).toBe(true);
-    });
-
-    it("false for free when at limit", () => {
-      for (let i = 0; i < FREE_LIMIT; i++) incrementMonthlyDocCount();
-      expect(canCreateDocument("free")).toBe(false);
-    });
-
-    it("false for undefined plan when at limit", () => {
-      for (let i = 0; i < FREE_LIMIT; i++) incrementMonthlyDocCount();
-      expect(canCreateDocument(undefined)).toBe(false);
-    });
-
-    it("true for free user in active trial even past FREE_LIMIT", () => {
-      for (let i = 0; i < FREE_LIMIT + 10; i++) incrementMonthlyDocCount();
-      const futureDate = new Date(Date.now() + 1000 * 60 * 60 * 24 * 5).toISOString();
-      expect(canCreateDocument("free", futureDate)).toBe(true);
-    });
-
-    it("false for free user whose trial has expired and who is at limit", () => {
-      for (let i = 0; i < FREE_LIMIT; i++) incrementMonthlyDocCount();
-      const pastDate = new Date(Date.now() - 1000 * 60).toISOString();
-      expect(canCreateDocument("free", pastDate)).toBe(false);
-    });
-  });
 
   // ── remainingFreeDocuments ──
-  describe("remainingFreeDocuments", () => {
-    it("returns Infinity for pro", () => {
-      expect(remainingFreeDocuments("pro_monthly")).toBe(Infinity);
-    });
-
-    it("returns FREE_LIMIT for fresh free user", () => {
-      expect(remainingFreeDocuments("free")).toBe(FREE_LIMIT);
-    });
-
-    it("decreases as docs are created", () => {
-      incrementMonthlyDocCount();
-      incrementMonthlyDocCount();
-      expect(remainingFreeDocuments("free")).toBe(FREE_LIMIT - 2);
-    });
-
-    it("never goes below 0", () => {
-      for (let i = 0; i < FREE_LIMIT + 5; i++) incrementMonthlyDocCount();
-      expect(remainingFreeDocuments("free")).toBe(0);
-    });
-
-    it("returns Infinity for a free user with an active trial", () => {
-      const futureDate = new Date(Date.now() + 1000 * 60 * 60 * 24 * 3).toISOString();
-      expect(remainingFreeDocuments("free", futureDate)).toBe(Infinity);
-    });
-  });
 
   // ── isInTrial / trialDaysRemaining / hasActiveAccess ──
   describe("trial helpers", () => {
