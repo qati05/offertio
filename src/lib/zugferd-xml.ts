@@ -10,6 +10,7 @@
 import { create } from "xmlbuilder2";
 import type { OfferteData } from "./types";
 import { addDaysIso } from "./dates";
+import { getReverseChargeCase } from "./reverse-charge";
 
 /** Format a YYYY-MM-DD string to YYYYMMDD for CII date fields */
 function toCiiDate(isoDate: string): string {
@@ -29,7 +30,16 @@ function money(value: number): string {
  *                       Falls back to data.datum if omitted.
  */
 export function buildZugferdXml(data: OfferteData, leistungsdatum?: string): string {
-  const { profil, kunde, positionen, mwstSatz, nummer, datum, rabatt } = data;
+  const { profil, kunde, positionen, nummer, datum, rabatt } = data;
+
+  // ── Reverse charge (§13b UStG) ───────────────────────────────────────────
+  // The recipient owes the tax, so the invoice carries none. The rate is forced
+  // to 0 rather than trusted from the caller: §14a Abs. 5 UStG disapplies the
+  // separate tax statement entirely, and an invoice that both claims reverse
+  // charge and shows VAT makes the issuer liable for that VAT under §14c UStG.
+  // A stale draft or a direct API call must not be able to produce that.
+  const reverseChargeCase = getReverseChargeCase(data.steuerfall);
+  const mwstSatz = reverseChargeCase ? 0 : data.mwstSatz;
 
   // ── Monetary totals ──────────────────────────────────────────────────────
   // Line net amounts (BT-131) as they are actually printed on each line. The
@@ -65,16 +75,31 @@ export function buildZugferdXml(data: OfferteData, leistungsdatum?: string): str
   const deliveryDate = leistungsdatum ?? datum;
   const buyerName = (kunde.firma?.trim() || kunde.name) ?? "";
 
-  // ── VAT category code + mandatory exemption reason (BT-120) ──────────────
-  // EN 16931 requires ExemptionReason whenever CategoryCode is "E" (exempt)
-  // or "Z" (zero-rated). Validators (Peppol, Mustangproject, FeRD) reject
-  // invoices where an exempt/zero line is missing the human-readable reason.
-  const vatCategoryCode = profil.kleinunternehmer ? "E" : mwstSatz === 0 ? "Z" : "S";
-  const vatExemptionReason = profil.kleinunternehmer
-    ? "Steuerbefreit nach §19 UStG (Kleinunternehmer)"
-    : mwstSatz === 0
-      ? "Nullsatz"
-      : null;
+  // ── VAT category code + exemption reason (BT-120 / BT-121) ───────────────
+  // "AE" = reverse charge, the recipient owes the tax (§13b UStG)
+  // "E"  = exempt (§19 UStG Kleinunternehmer, no input deduction for the buyer)
+  // "Z"  = zero-rated (taxable but at 0%)
+  // "S"  = standard-rated
+  //
+  // BR-AE-10 and BR-E-10 require an exemption reason for AE and E. Reverse
+  // charge additionally gets the coded form BT-121, using the CEF VATEX code
+  // list value for reverse charge, so a recipient's system can act on it
+  // without parsing German prose.
+  const vatCategoryCode = reverseChargeCase
+    ? "AE"
+    : profil.kleinunternehmer
+      ? "E"
+      : mwstSatz === 0
+        ? "Z"
+        : "S";
+  const vatExemptionReason = reverseChargeCase
+    ? reverseChargeCase.hinweis
+    : profil.kleinunternehmer
+      ? "Steuerbefreit nach §19 UStG (Kleinunternehmer)"
+      : mwstSatz === 0
+        ? "Nullsatz"
+        : null;
+  const vatExemptionReasonCode = reverseChargeCase?.vatexCode ?? null;
 
   // ── Payment due date (BT-9) ──────────────────────────────────────────────
   // Derived from invoice date + payment terms days (profil.zahlungsfrist,
@@ -152,7 +177,9 @@ export function buildZugferdXml(data: OfferteData, leistungsdatum?: string): str
     // "Z" = zero-rated (taxable but at 0%, e.g. exports)
     // "S" = standard-rated
     lineTax.ele("ram:CategoryCode").txt(vatCategoryCode);
-    if (vatExemptionReason) {
+    // Reverse charge states its reason once, in the BG-23 breakdown, which is
+    // where BR-AE-10 asks for it. Line level stays bare.
+    if (vatExemptionReason && !reverseChargeCase) {
       lineTax.ele("ram:ExemptionReason").txt(vatExemptionReason);
     }
     lineTax.ele("ram:RateApplicablePercent").txt(String(mwstSatz));
@@ -252,6 +279,11 @@ export function buildZugferdXml(data: OfferteData, leistungsdatum?: string): str
   }
   tradeTax.ele("ram:BasisAmount").txt(money(taxBasis));
   tradeTax.ele("ram:CategoryCode").txt(vatCategoryCode);
+  // BT-121, the coded exemption reason. The CII sequence places
+  // ExemptionReasonCode after CategoryCode and before RateApplicablePercent.
+  if (vatExemptionReasonCode) {
+    tradeTax.ele("ram:ExemptionReasonCode").txt(vatExemptionReasonCode);
+  }
   tradeTax.ele("ram:RateApplicablePercent").txt(String(mwstSatz));
 
   // Document-level allowance (BG-20) — the discount.

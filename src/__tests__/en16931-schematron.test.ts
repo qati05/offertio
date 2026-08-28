@@ -171,6 +171,25 @@ describe.skipIf(!runnable)("EN 16931 · official Schematron validation", () => {
       ["no BIC", invoice({ profil: { ...seller, bic: undefined } })],
       ["single line item", invoice({ positionen: [{ bezeichnung: "Nur eine", menge: 1, preis: 500 }] })],
       ["buyer without VAT id", invoice({ kunde: { name: "Privat AG", adresse: "Weg 2", plz: "80331", ort: "München" } })],
+      // §13b Abs. 2 Nr. 4 — reverse charge. Exercises the whole BR-AE family
+      // (BR-AE-01 through BR-AE-10) against the official rules.
+      ["reverse charge §13b", invoice({ steuerfall: "reverse_charge_13b_4", mwstSatz: 0 })],
+      [
+        "reverse charge §13b with a discount",
+        invoice({
+          steuerfall: "reverse_charge_13b_4",
+          mwstSatz: 0,
+          rabatt: { aktiv: true, modus: "prozent", wert: 10 },
+        }),
+      ],
+      [
+        "reverse charge §13b with a fixed discount",
+        invoice({
+          steuerfall: "reverse_charge_13b_4",
+          mwstSatz: 0,
+          rabatt: { aktiv: true, modus: "chf", wert: 250 },
+        }),
+      ],
     ];
 
     it.each(clean)("%s produces no rule violations", (_label, data) => {
