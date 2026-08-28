@@ -12,6 +12,7 @@ import { getDachConfig } from "@/lib/dach";
 import { isPro } from "@/lib/payment";
 import UpgradeScreen from "@/components/UpgradeScreen";
 import { REVERSE_CHARGE_CASES, type Steuerfall } from "@/lib/reverse-charge";
+import { roundToCents } from "@/lib/price-precision";
 import { trackDocumentCreated } from "@/lib/analytics";
 import { getMissingProfileFieldsForDocument } from "@/lib/profile";
 import { validateForRegion } from "@/lib/validation";
@@ -1931,7 +1932,10 @@ export default function DokumentNeuPage() {
                 value={pos.menge}
                 onChange={(e) => {
                   const raw = parseFloat(e.target.value);
-                  const safe = Number.isFinite(raw) && raw >= 0 ? raw : 0;
+                  // Rounded to cents: step="0.01" is only a hint, and a
+                  // sub-cent value makes the PDF and the e-invoice totals
+                  // disagree (see lib/price-precision).
+                  const safe = Number.isFinite(raw) && raw >= 0 ? roundToCents(raw) : 0;
                   updatePos(i, "menge", safe);
                 }}
                 aria-label={`Menge Position ${i + 1}`}
@@ -1945,7 +1949,7 @@ export default function DokumentNeuPage() {
                 value={pos.preis}
                 onChange={(e) => {
                   const raw = parseFloat(e.target.value);
-                  const safe = Number.isFinite(raw) && raw >= 0 ? raw : 0;
+                  const safe = Number.isFinite(raw) && raw >= 0 ? roundToCents(raw) : 0;
                   updatePos(i, "preis", safe);
                 }}
                 aria-label={`Preis Position ${i + 1}`}

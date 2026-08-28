@@ -605,3 +605,53 @@ describe("document save · §13b reverse charge guard", () => {
     expect(response.status).toBe(400);
   });
 });
+
+describe("document save · money precision", () => {
+  const base = {
+    pdfBase64: Buffer.from("%PDF-1.4\n").toString("base64"),
+    typ: "offerte",
+    nummer: "OF-2026-050",
+    kundenname: "Muster AG",
+    betrag: 100,
+    datum: "2026-03-01",
+  };
+
+  async function save(positionen: unknown) {
+    const { POST } = await import("@/app/api/dokument/save/route");
+    const response = await POST(sameOriginPost("/api/dokument/save", { ...base, positionen }));
+    return { response, body: await response.json() };
+  }
+
+  it("rejects a sub-cent unit price", async () => {
+    // Would otherwise make the PDF total and the EN 16931 header total
+    // disagree by a cent — the standard sums rounded line amounts, the PDF
+    // sums raw products.
+    const { response, body } = await save([
+      { bezeichnung: "A", einheit: "Std.", menge: 2, preis: 0.005 },
+    ]);
+    expect(response.status).toBe(400);
+    expect(body.error).toMatch(/Nachkommastellen/);
+  });
+
+  it("rejects a sub-cent quantity", async () => {
+    const { response } = await save([
+      { bezeichnung: "A", einheit: "Std.", menge: 1.005, preis: 10 },
+    ]);
+    expect(response.status).toBe(400);
+  });
+
+  it("rejects a non-numeric price", async () => {
+    const { response } = await save([
+      { bezeichnung: "A", einheit: "Std.", menge: 1, preis: "12,50" },
+    ]);
+    expect(response.status).toBe(400);
+  });
+
+  it("accepts ordinary two-decimal money", async () => {
+    // Reaches the storage layer rather than being rejected as malformed.
+    const { response } = await save([
+      { bezeichnung: "A", einheit: "Std.", menge: 2, preis: 120.55 },
+    ]);
+    expect(response.status).not.toBe(400);
+  });
+});

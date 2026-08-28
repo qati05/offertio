@@ -3,6 +3,7 @@ import { json } from "@/lib/api-response";
 import { createSupabaseServer } from "@/lib/supabase-server";
 import { getSupabaseAdmin } from "@/lib/supabase-admin";
 import { getCustomerDisplayName, makePrimaryCustomerLookupKey } from "@/lib/customers";
+import { validatePositionen } from "@/lib/price-precision";
 import { checkReverseChargeEligibility, isReverseCharge, type Steuerfall } from "@/lib/reverse-charge";
 import { isAllowedOrigin, isValidBase64, isSafeDocumentIdentifier, isValidUUID, stripControlChars } from "@/lib/security";
 import { rateLimitAsync } from "@/lib/rate-limit";
@@ -135,6 +136,13 @@ export async function POST(request: NextRequest) {
       }
       if (positionen.length > 200) {
         return json({ error: "Zu viele Positionen (max. 200)." }, 400);
+      }
+      // Money must be whole cents. A sub-cent unit price makes the PDF total
+      // and the EN 16931 header total disagree by a cent, because the standard
+      // sums the rounded line amounts while the PDF sums the raw products.
+      const priceCheck = validatePositionen(positionen);
+      if (!priceCheck.ok) {
+        return json({ error: priceCheck.message }, 400);
       }
       normalizedPositionen = positionen;
     }
