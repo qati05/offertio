@@ -66,6 +66,37 @@ function _modulo10Recursive(reference: string): string {
   return String((10 - carry) % 10);
 }
 
+
+/**
+ * Creditor block for the Swiss QR code.
+ *
+ * swissqrbill 4.x always encodes address type "S" (structured) — verified in
+ * its source, where the type letter is a literal. Offertio therefore never
+ * emits the deprecated combined type "K", and the November 2025 / November 2026
+ * structured-address deadlines are not a blocker for it.
+ *
+ * KNOWN GAP, deliberately not fixed here: the structured address has separate
+ * fields for street (StrtNm) and house number (BldgNb), but the profile stores
+ * a single `adresse` line, so "Hauptstrasse 12" goes into the street field and
+ * the house-number field stays empty. The document is still address type S, but
+ * the house number sits in the wrong element.
+ *
+ * Splitting it would need either separate street/number fields in the profile —
+ * a data-model and onboarding change, i.e. a product decision — or heuristic
+ * parsing of a free-text address line, which is precisely the kind of guessing
+ * that does not belong in payment data. Reported for a decision instead.
+ */
+export function buildCreditor(profil: Profile, cleanIban: string) {
+  return {
+    account: cleanIban,
+    name: profil.firmenname || `${profil.vorname} ${profil.nachname}`.trim(),
+    address: profil.adresse || "",
+    zip: profil.plz || "",
+    city: profil.ort || "",
+    country: "CH" as const,
+  };
+}
+
 /** Result returned by {@link generateQrBillData}. */
 export interface QrBillData {
   /** SVG data URL suitable for embedding in @react-pdf/renderer <Image>. */
@@ -115,14 +146,7 @@ export async function generateQrBillData(
 
     const isQrIban = isQRIBAN(cleanIban);
 
-    const creditor = {
-      account: cleanIban,
-      name: profil.firmenname || `${profil.vorname} ${profil.nachname}`.trim(),
-      address: profil.adresse || "",
-      zip: profil.plz || "",
-      city: profil.ort || "",
-      country: "CH" as const,
-    };
+    const creditor = buildCreditor(profil, cleanIban);
 
     let qrReference: string | null = null;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
