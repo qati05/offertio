@@ -12,7 +12,8 @@
     "test:e2e": "playwright test",
     "test:e2e:public": "playwright test --project=public --project=mobile-public",
     "test:e2e:auth": "node scripts/check-e2e-auth-env.mjs && playwright test --project=setup --project=app --project=mobile",
-    "test:e2e:ui": "playwright test --ui"
+    "test:e2e:ui": "playwright test --ui",
+    "test:en16931": "node scripts/en16931/fetch-artifacts.mjs && EN16931_VALIDATE=1 vitest run src/__tests__/en16931-schematron.test.ts"
   },
   "dependencies": {
     "@react-pdf/renderer": "^4.3.2",

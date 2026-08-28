@@ -52,3 +52,6 @@ e2e/.auth/user.json
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# EN 16931 validation artefacts (downloaded, checksum-pinned)
+/.en16931-cache/

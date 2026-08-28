@@ -55,6 +55,33 @@ jobs:
       - run: npm ci
       - run: npx next build
 
+  # ── EN 16931 validation ───────────────────────────────────────────────────
+  # Runs the generated ZUGFeRD XML through the official CEF Schematron with
+  # Saxon. Separate from the unit job because it needs a JDK and ~6.5 MB of
+  # downloaded, checksum-pinned artefacts.
+  en16931:
+    name: EN 16931 (official Schematron)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+      - name: Cache validation artefacts
+        uses: actions/cache@v4
+        with:
+          path: .en16931-cache
+          # The digests are pinned in the fetch script, so its hash is the key.
+          key: en16931-${{ hashFiles('scripts/en16931/fetch-artifacts.mjs') }}
+      - run: npm ci
+      - run: npm run test:en16931
+
   # ── Public E2E ────────────────────────────────────────────────────────────
   e2e-public:
     name: E2E (public)
