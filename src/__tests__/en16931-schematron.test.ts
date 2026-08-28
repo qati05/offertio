@@ -123,13 +123,6 @@ function kleinunternehmer(extra: Record<string, unknown> = {}): OfferteData {
  * list to be kept honest rather than quietly growing.
  */
 const KNOWN_GAPS: Record<string, { rules: string[]; why: string }> = {
-  "zero-rated": {
-    rules: ["BR-Z-10"],
-    why:
-      "zugferd-xml.ts emits ExemptionReason 'Nullsatz' for a 0% rate. BR-Z-10 " +
-      "forbids an exemption reason on category Z — the opposite of category E, " +
-      "where BR-E-10 requires one. Reported, not yet fixed.",
-  },
   "seller-without-vat-id": {
     rules: ["BR-CO-26"],
     why:
@@ -171,6 +164,7 @@ describe.skipIf(!runnable)("EN 16931 · official Schematron validation", () => {
       ["no BIC", invoice({ profil: { ...seller, bic: undefined } })],
       ["single line item", invoice({ positionen: [{ bezeichnung: "Nur eine", menge: 1, preis: 500 }] })],
       ["buyer without VAT id", invoice({ kunde: { name: "Privat AG", adresse: "Weg 2", plz: "80331", ort: "München" } })],
+      ["zero-rated 0%", invoice({ mwstSatz: 0 })],
       // §13b Abs. 2 Nr. 4 — reverse charge. Exercises the whole BR-AE family
       // (BR-AE-01 through BR-AE-10) against the official rules.
       ["reverse charge §13b", invoice({ steuerfall: "reverse_charge_13b_4", mwstSatz: 0 })],
@@ -198,11 +192,6 @@ describe.skipIf(!runnable)("EN 16931 · official Schematron validation", () => {
   });
 
   describe("known gaps — reported, awaiting a decision", () => {
-    it("zero-rated invoice still carries a forbidden exemption reason", () => {
-      const xml = buildZugferdXml(invoice({ mwstSatz: 0 }), "2026-02-28");
-      expect(violations(xml, "zero-rated")).toEqual(KNOWN_GAPS["zero-rated"].rules);
-    });
-
     it("seller with only a Steuernummer is not identifiable to EN 16931", () => {
       const xml = buildZugferdXml(
         invoice({ profil: { ...seller, uid_mwst: undefined } }),

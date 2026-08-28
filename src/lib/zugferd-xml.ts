@@ -92,13 +92,16 @@ export function buildZugferdXml(data: OfferteData, leistungsdatum?: string): str
       : mwstSatz === 0
         ? "Z"
         : "S";
+  //
+  // Category Z carries NO exemption reason. BR-E-10 requires one for "E" and
+  // BR-AE-10 for "AE", but BR-Z-10 forbids one for "Z" — zero-rated means
+  // taxable at 0%, so there is no exemption to justify. Supplying one anyway
+  // made every 0% invoice fail validation.
   const vatExemptionReason = reverseChargeCase
     ? reverseChargeCase.hinweis
     : profil.kleinunternehmer
       ? "Steuerbefreit nach §19 UStG (Kleinunternehmer)"
-      : mwstSatz === 0
-        ? "Nullsatz"
-        : null;
+      : null;
   const vatExemptionReasonCode = reverseChargeCase?.vatexCode ?? null;
 
   // ── Payment due date (BT-9) ──────────────────────────────────────────────
