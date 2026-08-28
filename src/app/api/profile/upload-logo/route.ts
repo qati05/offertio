@@ -10,7 +10,8 @@
  * to "logo.png" and have it accepted by only checking the Content-Type header.
  */
 
-import { NextRequest, NextResponse } from "next/server";
+import type { NextRequest } from "next/server";
+import { json } from "@/lib/api-response";
 import { createSupabaseServer } from "@/lib/supabase-server";
 import { getSupabaseAdmin } from "@/lib/supabase-admin";
 import { rateLimitAsync } from "@/lib/rate-limit";
@@ -46,13 +47,6 @@ function detectImageType(buf: Buffer): "image/png" | "image/jpeg" | "image/webp"
     return "image/webp";
   }
   return null;
-}
-
-function json(body: unknown, status = 200, extra?: Record<string, string>) {
-  return NextResponse.json(body, {
-    status,
-    headers: { "Cache-Control": "no-store", ...extra },
-  });
 }
 
 export async function POST(request: NextRequest) {

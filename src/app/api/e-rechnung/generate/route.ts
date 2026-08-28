@@ -10,7 +10,8 @@
  * Returns: { pdfBase64: string }
  */
 
-import { NextRequest, NextResponse } from "next/server";
+import type { NextRequest } from "next/server";
+import { json } from "@/lib/api-response";
 import { createSupabaseServer } from "@/lib/supabase-server";
 import { isAllowedOrigin, isValidBase64 } from "@/lib/security";
 import { rateLimitAsync } from "@/lib/rate-limit";
@@ -19,13 +20,6 @@ import { embedZugferdXml } from "@/lib/zugferd-embedder";
 import type { OfferteData, Profile } from "@/lib/types";
 
 const MAX_BODY_BYTES = 12 * 1024 * 1024; // 12 MB
-
-function json(body: unknown, status = 200, extra?: Record<string, string>) {
-  return NextResponse.json(body, {
-    status,
-    headers: { "Cache-Control": "no-store", ...extra },
-  });
-}
 
 type ServerProfile = Pick<
   Profile,

@@ -1,4 +1,5 @@
-import { NextRequest, NextResponse } from "next/server";
+import type { NextRequest } from "next/server";
+import { json } from "@/lib/api-response";
 import { createSupabaseServer } from "@/lib/supabase-server";
 import { getSupabaseAdmin } from "@/lib/supabase-admin";
 import { getCustomerDisplayName, makePrimaryCustomerLookupKey } from "@/lib/customers";
@@ -10,13 +11,6 @@ import type { KundenInfo } from "@/lib/types";
 const MAX_PDF_BYTES = 7 * 1024 * 1024;
 // base64 overhead ≈ 4/3 — a 7 MB PDF becomes ~9.5 MB base64 plus JSON wrapper.
 const MAX_REQUEST_BYTES = 12 * 1024 * 1024;
-
-function json(body: unknown, status = 200, extra?: Record<string, string>) {
-  return NextResponse.json(body, {
-    status,
-    headers: { "Cache-Control": "no-store", ...extra },
-  });
-}
 
 async function removeUploadedPdf(
   admin: ReturnType<typeof getSupabaseAdmin>,

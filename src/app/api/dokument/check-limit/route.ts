@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server";
+import { json } from "@/lib/api-response";
 import { createSupabaseServer } from "@/lib/supabase-server";
 import {
   FREE_LIMIT,
@@ -13,13 +13,6 @@ import { logger } from "@/lib/logger";
 function getCurrentMonat(): string {
   const now = new Date();
   return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
-}
-
-function json(body: unknown, status = 200, extra?: Record<string, string>) {
-  return NextResponse.json(body, {
-    status,
-    headers: { "Cache-Control": "no-store", ...extra },
-  });
 }
 
 /**

@@ -1,4 +1,5 @@
-import { NextRequest, NextResponse } from "next/server";
+import type { NextRequest } from "next/server";
+import { json } from "@/lib/api-response";
 import { createSupabaseServer } from "@/lib/supabase-server";
 import { isAllowedOrigin, isValidUUID } from "@/lib/security";
 import { rateLimitAsync } from "@/lib/rate-limit";
@@ -7,13 +8,6 @@ import type { RecurringFrequency } from "@/lib/recurring";
 
 const VALID_FREQUENCIES = new Set<RecurringFrequency>(["weekly", "monthly", "quarterly", "yearly"]);
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
-
-function json(body: unknown, status = 200, extra?: Record<string, string>) {
-  return NextResponse.json(body, {
-    status,
-    headers: { "Cache-Control": "no-store", ...extra },
-  });
-}
 
 /**
  * PATCH /api/recurring/[id]

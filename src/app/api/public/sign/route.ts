@@ -1,4 +1,5 @@
-import { NextRequest, NextResponse } from "next/server";
+import type { NextRequest } from "next/server";
+import { json } from "@/lib/api-response";
 import { getSupabaseAdmin } from "@/lib/supabase-admin";
 import { rateLimitAsync } from "@/lib/rate-limit";
 import { logger } from "@/lib/logger";
@@ -16,13 +17,6 @@ function pickLocale(req: NextRequest): PublicViewLocale {
   if (/^fr\b/i.test(raw)) return "fr";
   if (/^it\b/i.test(raw)) return "it";
   return "de";
-}
-
-function json(body: unknown, status = 200, extra?: HeadersInit) {
-  return NextResponse.json(body, {
-    status,
-    headers: { "Cache-Control": "no-store", ...(extra ?? {}) },
-  });
 }
 
 /**

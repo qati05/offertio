@@ -1,4 +1,5 @@
-import { NextRequest, NextResponse } from "next/server";
+import type { NextRequest } from "next/server";
+import { json } from "@/lib/api-response";
 import { createSupabaseServer } from "@/lib/supabase-server";
 import { getSupabaseAdmin } from "@/lib/supabase-admin";
 import { isAllowedOrigin } from "@/lib/security";
@@ -7,13 +8,6 @@ import { logger } from "@/lib/logger";
 import { advanceByFrequency, type RecurringFrequency } from "@/lib/recurring";
 
 const MAX_GENERATED_PER_RUN = 50;
-
-function json(body: unknown, status = 200, extra?: Record<string, string>) {
-  return NextResponse.json(body, {
-    status,
-    headers: { "Cache-Control": "no-store", ...extra },
-  });
-}
 
 /** Return today's date in the user's locale as YYYY-MM-DD.
  *  We intentionally use the server's local time (typically UTC on Vercel) —

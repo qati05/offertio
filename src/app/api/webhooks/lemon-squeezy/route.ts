@@ -1,4 +1,5 @@
-import { NextRequest, NextResponse } from "next/server";
+import type { NextRequest } from "next/server";
+import { json } from "@/lib/api-response";
 import crypto from "crypto";
 import { getSupabaseAdmin } from "@/lib/supabase-admin";
 import { isValidUUID, getClientIp } from "@/lib/security";
@@ -24,13 +25,6 @@ const HANDLED_EVENTS = new Set([
   "subscription_cancelled",
   "subscription_expired",
 ]);
-
-function json(body: unknown, status = 200) {
-  return NextResponse.json(body, {
-    status,
-    headers: { "Cache-Control": "no-store" },
-  });
-}
 
 /**
  * Lemon Squeezy webhook handler.
