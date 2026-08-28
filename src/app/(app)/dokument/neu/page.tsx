@@ -11,6 +11,7 @@ import { findReusableCustomer, getCustomerDisplayName, mergeCustomerIntoDraft } 
 import { getDachConfig } from "@/lib/dach";
 import { isPro } from "@/lib/payment";
 import UpgradeScreen from "@/components/UpgradeScreen";
+import { REVERSE_CHARGE_CASES, type Steuerfall } from "@/lib/reverse-charge";
 import { trackDocumentCreated } from "@/lib/analytics";
 import { getMissingProfileFieldsForDocument } from "@/lib/profile";
 import { validateForRegion } from "@/lib/validation";
@@ -47,6 +48,21 @@ export default function DokumentNeuPage() {
   const [leistungsdatum, setLeistungsdatum] = useState("");
   const [objekt, setObjekt] = useState("");
   const [mwstSatz, setMwstSatz] = useState(0);
+  // §13b reverse charge. Never inferred from the customer or the line items —
+  // whether it applies depends on whether the RECIPIENT sustainably performs
+  // construction services, which only the issuer can judge.
+  const [steuerfall, setSteuerfall] = useState<Steuerfall>("standard");
+  const [ust1tgDatum, setUst1tgDatum] = useState("");
+  const [ust1tgReferenz, setUst1tgReferenz] = useState("");
+
+  /**
+   * §13b applies only to German invoices. It is offered, never auto-detected:
+   * whether the recipient sustainably performs construction services
+   * (§13b Abs. 5 S. 2) is a judgement about that customer, not something the
+   * line items reveal.
+   */
+  const reverseChargeVerfuegbar = profil?.land === "DE" && dokumentTyp === "rechnung";
+  const istReverseCharge = steuerfall === "reverse_charge_13b_4";
   const [preisMode, setPreisMode] = useState<"exkl" | "inkl">("exkl");
   const [notiz, setNotiz] = useState("");
   const [selectedVorlage, setSelectedVorlage] = useState<string | null>(null);
@@ -522,6 +538,7 @@ export default function DokumentNeuPage() {
         leistungsdatum: leistungsdatum || undefined,
         objekt,
         mwstSatz,
+        steuerfall,
         notiz,
         rabatt,
         qrCodeDataUrl,
@@ -787,6 +804,7 @@ export default function DokumentNeuPage() {
             // from this offerte) preload positionen without retyping.
             positionen,
             mwstSatz,
+            steuerfall,
             rabatt,
             notiz,
             preisMode,
@@ -966,6 +984,7 @@ export default function DokumentNeuPage() {
               rabatt,
               preisMode,
               mwstSatz,
+              steuerfall,
               sourceDocumentId: savedDocumentId,
               sourceDocumentNumber: finalNummer,
               // Carry over leistungsdatum only when the source Offerte already
@@ -1017,6 +1036,9 @@ export default function DokumentNeuPage() {
       gueltigBis,
       leistungsdatum,
       mwstSatz,
+      steuerfall,
+      ust1tgDatum: ust1tgDatum || null,
+      ust1tgReferenz: ust1tgReferenz || null,
       notiz,
       objekt,
       rabatt,
@@ -1066,6 +1088,7 @@ export default function DokumentNeuPage() {
           existingDocumentId: cloudDraftId,
           positionen,
           mwstSatz,
+          steuerfall,
           rabatt,
           notiz,
           preisMode,
@@ -1125,7 +1148,7 @@ export default function DokumentNeuPage() {
         reader.onerror = () => reject(new Error("PDF konnte nicht gelesen werden."));
         reader.readAsDataURL(blob);
       });
-      const invoiceData = { nummer, datum, kunde, positionen, mwstSatz, notiz, profil, rabatt };
+      const invoiceData = { nummer, datum, kunde, positionen, mwstSatz, notiz, profil, rabatt, steuerfall };
       const res = await fetch("/api/e-rechnung/generate", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -1566,6 +1589,66 @@ export default function DokumentNeuPage() {
                 : "Wann haben Sie die Leistung erbracht? (Pflicht nach §11 Abs. 1 Z 6 öUStG)"}
             </div>
           )}
+          {/* §13b reverse charge — DE invoices only */}
+          {reverseChargeVerfuegbar && (
+            <div style={{ marginTop: 10, textAlign: "left" }}>
+              <label style={{ display: "flex", alignItems: "flex-start", gap: 8, cursor: "pointer", fontSize: 11, color: "var(--color-text-muted)" }}>
+                <input
+                  type="checkbox"
+                  checked={istReverseCharge}
+                  onChange={(e) => {
+                    const on = e.target.checked;
+                    setSteuerfall(on ? "reverse_charge_13b_4" : "standard");
+                    // A reverse-charge invoice shows no VAT. Zeroing the rate here
+                    // keeps the totals on screen honest; the PDF and the XML force
+                    // it independently, so a stale value can never slip through.
+                    if (on) setMwstSatz(0);
+                    else {
+                      setUst1tgDatum("");
+                      setUst1tgReferenz("");
+                    }
+                  }}
+                  style={{ marginTop: 2 }}
+                />
+                <span>
+                  Reverse Charge — {REVERSE_CHARGE_CASES.reverse_charge_13b_4.label}
+                  <span style={{ display: "block", fontSize: 10, marginTop: 2 }}>
+                    Nur wenn dein Kunde selbst nachhaltig Bauleistungen erbringt. Die Rechnung
+                    weist dann keine USt. aus; du brauchst deine und seine USt-IdNr.
+                  </span>
+                </span>
+              </label>
+
+              {istReverseCharge && (
+                <div style={{ marginTop: 8, paddingLeft: 24, display: "flex", flexDirection: "column", gap: 6 }}>
+                  <div style={{ fontSize: 10, color: "var(--color-text-muted)" }}>
+                    Nachweis USt 1 TG (optional, erscheint nicht auf der Rechnung)
+                  </div>
+                  <label style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 11, color: "var(--color-text-muted)" }}>
+                    <span style={{ minWidth: 54 }}>Datum:</span>
+                    <input
+                      type="date"
+                      value={ust1tgDatum}
+                      onChange={(e) => setUst1tgDatum(e.target.value)}
+                      style={{ background: "transparent", border: "1px solid var(--color-border)", borderRadius: 4, fontSize: 11, padding: "2px 4px", color: "var(--color-text-muted)", fontFamily: "var(--font-sans)" }}
+                    />
+                  </label>
+                  <label style={{ display: "flex", alignItems: "center", gap: 6, fontSize: 11, color: "var(--color-text-muted)" }}>
+                    <span style={{ minWidth: 54 }}>Referenz:</span>
+                    <input
+                      type="text"
+                      value={ust1tgReferenz}
+                      maxLength={200}
+                      placeholder="z. B. Aktenzeichen der Bescheinigung"
+                      onChange={(e) => setUst1tgReferenz(e.target.value)}
+                      style={{ flex: 1, background: "transparent", border: "1px solid var(--color-border)", borderRadius: 4, fontSize: 11, padding: "2px 6px", color: "var(--color-text-muted)", fontFamily: "var(--font-sans)" }}
+                    />
+                  </label>
+                </div>
+              )}
+            </div>
+          )}
+
           {/* Info hint for CH — only when field is filled and differs from invoice date */}
           {profil?.land === "CH" && !dachConfig.leistungsdatumRequired && !leistungsdatum && (
             <div style={{ textAlign: "right", fontSize: 10, color: "var(--color-text-muted)", marginTop: 2 }}>
@@ -2051,23 +2134,32 @@ export default function DokumentNeuPage() {
                 </div>
               </div>
             )}
-            <div className="total-row">
-              <div className="total-label">
-                {dachConfig.mwstLabel}{" "}
-                <select
-                  className="mwst-select"
-                  value={mwstSatz}
-                  onChange={(e) => setMwstSatz(parseFloat(e.target.value))}
-                >
-                  {dachConfig.mwstOptions.map((o) => (
-                    <option key={o.value} value={o.value}>
-                      {o.label}
-                    </option>
-                  ))}
-                </select>
+            {istReverseCharge ? (
+              <div className="total-row">
+                <div className="total-label" style={{ fontSize: 12, lineHeight: 1.4 }}>
+                  {REVERSE_CHARGE_CASES.reverse_charge_13b_4.hinweis}
+                </div>
+                <div className="total-val">{cur} 0.00</div>
               </div>
-              <div className="total-val">{cur} {fmtAmt(mwstBetrag)}</div>
-            </div>
+            ) : (
+              <div className="total-row">
+                <div className="total-label">
+                  {dachConfig.mwstLabel}{" "}
+                  <select
+                    className="mwst-select"
+                    value={mwstSatz}
+                    onChange={(e) => setMwstSatz(parseFloat(e.target.value))}
+                  >
+                    {dachConfig.mwstOptions.map((o) => (
+                      <option key={o.value} value={o.value}>
+                        {o.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div className="total-val">{cur} {fmtAmt(mwstBetrag)}</div>
+              </div>
+            )}
             <div className="total-divider" />
             <div className="total-row total-final">
               <div className="total-label">Total</div>
@@ -2088,26 +2180,37 @@ export default function DokumentNeuPage() {
                 </div>
               </div>
             )}
-            <div className="total-row">
-              <div className="total-label" style={{ color: "var(--color-text-muted)", fontSize: 11 }}>
-                davon{" "}
-                {dachConfig.mwstLabel}{" "}
-                <select
-                  className="mwst-select"
-                  value={mwstSatz}
-                  onChange={(e) => setMwstSatz(parseFloat(e.target.value))}
-                >
-                  {dachConfig.mwstOptions.map((o) => (
-                    <option key={o.value} value={o.value}>
-                      {o.label}
-                    </option>
-                  ))}
-                </select>
+            {istReverseCharge ? (
+              <div className="total-row">
+                <div className="total-label" style={{ color: "var(--color-text-muted)", fontSize: 11, lineHeight: 1.4 }}>
+                  {REVERSE_CHARGE_CASES.reverse_charge_13b_4.hinweis}
+                </div>
+                <div className="total-val" style={{ color: "var(--color-text-muted)", fontSize: 11 }}>
+                  {cur} 0.00
+                </div>
               </div>
-              <div className="total-val" style={{ color: "var(--color-text-muted)", fontSize: 11 }}>
-                {cur} {fmtAmt(mwstBetrag)}
+            ) : (
+              <div className="total-row">
+                <div className="total-label" style={{ color: "var(--color-text-muted)", fontSize: 11 }}>
+                  davon{" "}
+                  {dachConfig.mwstLabel}{" "}
+                  <select
+                    className="mwst-select"
+                    value={mwstSatz}
+                    onChange={(e) => setMwstSatz(parseFloat(e.target.value))}
+                  >
+                    {dachConfig.mwstOptions.map((o) => (
+                      <option key={o.value} value={o.value}>
+                        {o.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div className="total-val" style={{ color: "var(--color-text-muted)", fontSize: 11 }}>
+                  {cur} {fmtAmt(mwstBetrag)}
+                </div>
               </div>
-            </div>
+            )}
             <div className="total-divider" />
             <div className="total-row total-final">
               <div className="total-label">Total</div>
