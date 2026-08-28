@@ -1,0 +1,122 @@
+name: CI
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  # The unit tests and the public E2E suite never reach a real Supabase project,
+  # but middleware constructs a client on every request, so the vars must exist.
+  # Overridden by repository secrets when they are set (needed by the auth job).
+  NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL || 'http://127.0.0.1:54321' }}
+  NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'offertio-ci-anon-key' }}
+  SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY || 'offertio-ci-service-key' }}
+  NEXT_PUBLIC_GOOGLE_AUTH_ENABLED: "false"
+
+jobs:
+  # ── Types + unit tests ────────────────────────────────────────────────────
+  # `npm run lint` is deliberately NOT run here: `next lint` is deprecated in
+  # Next 15 and this repo has no ESLint config, so it drops into an interactive
+  # setup prompt and would hang the runner. Wire up the ESLint CLI first.
+  unit:
+    name: Typecheck + unit tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Typecheck
+        run: npx tsc --noEmit
+      - name: Unit tests
+        run: npm test
+
+  # ── Production build ──────────────────────────────────────────────────────
+  # Catches route-level and App Router problems that tsc does not see.
+  build:
+    name: Production build
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npx next build
+
+  # ── Public E2E ────────────────────────────────────────────────────────────
+  e2e-public:
+    name: E2E (public)
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      # Without this the whole suite fails on a missing browser binary, with an
+      # error that reads like a code defect. --with-deps installs the system
+      # libraries Chromium needs on a bare runner.
+      - name: Install Playwright Chromium
+        run: npx playwright install --with-deps chromium
+      - run: npm run test:e2e:public
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: playwright-report-public
+          path: playwright-report/
+          retention-days: 7
+
+  # ── Authenticated E2E ─────────────────────────────────────────────────────
+  # Runs only when the test-account secrets exist. Without them the entire
+  # authenticated app flow — document creation, dashboard, settings — is never
+  # exercised, even though the specs are written. Set E2E_USER_EMAIL and
+  # E2E_USER_PASSWORD (a Supabase user with onboarding completed) plus the real
+  # NEXT_PUBLIC_SUPABASE_* secrets to switch this on.
+  e2e-auth:
+    name: E2E (authenticated)
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    env:
+      E2E_USER_EMAIL: ${{ secrets.E2E_USER_EMAIL }}
+      E2E_USER_PASSWORD: ${{ secrets.E2E_USER_PASSWORD }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Report whether credentials are configured
+        run: |
+          if [ -z "$E2E_USER_EMAIL" ] || [ -z "$E2E_USER_PASSWORD" ]; then
+            echo "::notice::E2E_USER_EMAIL / E2E_USER_PASSWORD not set — the authenticated E2E suite is being skipped."
+          fi
+      - uses: actions/setup-node@v4
+        if: env.E2E_USER_EMAIL != '' && env.E2E_USER_PASSWORD != ''
+        with:
+          node-version: 22
+          cache: npm
+      - name: Install dependencies
+        if: env.E2E_USER_EMAIL != '' && env.E2E_USER_PASSWORD != ''
+        run: npm ci
+      - name: Install Playwright Chromium
+        if: env.E2E_USER_EMAIL != '' && env.E2E_USER_PASSWORD != ''
+        run: npx playwright install --with-deps chromium
+      - name: Authenticated E2E
+        if: env.E2E_USER_EMAIL != '' && env.E2E_USER_PASSWORD != ''
+        run: npm run test:e2e:auth
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: playwright-report-auth
+          path: playwright-report/
+          retention-days: 7
