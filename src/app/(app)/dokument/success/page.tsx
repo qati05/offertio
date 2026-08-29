@@ -265,7 +265,15 @@ export default function DokumentSuccessPage() {
 
             {!cloudSaved && (
               <div className="auth-alert auth-alert-error mt-6 text-left">
-                Da ist etwas schiefgegangen. Dein Dokument wurde erstellt — bitte bewahre das PDF auf. Wir versuchen es beim nächsten Mal automatisch erneut.
+                {/* This box now only appears when the server was unreachable or
+                    broke — a refusal aborts the send and shows its own reason.
+                    The old wording promised an automatic retry that does not
+                    exist anywhere in the codebase, so the user waited for a
+                    recovery that was never coming. */}
+                Der Server war nicht erreichbar — dein Dokument ist <strong>nicht</strong> im Archiv
+                gespeichert. Das PDF liegt auf deinem Gerät: bitte bewahre es auf. Es gibt keinen
+                automatischen zweiten Versuch; lege das Dokument bei Gelegenheit erneut an, damit es
+                im Archiv erscheint.
               </div>
             )}
 

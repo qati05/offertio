@@ -8,6 +8,7 @@ import { createSupabaseBrowser } from "@/lib/supabase-browser";
 import { peekNextNummer, commitNummer } from "@/lib/dokument-nummer";
 import { useOnlineStatus } from "@/components/OfflineBanner";
 import { findReusableCustomer, getCustomerDisplayName, mergeCustomerIntoDraft } from "@/lib/customers";
+import { classifySaveResponse, type SendOutcome } from "@/lib/send-outcome";
 import { getDachConfig } from "@/lib/dach";
 import { isPro, FREE_LIMIT } from "@/lib/payment";
 import UpgradeScreen from "@/components/UpgradeScreen";
@@ -763,29 +764,14 @@ export default function DokumentNeuPage() {
       let savedCustomerId: string | null = null;
       let finalNummer = nummer;
 
-      if (downloadPdf) {
-        downloadBlob(blob, `${finalNummer}.pdf`);
-        downloadedResult = true;
-        delivery = "download";
-      }
-
-      if (sharePdf) {
-        const shared = await trySharePdf(blob, `${finalNummer}.pdf`);
-        if (!shared) {
-          // Web Share API not available — fall back to download
-          if (!downloadedResult) {
-            downloadBlob(blob, `${finalNummer}.pdf`);
-            downloadedResult = true;
-          }
-          delivery = "download";
-        } else {
-          delivery = "share";
-        }
-      }
-
       let savedDocumentId: string | null = null;
       let savedShareToken: string | null = null;
       let savedSourceDocumentNumber = sourceDocumentNumber;
+
+      // The save runs BEFORE any delivery. Handing the customer a PDF the
+      // server then refuses leaves them holding an invoice that exists nowhere
+      // in the system, with its number already burnt.
+      let outcome: SendOutcome;
       try {
         const saveRes = await fetch("/api/dokument/save", {
           method: "POST",
@@ -815,25 +801,63 @@ export default function DokumentNeuPage() {
           }),
         });
 
-        if (!saveRes.ok) {
-          const saveData = await saveRes.json();
-          // Save failed — falls through to cloudSaved=false handling
-          cloudSaved = false;
-        } else {
-          const saveData = await saveRes.json();
-          if (saveData.metadataStored === false) {
-            cloudSaved = false;
-          } else {
-            savedDocumentId = saveData.document?.id || null;
-            savedSourceDocumentNumber = saveData.document?.source_document_nummer || sourceDocumentNumber;
-            savedCustomerId = saveData.document?.customer_id || null;
-            finalNummer = saveData.document?.nummer || nummer;
-            savedShareToken = saveData.document?.share_token || null;
-          }
+        let parsed: unknown = null;
+        try {
+          parsed = await saveRes.json();
+        } catch {
+          // A refusal without a JSON body still has to be classified by status.
+          parsed = null;
         }
+        outcome = classifySaveResponse({
+          ok: saveRes.ok,
+          status: saveRes.status,
+          body: parsed,
+        });
       } catch (e) {
-        // Network save error — PDF already downloaded locally
+        // The fetch itself threw — offline, DNS, aborted. The document is fine,
+        // only the save did not happen, so fall back to local delivery.
+        outcome = { action: "deliver_offline" };
+      }
+
+      if (outcome.action === "abort") {
+        // The server refused this document and said why. Show that reason and
+        // deliver nothing — this is the Swiss UID, the missing Leistungsdatum,
+        // the exhausted quota, the already-issued invoice.
+        showToast(outcome.message);
+        setSending(false);
+        waWindow?.close();
+        return;
+      }
+
+      if (outcome.action === "deliver_offline") {
         cloudSaved = false;
+      } else {
+        savedDocumentId = outcome.document.id;
+        savedSourceDocumentNumber =
+          outcome.document.source_document_nummer ?? sourceDocumentNumber;
+        savedCustomerId = outcome.document.customer_id;
+        finalNummer = outcome.document.nummer ?? nummer;
+        savedShareToken = outcome.document.share_token;
+      }
+
+      if (downloadPdf) {
+        downloadBlob(blob, `${finalNummer}.pdf`);
+        downloadedResult = true;
+        delivery = "download";
+      }
+
+      if (sharePdf) {
+        const shared = await trySharePdf(blob, `${finalNummer}.pdf`);
+        if (!shared) {
+          // Web Share API not available — fall back to download
+          if (!downloadedResult) {
+            downloadBlob(blob, `${finalNummer}.pdf`);
+            downloadedResult = true;
+          }
+          delivery = "download";
+        } else {
+          delivery = "share";
+        }
       }
 
       // Build the recipient view URL once. Recipients open this branded page
