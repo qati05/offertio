@@ -1,30 +1,94 @@
-# Migrationen einspielen
+# Migrationen — Stand der Live-Datenbank
 
-Kurzanleitung für die ausstehenden Migrationen **032, 033, 034**. Diese drei
-müssen eingespielt sein, **bevor** ein Kundentest läuft — ohne sie schlägt jedes
-Speichern mit `steuerfall`, jede Stornierung und jede §13b-Rechnung fehl.
+Stand **29.08.2026**, Projekt `osexdcaqlggnaubeezqo` (Offertio, eu-central-1).
+Alle Migrationen **000–036 sind eingespielt**. Nachgemessen, nicht angenommen.
 
-## Was die drei tun
+## Was vorher schiefstand
 
-| Datei | Inhalt |
+Die Datenbank war von den Migrationsdateien **abgedriftet**. Eingespielt waren
+`000`–`014` plus **sechs von Hand angelegte Migrationen vom 05.04.2026**, die es
+im Repo nicht gibt:
+
+| Handmigration | Deckt Repo-Datei ab |
 | --- | --- |
-| `032_reverse_charge_13b.sql` | Spalte `steuerfall`, USt-1-TG-Felder, §13b Abs. 2 Nr. 4 |
-| `033_storno_und_unveraenderbarkeit.sql` | `storniert_at` / `storno_grund`, Status-Whitelist |
-| `034_reverse_charge_13b_8.sql` | §13b Abs. 2 Nr. 8 (Gebäudereinigung) freischalten |
+| `profiles_add_payment_columns` | Teile von 016, 018, 022 |
+| `create_customers_table` | Teile von 015 |
+| `dokumente_add_extended_columns` | Teile von 015, 020 |
+| `fix_dokumente_rls_performance` | — (Verbesserung: `(select auth.uid())` statt `auth.uid()`) |
+| `fix_dokument_counter_limit_enforcement` | — (atomare Kontingentprüfung) |
+| `drop_unused_indexes` | — (löscht `idx_profiles_email`, `dokumente_datum_idx`) |
 
-Reihenfolge ist zwingend: 034 erweitert einen Constraint, den 032 anlegt.
+**015–034 fehlten damit ganz oder teilweise.** Konkret fehlten der Datenbank
+`share_token`, `positionen`, `mwst_satz`, `rabatt`, `notiz`, `preis_mode`,
+`steuerfall`, `ust1tg_*`, `storniert_at`, `storno_grund`, `signature_path`,
+`mahnstufe`, `pdf_accent_color`, `referral_code` sowie die Tabellen
+`referrals` und `recurring_schedules`.
 
-## Einspielen
+Die App war gegen diese Datenbank **nicht lauffähig**: der Empfänger-Link
+(`/view/<token>`) hatte keine Spalte, jedes Speichern mit Positionen wäre
+gescheitert, Storno und §13b ebenso.
 
-Im Supabase-Dashboard → SQL Editor, **eine Datei nach der anderen**, in der
-Reihenfolge oben. Nach jeder Datei prüfen, dass sie ohne Fehler durchlief,
-bevor die nächste kommt.
+## Wie der Abgleich gemacht wurde
 
-Alternativ mit der Supabase CLI:
+Nicht durch Lesen der Dateien, sondern durch Messen der Datenbank:
+`information_schema.columns`, `pg_indexes`, `pg_constraint`, `pg_proc`,
+`pg_trigger`, `pg_policies` und `storage.buckets` gegen den Inhalt jeder
+Migrationsdatei. Erst danach wurde geschrieben.
 
-```bash
-supabase db push
-```
+Zum Zeitpunkt der Arbeit enthielt die Datenbank ausschliesslich Testdaten
+(2 Nutzer, 3 Dokumente, 1 Kunde) — deshalb war das Risiko klein.
+
+## Drei bewusste Abweichungen von den Repo-Dateien
+
+Diese drei Stellen wurden **nicht wörtlich** eingespielt. Jede ist hier
+begründet, damit später niemand rätselt, warum Datei und Datenbank auseinander
+liegen.
+
+**1. `017` — Constraint als `NOT VALID`.** Die Datei legt
+`profiles_ch_uid_mwst_format_check` validierend an. Auf der Live-Datenbank
+existiert ein Altprofil mit `land = 'CH'` und `uid_mwst = '8'`, das dem Muster
+`CHE-XXX.XXX.XXX` widerspricht — ein validierender Constraint hätte die
+Migration abgebrochen. `NOT VALID` erzwingt die Regel für **alle künftigen**
+Schreibvorgänge und lässt genau diese Altzeile in Ruhe.
+
+> ⚠️ **Offen, deine Entscheidung:** `uid_mwst = '8'` ist keine gültige UID. Weil
+> der Wert nicht leer ist, hält `checkInvoiceRequirements` ihn für gesetzt und
+> lässt eine Rechnung mit 8.1 % MWST durch — auf der dann „8" als UID steht.
+> Das ist eine formell fehlerhafte Rechnung (Art. 26 Abs. 2 lit. a MWSTG).
+> Empfehlung: im Profil auf leer setzen oder die echte UID eintragen. Danach:
+>
+> ```sql
+> ALTER TABLE public.profiles VALIDATE CONSTRAINT profiles_ch_uid_mwst_format_check;
+> ```
+
+**2. `021` / `028` — ohne `CONCURRENTLY`.** Beide Dateien nutzen
+`CREATE INDEX CONCURRENTLY`, was in PostgreSQL nicht in einer Transaktion laufen
+darf; das Migrationswerkzeug fährt aber alles in einer Transaktion. Bei 3 Zeilen
+ist ein normaler Indexaufbau ohnehin sofort fertig, die Sperre also
+bedeutungslos. Die Dateien bleiben unverändert — auf einer frischen Datenbank
+ist `CONCURRENTLY` weiterhin richtig.
+
+**3. `022` / `025` — Datenteile ausgelassen, Funktionen gehärtet.** Das
+`UPDATE profiles SET trial_ends_at = …` aus 022 lief nicht: die vorhandenen
+Profile haben bereits ein `trial_ends_at`. Der `referral_code`-Backfill aus 025
+lief ebenfalls nicht.
+
+> ⚠️ **Offen:** Die beiden bestehenden Profile haben `referral_code = NULL`.
+> Neue Registrierungen bekommen einen Code über `handle_new_user()`.
+
+Ausserdem wurde `handle_new_user()` in 025 gegenüber der Repo-Datei **nicht
+verschlechtert**: die Datei verliert `SET search_path = public` und
+`ON CONFLICT (id) DO NOTHING`, die 022 noch hatte. Eingespielt wurde die
+Fassung **mit** beidem — ohne `search_path` ist eine `SECURITY DEFINER`-Funktion
+angreifbar, und ohne `ON CONFLICT` bricht ein wiederholter Trigger ab.
+
+## Migrationsverzeichnis wieder synchron
+
+`apply_migration` vergibt Zeitstempel-Versionen (`20260828203931`) statt der
+Nummern aus den Dateinamen. Das hätte `supabase db push` dazu gebracht, 015–034
+für „noch nicht eingespielt" zu halten und erneut auszuführen. Die Versionen im
+Verzeichnis wurden deshalb auf die Dateinummern zurückgesetzt; `list_migrations`
+zeigt jetzt sauber `000`–`036`.
 
 ## Danach prüfen
 
@@ -32,50 +96,30 @@ supabase db push
 -- Spalten vorhanden?
 SELECT column_name FROM information_schema.columns
  WHERE table_name = 'dokumente'
-   AND column_name IN ('steuerfall','ust1tg_datum','ust1tg_referenz','storniert_at','storno_grund');
+   AND column_name IN ('share_token','positionen','steuerfall','storniert_at','mahnstufe');
 -- erwartet: 5 Zeilen
 
--- Constraints aktiv?
-SELECT conname, convalidated FROM pg_constraint
- WHERE conrelid = 'public.dokumente'::regclass
-   AND conname LIKE 'dokumente_%chk';
+-- Kann der Browser die Abrechnungsspalten schreiben? (muss false sein)
+SELECT has_column_privilege('authenticated','public.profiles','plan','UPDATE');
 
--- Bestandsdaten korrekt vorbelegt?
-SELECT steuerfall, count(*) FROM public.dokumente GROUP BY 1;
--- erwartet: alle Altzeilen auf 'standard'
+-- Kann ein Anonymer fremde Kontingente verbrennen? (muss false sein)
+SELECT has_function_privilege('anon','public.increment_dokument_counter(uuid,text)','EXECUTE');
 ```
-
-## Was vorab verifiziert wurde
-
-Gegen eine echte PostgreSQL-16-Instanz, nicht nur gelesen:
-
-- Alle 35 Migrationen laufen auf einer **leeren** Datenbank fehlerfrei durch.
-- Der **reale Upgrade-Pfad** — Bestand auf Stand 031 mit Rechnungen in den
-  Status `entwurf`, `gesendet`, `bezahlt`, `ueberfaellig` sowie einer Offerte,
-  danach 032 → 033 → 034 — läuft sauber. Altdaten bleiben unverändert und
-  bekommen `steuerfall = 'standard'`.
-- Die neuen Constraints greifen tatsächlich: ein nicht freigeschalteter
-  `steuerfall` wird abgewiesen, USt-1-TG-Felder auf einer Standardrechnung
-  werden abgewiesen, `status = 'storniert'` ohne `storniert_at` wird abgewiesen,
-  eine lebende Rechnung mit `storniert_at` wird abgewiesen, ein erfundener
-  Status wird abgewiesen.
 
 ## Zwei bekannte Punkte
 
-**Die Status-Whitelist ist `NOT VALID`.** Auf `dokumente.status` gab es nie
-einen CHECK, also könnte eine historische Zeile einen Wert tragen, den die
-Liste nicht kennt — ein validierender Constraint würde dann die ganze Migration
-abbrechen. `NOT VALID` erzwingt die Regel für alle künftigen Schreibvorgänge und
-lässt Altzeilen unangetastet. Nachträglich vollständig übernehmen:
+**Drei Constraints sind `NOT VALID`** — `dokumente_status_chk`,
+`dokumente_storniert_consistency_chk` (beide 033) und
+`profiles_ch_uid_mwst_format_check` (017). Sie greifen für alle künftigen
+Schreibvorgänge; nur Altzeilen sind ausgenommen. Die drei vorhandenen Dokumente
+tragen `entwurf`, `angenommen`, `bezahlt` — alle innerhalb der Whitelist, die
+Status-Regel könnte also sofort vollständig übernommen werden:
 
 ```sql
-SELECT DISTINCT status FROM public.dokumente;   -- erst ansehen
 ALTER TABLE public.dokumente VALIDATE CONSTRAINT dokumente_status_chk;
 ```
 
 **Vier ältere Migrationen sind nicht wiederholbar** (`000`, `001`, `013`,
-`019`): sie legen Policies mit `CREATE POLICY` ohne vorheriges
-`DROP POLICY IF EXISTS` an und brechen beim zweiten Durchlauf ab. In der
-normalen Vorwärtsreihenfolge läuft jede Datei genau einmal, also stört das im
-Betrieb nicht. Nur relevant, falls jemand eine Datei von Hand erneut ausführt.
-Nicht geändert — reines Housekeeping ausserhalb des aktuellen Auftrags.
+`019`): sie legen Policies ohne vorheriges `DROP POLICY IF EXISTS` an und
+brechen beim zweiten Durchlauf ab. In der normalen Vorwärtsreihenfolge läuft
+jede Datei genau einmal, im Betrieb stört das also nicht.
