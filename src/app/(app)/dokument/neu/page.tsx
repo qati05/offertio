@@ -9,6 +9,7 @@ import { peekNextNummer, commitNummer } from "@/lib/dokument-nummer";
 import { useOnlineStatus } from "@/components/OfflineBanner";
 import { findReusableCustomer, getCustomerDisplayName, mergeCustomerIntoDraft } from "@/lib/customers";
 import { classifySaveResponse, type SendOutcome } from "@/lib/send-outcome";
+import { getSendConfirmation } from "@/lib/send-confirmation";
 import { getDachConfig } from "@/lib/dach";
 import { isPro, FREE_LIMIT } from "@/lib/payment";
 import UpgradeScreen from "@/components/UpgradeScreen";
@@ -694,6 +695,18 @@ export default function DokumentNeuPage() {
 
     if (!downloadPdf && !sharePdf && !whatsappPdf && !emailPdf) return;
 
+    // Last stop before the document is frozen. An invoice saved as "gesendet"
+    // can no longer be edited — only cancelled and reissued — so the user gets
+    // one plain question first. Quotations stay editable and are not asked.
+    // Placed before setSending and before the WhatsApp tab is pre-opened, so a
+    // cancelled send leaves no spinner and no stray tab behind.
+    const confirmation = getSendConfirmation({
+      typ: dokumentTyp,
+      nummer,
+      kundenname: getCustomerDisplayName(kunde),
+    });
+    if (confirmation.required && !window.confirm(confirmation.message)) return;
+
     setSending(true);
 
     // Pre-open a WhatsApp tab now, while we still have the user gesture.
@@ -786,7 +799,12 @@ export default function DokumentNeuPage() {
             betrag: total,
             datum,
             leistungsdatum: leistungsdatum || null,
-            status: "entwurf",
+            // Sending is what issues the document. Everything downstream keys on
+            // this: the recipient may act on it, an invoice becomes immutable
+            // (§14 UStG / GoBD) and cancellable, "Bezahlt" and Mahnung appear,
+            // and an unpaid invoice can go überfällig. Writing "entwurf" here
+            // left that entire lifecycle inert. saveDraft still writes "entwurf".
+            status: "gesendet",
             // Send the cloud draft's id so the route UPDATEs that row instead of
             // INSERTing a second one. Without it the draft's own number counted
             // as taken and the invoice was renumbered to "<nummer>-1" — after
@@ -999,7 +1017,11 @@ export default function DokumentNeuPage() {
           kunde_ort: kunde.ort || null,
           betrag: total,
           datum,
-          status: "entwurf",
+          // Must match what the save actually wrote. The archive seeds its list
+          // from this cache before the server responds, so a stale "entwurf"
+          // here would show the wrong status on every first paint — and would
+          // stay wrong for as long as the user is offline.
+          status: "gesendet",
           source_document_id: sourceDocumentId,
           source_document_nummer: savedSourceDocumentNumber,
           source_document_typ: sourceDocumentId ? "offerte" : null,
