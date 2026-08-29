@@ -122,7 +122,11 @@ export default function OnboardingPage() {
         steuernummer: form.steuernummer,
         fn_nr: form.fn_nr,
         zahlungsfrist: parseInt(form.zahlungsfrist, 10) || 30,
-        plan: "free",
+        // `plan` is deliberately absent. The column defaults to 'free' and is
+        // written only by the Lemon Squeezy webhook through the service role —
+        // migration 035 revokes it from the browser's role, so sending it here
+        // would fail the whole upsert. Omitting it also stops a re-run of
+        // onboarding from downgrading a paying user back to free.
         onboarding_complete: true,
       },
       { onConflict: "id" },
