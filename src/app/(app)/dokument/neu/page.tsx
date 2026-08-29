@@ -787,6 +787,13 @@ export default function DokumentNeuPage() {
             datum,
             leistungsdatum: leistungsdatum || null,
             status: "entwurf",
+            // Send the cloud draft's id so the route UPDATEs that row instead of
+            // INSERTing a second one. Without it the draft's own number counted
+            // as taken and the invoice was renumbered to "<nummer>-1" — after
+            // the PDF with the original number had already gone to the customer
+            // — the free-plan quota was charged twice for one invoice, and the
+            // orphaned draft stayed in the archive unreachable.
+            existingDocumentId: cloudDraftId,
             sourceDocumentId,
             sourceDocumentNummer: sourceDocumentNumber,
             sourceDocumentTyp: sourceDocumentId ? "offerte" : null,
