@@ -85,10 +85,16 @@ dort. Streifen 105 mm hoch, Empfangsschein 62 mm, Zahlteil 148 mm, QR 46 mm —
 62 + 148 = 210 = A4-Breite. Das Seiten-Padding unten wurde entsprechend
 vergrössert, damit die Positionstabelle nicht unter den Streifen läuft.
 
-**Was daran geprüft ist und was nicht:** Die Umrechnung ist getestet, die
-Templates nutzen nachweislich die Konstanten, und die PDFs rendern fehlerfrei.
-**Niemand hat die PDFs angesehen.** Ob der Umbruch bei langen Positionslisten
-gut aussieht, ist ungeprüft — das braucht einen Blick auf ein echtes Dokument.
+**Was daran geprüft ist:** Die Umrechnung ist getestet, die Templates nutzen
+nachweislich die Konstanten. `pdf-layout-smoke.test.tsx` rendert echte PDFs
+durch alle fünf Vorlagen und liest sie mit `pdf-lib` zurück: Seitenformat ist
+A4 (595,28 × 841,89 pt), und eine Rechnung mit 25 Positionen bricht korrekt auf
+mehrere Seiten um, statt Zeilen zu verlieren oder das Rendern abzubrechen. Der
+Streifen belegt 35,4 % der Seitenhöhe.
+
+**Was nicht geprüft ist: Niemand hat ein PDF angesehen.** Die Tests zeigen,
+dass nichts abstürzt und nichts verlorengeht — nicht, ob das Ergebnis gut
+aussieht. Dafür braucht es einen Blick auf ein echtes Dokument.
 
 ## Was weiterhin ungeprüft ist
 
