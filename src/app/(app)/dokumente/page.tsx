@@ -11,15 +11,30 @@ import { buildDokumentCsv } from "@/lib/export";
 import { groupDocumentsByCustomer } from "@/lib/customer-folders";
 import { computeDocumentStatus, getStatus, MAHNSTUFE_SHORT, MAX_MAHNSTUFE, isMahnungCandidate } from "@/lib/dokument-status";
 import { checkStornoTransition } from "@/lib/dokument-immutability";
-import { getStornoConfirmation } from "@/lib/status-transitions";
+import { getStornoConfirmation, checkStatusTransition } from "@/lib/status-transitions";
 import type { DokumentHistorie, Profile } from "@/lib/types";
 
-/** Status options available per document type */
-function statusOptionsFor(typ: "offerte" | "rechnung") {
-  if (typ === "offerte") {
-    return ["entwurf", "gesendet", "angenommen", "abgelaufen"] as const;
-  }
-  return ["entwurf", "gesendet", "bezahlt", "ueberfaellig"] as const;
+/**
+ * Status options available per document type — filtered by what the server
+ * would actually accept from the document's current state.
+ *
+ * Offering "Entwurf" on an issued invoice was not merely useless: the user
+ * picked it, the row flickered to the new label, and then jumped back with no
+ * explanation, because the route refuses the transition. That reads as a broken
+ * app, not as a deliberate rule. The dropdown now asks the same
+ * checkStatusTransition the route uses, so a refused option is never offered.
+ */
+function statusOptionsFor(typ: "offerte" | "rechnung", currentStatus?: string) {
+  const all =
+    typ === "offerte"
+      ? (["entwurf", "gesendet", "angenommen", "abgelaufen"] as const)
+      : (["entwurf", "gesendet", "bezahlt", "ueberfaellig"] as const);
+  if (currentStatus === undefined) return all;
+  return all.filter(
+    (next) =>
+      next === currentStatus ||
+      checkStatusTransition({ typ, currentStatus, nextStatus: next }).ok,
+  );
 }
 
 /** Read cached history from localStorage synchronously (returns [] on miss/error). */
@@ -137,15 +152,19 @@ export default function DokumentePage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ id: doc.id }),
       });
-      if (!res.ok) setHistory(revert);
+      if (!res.ok) {
+        const body = await res.json().catch(() => null);
+        setHistory(revert);
+        setToast(body?.error ?? "Konnte nicht als bezahlt markiert werden.");
+      }
     } catch {
       setHistory(revert);
+      setToast("Verbindung zum Server fehlgeschlagen. Bitte versuche es erneut.");
     } finally {
       setUpdatingId(null);
     }
   }, [source]);
 
-  /** Escalate to the next Mahnstufe for an overdue Rechnung. */
   /**
    * Cancelling an invoice. The route existed, was hardened and tested, and had
    * no caller anywhere in the interface — while the immutability error told the
@@ -193,6 +212,7 @@ export default function DokumentePage() {
     }
   }, [source]);
 
+  /** Escalate to the next Mahnstufe for an overdue Rechnung. */
   const handleMahnung = useCallback(async (doc: DokumentHistorie) => {
     if (!doc.id || source === "local") return;
     const nextStufe = Math.min((doc.mahnstufe ?? 0) + 1, MAX_MAHNSTUFE);
@@ -220,9 +240,14 @@ export default function DokumentePage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ id: doc.id }),
       });
-      if (!res.ok) setHistory(revert);
+      if (!res.ok) {
+        const body = await res.json().catch(() => null);
+        setHistory(revert);
+        setToast(body?.error ?? "Mahnung konnte nicht gesendet werden.");
+      }
     } catch {
       setHistory(revert);
+      setToast("Verbindung zum Server fehlgeschlagen. Bitte versuche es erneut.");
     } finally {
       setUpdatingId(null);
     }
@@ -250,9 +275,16 @@ export default function DokumentePage() {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ id: doc.id, status: newStatus }),
         });
-        if (!res.ok) setHistory(revert);
+        if (!res.ok) {
+          // A silent revert looks like a bug. The routes answer 409 with a
+          // German sentence explaining why — show it.
+          const body = await res.json().catch(() => null);
+          setHistory(revert);
+          setToast(body?.error ?? "Status konnte nicht geändert werden.");
+        }
       } catch {
         setHistory(revert);
+        setToast("Verbindung zum Server fehlgeschlagen. Bitte versuche es erneut.");
       } finally {
         setUpdatingId(null);
       }
@@ -315,7 +347,7 @@ export default function DokumentePage() {
     const isRechnung = doc.typ === "rechnung";
     const convertedInvoice = doc.id ? convertedInvoicesBySourceId.get(doc.id) : null;
     const isUpdating = doc.id === updatingId;
-    const options = statusOptionsFor(doc.typ);
+    const options = statusOptionsFor(doc.typ, doc.status);
     const canEdit = !!doc.id && source === "cloud";
     const mahnstufe = doc.mahnstufe ?? 0;
     const isPaid = !!doc.payment_received_at || doc.status === "bezahlt";
