@@ -4,6 +4,7 @@ import { createSupabaseServer } from "@/lib/supabase-server";
 import { isAllowedOrigin, isValidUUID } from "@/lib/security";
 import { rateLimitAsync } from "@/lib/rate-limit";
 import { logger } from "@/lib/logger";
+import { checkStatusTransition } from "@/lib/status-transitions";
 
 /**
  * PATCH /api/dokument/mark-paid
@@ -84,6 +85,19 @@ export async function PATCH(request: NextRequest) {
   }
   if (current.typ !== "rechnung") {
     return json({ error: "Nur Rechnungen können als bezahlt markiert werden." }, 422);
+  }
+
+  // A cancelled invoice is inert. Without this the write reached Postgres and
+  // was rejected by the CHECK constraint from migration 033 (status='storniert'
+  // requires storniert_at), because this route sets `status` and never clears
+  // `storniert_at` — the user saw an unexplained 500 rather than a reason.
+  const transition = checkStatusTransition({
+    typ: current.typ,
+    currentStatus: current.status,
+    nextStatus: "bezahlt",
+  });
+  if (!transition.ok) {
+    return json({ error: transition.message, code: transition.code }, 409);
   }
 
   // Already paid — preserve original timestamp, return success.

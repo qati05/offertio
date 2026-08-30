@@ -4,6 +4,7 @@ import { createSupabaseServer } from "@/lib/supabase-server";
 import { isAllowedOrigin, isValidUUID } from "@/lib/security";
 import { rateLimitAsync } from "@/lib/rate-limit";
 import { logger } from "@/lib/logger";
+import { checkStatusTransition } from "@/lib/status-transitions";
 
 const MAX_MAHNSTUFE = 3;
 
@@ -85,6 +86,21 @@ export async function POST(request: NextRequest) {
   }
   if (current.status === "bezahlt" || current.payment_received_at) {
     return json({ error: "Bezahlte Rechnungen können nicht gemahnt werden." }, 422);
+  }
+
+  // A cancelled invoice must not be chased. This route failed differently from
+  // the others and therefore silently: it writes `status` only when the current
+  // status is "gesendet", so on a cancelled invoice it left `status` alone, the
+  // migration-033 constraint stayed satisfied, and the write SUCCEEDED —
+  // Mahnstufe 1, 2, 3 on a document that no longer exists. "ueberfaellig" is
+  // the status this route drives towards, so it is the transition to check.
+  const transition = checkStatusTransition({
+    typ: current.typ,
+    currentStatus: current.status,
+    nextStatus: "ueberfaellig",
+  });
+  if (!transition.ok) {
+    return json({ error: transition.message, code: transition.code }, 409);
   }
 
   const currentStufe = typeof current.mahnstufe === "number" ? current.mahnstufe : 0;
