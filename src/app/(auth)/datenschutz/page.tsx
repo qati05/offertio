@@ -44,7 +44,9 @@ export default function DatenschutzPage() {
           <h2 style={{ fontSize: 18, marginTop: 32, marginBottom: 12 }}>4. Datenspeicherung und Aufbewahrung</h2>
           <p>
             Profildaten, Kundendaten und Dokument-Metadaten werden in einer Supabase-Datenbank
-            (Hosting: EU/CH) gespeichert. Generierte PDF-Dokumente werden in Supabase Storage (EU/CH) abgelegt.
+            in der Europäischen Union (Frankfurt, Region eu-central-1) gespeichert. Generierte
+            PDF-Dokumente werden in Supabase Storage in derselben Region abgelegt. Eine
+            Speicherung in der Schweiz findet nicht statt.
           </p>
           <p style={{ marginTop: 8 }}>
             <strong>Gesetzliche Aufbewahrungspflichten:</strong> Als Nutzer sind Sie verpflichtet,
