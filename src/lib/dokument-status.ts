@@ -17,6 +17,7 @@ export type StatusKey =
   | "entwurf"
   | "gesendet"
   | "angenommen"
+  | "abgelehnt"
   | "bezahlt"
   | "abgelaufen"
   | "ueberfaellig"
@@ -37,6 +38,10 @@ export const STATUS_MAP: Record<StatusKey, StatusConfig> = {
   gesendet:     { label: "Ausstehend", color: "var(--color-primary)",  bg: "rgba(200,121,61,0.07)"  },
   offen:        { label: "Ausstehend", color: "var(--color-primary)",  bg: "rgba(200,121,61,0.07)"  },
   angenommen:   { label: "Bestätigt",  color: "#1A7F42",               bg: "rgba(26,127,66,0.07)"   },
+  // A declined quotation is a normal business outcome, not an error — muted
+  // like abgelaufen, never red. Missing here until now, so a declined offer
+  // fell through to the "offen" fallback and displayed as "Ausstehend".
+  abgelehnt:    { label: "Abgelehnt",  color: "var(--app-text-muted)", bg: "rgba(107,114,128,0.07)" },
   bezahlt:      { label: "Erledigt",   color: "#1A7F42",               bg: "rgba(26,127,66,0.07)"   },
   abgelaufen:   { label: "Abgelaufen", color: "var(--app-text-muted)", bg: "rgba(107,114,128,0.07)" },
   ueberfaellig: { label: "Überfällig", color: "#B91C1C",               bg: "rgba(185,28,28,0.07)"   },

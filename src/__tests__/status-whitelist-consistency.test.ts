@@ -1,11 +1,12 @@
 import { describe, it, expect } from "vitest";
 import { readFileSync, readdirSync } from "node:fs";
 import { join } from "node:path";
+import { STATUS_MAP } from "@/lib/dokument-status";
 
 /**
- * Three places name the statuses a document can have, and they have to agree:
- * the CHECK constraint in the migrations, the union type in types.ts, and the
- * literals the routes write.
+ * Four places name the statuses a document can have, and they have to agree:
+ * the CHECK constraint in the migrations, the union type in types.ts, the
+ * label table in dokument-status.ts, and the literals the routes write.
  *
  * They did not. Migration 033 put a constraint on dokumente.status and I wrote
  * the list from the values I could see — statusOptionsFor, the Storno work, the
@@ -118,11 +119,28 @@ describe("the three declarations of a document status agree", () => {
     expect(bad).toEqual([]);
   });
 
+  it("every status a route writes has its own label", () => {
+    // The fourth declaration. getStatus() falls back to "offen" for anything it
+    // does not know, so a missing entry does not throw — it silently displays
+    // the wrong thing. "storniert" showed as "Entwurf" this way, and
+    // "abgelehnt" would have shown as "Ausstehend".
+    const unlabelled = [...routes.entries()]
+      .filter(([value]) => !Object.prototype.hasOwnProperty.call(STATUS_MAP, value))
+      .map(([value, file]) => `${value} (${file})`);
+    expect(unlabelled).toEqual([]);
+  });
+
+  it("the label table declares nothing the database would reject", () => {
+    const labels = Object.keys(STATUS_MAP).filter((k) => k !== "offen");
+    expect(labels.filter((s) => !whitelist.has(s))).toEqual([]);
+  });
+
   it("accepts the rejection status the recipient view writes", () => {
     // Named explicitly because this is the one that was missing, and because
     // it only becomes reachable when NEXT_PUBLIC_ENABLE_SIGNING is turned on.
     expect(whitelist.has("abgelehnt")).toBe(true);
     expect(union.has("abgelehnt")).toBe(true);
     expect(routes.get("abgelehnt")).toContain("public/reject");
+    expect(Object.prototype.hasOwnProperty.call(STATUS_MAP, "abgelehnt")).toBe(true);
   });
 });
