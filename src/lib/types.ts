@@ -137,6 +137,7 @@ export interface DokumentHistorie {
     | "entwurf"
     | "gesendet"
     | "angenommen"
+    | "abgelehnt"
     | "abgelaufen"
     | "bezahlt"
     | "ueberfaellig"

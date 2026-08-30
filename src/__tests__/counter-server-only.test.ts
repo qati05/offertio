@@ -38,6 +38,21 @@ describe("migration 037", () => {
     expect(MIGRATION).toMatch(/CHECK\s*\(\s*anzahl\s*>=\s*0\s*\)/i);
   });
 
+  it("heals negative counters before constraining them", () => {
+    // The gap this migration closes is what produces negative counters, so a
+    // database where it was exploited is the likeliest place this runs. A
+    // validating ADD CONSTRAINT would abort on exactly that row.
+    const heal = MIGRATION.search(/UPDATE\s+public\.dokument_counter\s+SET\s+anzahl\s*=\s*0/i);
+    const constrain = MIGRATION.search(/ADD CONSTRAINT dokument_counter_anzahl_nonnegative_chk/i);
+    expect(heal).toBeGreaterThan(-1);
+    expect(constrain).toBeGreaterThan(-1);
+    expect(heal).toBeLessThan(constrain);
+  });
+
+  it("adds the constraint as NOT VALID, like migration 033", () => {
+    expect(MIGRATION).toMatch(/CHECK\s*\(\s*anzahl\s*>=\s*0\s*\)\s*\n?\s*NOT VALID/i);
+  });
+
   it("does not touch SELECT — the routes read this table", () => {
     // check-limit and save both SELECT it. Revoking that would break the quota
     // check outright.

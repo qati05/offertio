@@ -3,6 +3,15 @@
 Stand **29.08.2026**, Projekt `osexdcaqlggnaubeezqo` (Offertio, eu-central-1).
 Migrationen **000–036 sind eingespielt**. Nachgemessen, nicht angenommen.
 
+> ⚠️ **037 und 038 liegen im Repo, sind aber NICHT eingespielt.**
+>
+> **038** trägt `abgelehnt` in die Status-Whitelist nach. Die Liste aus 033 hat
+> diesen Status übersehen — geschrieben wird er von `/api/public/reject`, wenn
+> ein Empfänger eine Offerte über den geteilten Link ablehnt. Solange
+> `NEXT_PUBLIC_ENABLE_SIGNING=false` ist, ist die Route nicht erreichbar und
+> nichts bricht. **Ohne 038 scheitert dort jede Ablehnung mit einem 500, sobald
+> das Feature eingeschaltet wird.**
+>
 > ⚠️ **037 liegt im Repo, ist aber NICHT eingespielt.** Die Verbindung zur
 > Live-Datenbank war zum Zeitpunkt der Erstellung gesperrt. Die Migration
 > entzieht der Browser-Rolle die Schreibrechte auf `dokument_counter` — ohne

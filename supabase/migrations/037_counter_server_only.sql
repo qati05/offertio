@@ -39,15 +39,30 @@
 
 REVOKE INSERT, UPDATE, DELETE ON public.dokument_counter FROM authenticated;
 
+-- Heal before constraining. The gap this migration closes is exactly the one
+-- that produces negative counters, so a database where it was exploited is the
+-- likeliest place for this migration to run — and a validating constraint would
+-- abort on precisely that row, leaving the REVOKE above in doubt depending on
+-- how the runner wraps the file. Reproduced by the audit's red team against a
+-- local database still holding an `anzahl = -999` row from their own proof of
+-- the exploit: the ADD CONSTRAINT failed and took the migration with it.
+--
+-- A negative counter has no legitimate meaning, so resetting it to zero loses
+-- nothing; it gives the user back the free documents they helped themselves to,
+-- which is the correct direction to err.
+UPDATE public.dokument_counter SET anzahl = 0 WHERE anzahl < 0;
+
 -- The value guard stays even if a future migration re-grants the write. A
 -- counter is a count: it cannot be negative, and no legitimate caller ever
--- tries.
+-- tries. NOT VALID for the same reason migration 033 uses it — future writes
+-- are constrained, historical rows are not re-checked on the way in.
 ALTER TABLE public.dokument_counter
   DROP CONSTRAINT IF EXISTS dokument_counter_anzahl_nonnegative_chk;
 
 ALTER TABLE public.dokument_counter
   ADD CONSTRAINT dokument_counter_anzahl_nonnegative_chk
-  CHECK (anzahl >= 0);
+  CHECK (anzahl >= 0)
+  NOT VALID;
 
 COMMENT ON TABLE public.dokument_counter IS
   'Monthly document count for free-plan enforcement. Written exclusively by increment_dokument_counter (SECURITY DEFINER); the authenticated role may only read it.';
