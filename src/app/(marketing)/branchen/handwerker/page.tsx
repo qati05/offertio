@@ -250,7 +250,7 @@ export default function HandwerkerPage() {
                 className="text-sm mb-6"
                 style={{ color: "var(--color-text-muted)" }}
               >
-                10 Dokumente pro Monat. Zum Reinschnuppern.
+                5 Dokumente pro Monat. Zum Reinschnuppern.
               </p>
               <ul
                 className="space-y-2 text-sm mb-6"

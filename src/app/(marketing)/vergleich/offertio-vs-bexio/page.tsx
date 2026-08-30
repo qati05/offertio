@@ -26,7 +26,7 @@ const rows = [
 const faqs = [
   {
     q: "Ist Offertio eine günstige bexio-Alternative?",
-    a: "Ja. bexio startet bei CHF 39 pro Monat und ist primär für KMU mit Lohnbuchhaltung und Treuhänder-Anbindung gedacht. Offertio kostet CHF 0 für 10 Dokumente pro Monat und ist auf schnelle, mobile Offerten und Rechnungen spezialisiert – ideal für Selbstständige und Kleinstbetriebe.",
+    a: "Ja. bexio startet bei CHF 39 pro Monat und ist primär für KMU mit Lohnbuchhaltung und Treuhänder-Anbindung gedacht. Offertio kostet CHF 0 für 5 Dokumente pro Monat und ist auf schnelle, mobile Offerten und Rechnungen spezialisiert – ideal für Selbstständige und Kleinstbetriebe.",
   },
   {
     q: "Hat Offertio auch Swiss QR-Rechnung wie bexio?",

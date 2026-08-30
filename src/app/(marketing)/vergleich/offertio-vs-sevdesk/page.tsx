@@ -293,7 +293,7 @@ export default function VergleichSevDeskPage() {
           Offertio kostenlos testen — ohne Kreditkarte
         </h2>
         <p style={{ color: "var(--color-text-muted)", fontSize: 15, marginBottom: 28 }}>
-          10 Dokumente pro Monat, Swiss QR-Rechnung, PDF-Versand — dauerhaft gratis.
+          5 Dokumente pro Monat, Swiss QR-Rechnung, PDF-Versand — dauerhaft gratis.
         </p>
         <a
           href="/#preise"

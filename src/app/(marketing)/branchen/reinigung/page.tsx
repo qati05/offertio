@@ -328,7 +328,7 @@ export default function ReinigungPage() {
               Für immer kostenlos
             </div>
             <ul style={{ listStyle: "none", padding: 0, fontSize: 14, lineHeight: 2 }}>
-              <li>✓ 10 Dokumente / Monat</li>
+              <li>✓ 5 Dokumente / Monat</li>
               <li>✓ Swiss QR-Rechnung</li>
               <li>✓ PDF per Mail</li>
               <li>✓ Logo & Farben</li>
