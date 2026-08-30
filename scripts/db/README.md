@@ -14,6 +14,7 @@ su postgres -c "/usr/lib/postgresql/16/bin/pg_ctl -D /tmp/pgtest -o '-p 54329 -k
 
 psql -h /tmp -p 54329 -U postgres -f scripts/db/_trigger-schema.sql
 psql -h /tmp -p 54329 -U postgres -f supabase/migrations/039_issued_invoice_immutable.sql
+psql -h /tmp -p 54329 -U postgres -f supabase/migrations/040_issued_invoice_delete_and_metadata.sql
 psql -h /tmp -p 54329 -U postgres -f scripts/db/verify-039-trigger.sql
 ```
 
@@ -24,10 +25,18 @@ Erwartet:
 | Betrag / Nummer / Positionen einer gesendeten Rechnung ändern | `issued invoice content is immutable` |
 | Gesendete Rechnung auf `entwurf` zurück | `issued invoice cannot return to draft` |
 | Stornierte Rechnung reaktivieren | `cancelled invoice is final` |
+| Ausgestellte Rechnung löschen | `issued invoice must be retained` |
+| `pdf_url`, `share_token` oder `created_at` einer gestellten Rechnung ändern | `issued invoice content is immutable` |
 | Als bezahlt markieren, mahnen, Status wechseln, stornieren | geht durch |
+| Entwurf oder Offerte löschen | geht durch |
 | Entwurf inhaltlich ändern | geht durch |
 | Offerte signieren, ändern, Konvertierungsverweis setzen | geht durch |
 
-Gemessen am 30.08.2026 gegen PostgreSQL 16: alle fünf Angriffe abgewiesen, alle
-acht legitimen Pfade erlaubt. Die Migration läuft auch dann komplett durch, wenn
+Gemessen am 30.08.2026 gegen PostgreSQL 16: alle **neun** Angriffe abgewiesen,
+alle **zehn** legitimen Pfade erlaubt.
+
+Das Schema in `_trigger-schema.sql` war zunächst unvollständig — es hatte kein
+`pdf_url`. Die Prüfung sah dadurch vollständig aus, während die Spalte, die auf
+das archivierte Dokument selbst zeigt, nie angefasst wurde. Wer dieses Schema
+erweitert: eine fehlende Spalte macht die Prüfung stillschweigend blind. Die Migration läuft auch dann komplett durch, wenn
 die Rolle `service_role` fehlt — der `GRANT` steht in einem Existenz-Guard.

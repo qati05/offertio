@@ -50,10 +50,28 @@ function unionFromTypes(): Set<string> {
   return new Set([...match[1].matchAll(/"([a-z_]+)"/g)].map((m) => m[1]));
 }
 
-/** Status literals written by the routes that update documents. */
+/**
+ * Status literals a route actually writes to a document row.
+ *
+ * Getting the aim right took three tries, and both misses are worth recording
+ * because they are opposite failures:
+ *
+ *   - too narrow: it matched only `status: "wert"` inside api/dokument and
+ *     api/public, so mahnung's `updates.status = "ueberfaellig"` and
+ *     recurring/run's insert were invisible;
+ *   - too broad: widening it swept in `results.push({ status: "skipped" })`
+ *     from the recurring runner and the health route's `status: "ok"`, which
+ *     are API response fields and have nothing to do with a document.
+ *
+ * So it looks for writes, not for the word: the payload of an .update() or
+ * .insert(), an object literal carrying the columns a document row has, or an
+ * assignment onto an updates object.
+ */
 function statusesWrittenByRoutes(): Map<string, string> {
-  const roots = ["src/app/api/dokument", "src/app/api/public"];
+  const roots = ["src/app/api/dokument", "src/app/api/public", "src/app/api/recurring"];
   const found = new Map<string, string>();
+  const DOCUMENT_FIELDS = ["user_id", "nummer", "typ", "betrag", "kundenname"];
+
   for (const root of roots) {
     for (const dir of readdirSync(root, { withFileTypes: true })) {
       if (!dir.isDirectory()) continue;
@@ -65,8 +83,28 @@ function statusesWrittenByRoutes(): Map<string, string> {
         continue;
       }
       if (!source.includes('from("dokumente")')) continue;
-      for (const match of source.matchAll(/\bstatus:\s*"([a-z_]+)"/g)) {
-        found.set(match[1], file.replace("src/app/api/", ""));
+      const label = file.replace("src/app/api/", "");
+
+      const record = (value: string) => found.set(value, label);
+
+      // 1. The payload of an update or insert.
+      for (const call of source.matchAll(/\.(update|insert)\(\s*\{([\s\S]*?)\}\s*\)/g)) {
+        const match = call[2].match(/\bstatus:\s*"([a-z_]+)"/);
+        if (match) record(match[1]);
+      }
+
+      // 2. An object literal that carries document columns — the payload built
+      //    in a variable first, as recurring/run does.
+      for (const literal of source.matchAll(/\{([^{}]*\bstatus:\s*"[a-z_]+"[^{}]*)\}/g)) {
+        const body = literal[1];
+        if (!DOCUMENT_FIELDS.some((f) => body.includes(`${f}:`))) continue;
+        const match = body.match(/\bstatus:\s*"([a-z_]+)"/);
+        if (match) record(match[1]);
+      }
+
+      // 3. `updates.status = "..."` — the assignment form.
+      for (const match of source.matchAll(/\bupdates\.status\s*=\s*"([a-z_]+)"/g)) {
+        record(match[1]);
       }
     }
   }
@@ -77,6 +115,14 @@ describe("the three declarations of a document status agree", () => {
   const whitelist = whitelistFromMigrations();
   const union = unionFromTypes();
   const routes = statusesWrittenByRoutes();
+
+  it("sees both ways a route can write a status", () => {
+    // Guards against the blind spots above returning: mahnung uses the
+    // assignment form, recurring/run lies outside the original two roots.
+    const files = [...routes.values()].join(" ");
+    expect(files).toMatch(/mahnung/);
+    expect(files).toMatch(/recurring/);
+  });
 
   it("finds all three to compare", () => {
     // Guards the guard: a renamed constraint, a moved type or a restructured

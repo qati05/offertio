@@ -3,10 +3,19 @@
 Stand **29.08.2026**, Projekt `osexdcaqlggnaubeezqo` (Offertio, eu-central-1).
 Migrationen **000–036 sind eingespielt**. Nachgemessen, nicht angenommen.
 
-> ⚠️ **037, 038 und 039 liegen im Repo, sind aber NICHT eingespielt.**
+> ⚠️ **037 bis 040 liegen im Repo, sind aber NICHT eingespielt.**
+>
+> **040** schliesst zwei Wege um 039 herum, die das Red Team gefunden und
+> gegen echtes PostgreSQL reproduziert hat: eine ausgestellte Rechnung liess
+> sich **löschen** (039 ist nur `BEFORE UPDATE`), und `pdf_url` war nicht
+> eingefroren — man konnte das hinterlegte PDF austauschen, während Betrag,
+> Nummer und Status nachweislich unverändert blieben. 040 fügt einen
+> `BEFORE DELETE`-Trigger hinzu und dreht die Spaltenregel um: **alles ist
+> eingefroren ausser sechs Spalten**, statt eine Liste der verbotenen zu führen.
+> Damit ist auch jede künftig hinzukommende Spalte automatisch geschützt.
 >
 > **039** macht eine ausgestellte Rechnung in der Datenbank selbst
-> unveränderbar. Bisher lebte diese Regel nur in `/api/dokument/save` — der
+> unveränderbar (in der von 040 korrigierten Fassung). Bisher lebte diese Regel nur in `/api/dokument/save` — der
 > Browser spricht aber direkt mit PostgREST, ein eingeloggter Nutzer konnte
 > seine eigene gestellte Rechnung also mit dem eigenen Token umschreiben
 > (zweimal unabhängig reproduziert). Der Trigger lässt Zahlung und Mahnwesen

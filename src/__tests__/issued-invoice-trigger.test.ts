@@ -24,14 +24,25 @@ const MIGRATION = readFileSync(
   "supabase/migrations/039_issued_invoice_immutable.sql",
   "utf8",
 );
+/** 040 replaces the function 039 installs and adds the DELETE guard. */
+const MIGRATION_040 = readFileSync(
+  "supabase/migrations/040_issued_invoice_delete_and_metadata.sql",
+  "utf8",
+);
 
-/** Columns the trigger freezes on an issued invoice. */
-function frozenColumns(): Set<string> {
-  const block = MIGRATION.slice(
-    MIGRATION.indexOf("IF (NEW.betrag"),
-    MIGRATION.indexOf("issued invoice content is immutable"),
+/**
+ * Columns that may still move on an issued invoice.
+ *
+ * 039 enumerated the FROZEN columns, which meant anything it forgot — pdf_url,
+ * share_token, created_at — was writable by default, and a column added later
+ * would be too. 040 inverts it: everything is frozen except this list.
+ */
+function writableColumns(): Set<string> {
+  const block = MIGRATION_040.slice(
+    MIGRATION_040.indexOf("writable constant text[]"),
+    MIGRATION_040.indexOf("];", MIGRATION_040.indexOf("writable constant text[]")),
   );
-  return new Set([...block.matchAll(/NEW\.([a-z_]+)/g)].map((m) => m[1]));
+  return new Set([...block.matchAll(/'([a-z_]+)'/g)].map((m) => m[1]));
 }
 
 /** Columns each route writes to an existing dokumente row. */
@@ -63,8 +74,11 @@ function routeWrites(): Map<string, Set<string>> {
   return out;
 }
 
-/** Routes that only ever touch quotations — the trigger exempts those. */
-const OFFERTE_ONLY = new Set(["sign", "reject"]);
+/**
+ * Routes whose writes never land on an issued invoice, so the trigger does not
+ * apply to them. Each one is asserted below rather than taken on trust.
+ */
+const OFFERTE_ONLY = new Set(["sign", "reject", "save"]);
 
 describe("migration 039 locks an issued invoice", () => {
   it("refuses a return to draft, which would remove the lock", () => {
@@ -84,11 +98,34 @@ describe("migration 039 locks an issued invoice", () => {
     expect(MIGRATION).toMatch(/OLD\.typ <> 'rechnung' OR OLD\.status = 'entwurf'/);
   });
 
-  it("freezes the money and counterparty columns", () => {
-    const frozen = frozenColumns();
-    for (const column of ["betrag", "nummer", "positionen", "kundenname", "datum", "mwst_satz", "steuerfall"]) {
-      expect(frozen.has(column), `${column} must be frozen`).toBe(true);
+  it("freezes by default instead of enumerating what to freeze", () => {
+    // The inversion is the point: an enumeration is only as complete as the day
+    // it was written, and 039's forgot pdf_url — the pointer to the archived
+    // document itself. A column added in a later migration is now protected
+    // without anyone remembering to add it.
+    expect(MIGRATION_040).toContain("to_jsonb(OLD)");
+    expect(MIGRATION_040).toContain("to_jsonb(NEW)");
+    const writable = writableColumns();
+    for (const column of ["betrag", "nummer", "positionen", "pdf_url", "share_token", "created_at"]) {
+      expect(writable.has(column), `${column} must not be writable`).toBe(false);
     }
+  });
+
+  it("refuses to delete an issued invoice", () => {
+    // Worse than editing: the invoice has to be KEPT (§147 AO, Art. 958f OR),
+    // and 039 was BEFORE UPDATE only. Reproduced against real PostgreSQL: a
+    // logged-in owner could DELETE their own sent invoice outright.
+    expect(MIGRATION_040).toContain("BEFORE DELETE ON public.dokumente");
+    expect(MIGRATION_040).toContain("issued invoice must be retained");
+  });
+
+  it("still lets a draft or a quotation be deleted", () => {
+    // A blanket REVOKE is the over-broad fix that broke Storno earlier in this
+    // audit. The guard states the actual rule instead.
+    const retention = MIGRATION_040.slice(
+      MIGRATION_040.indexOf("enforce_issued_invoice_retention()"),
+    );
+    expect(retention).toMatch(/OLD\.typ = 'rechnung' AND OLD\.status <> 'entwurf'/);
   });
 
   it("guards the GRANT against a missing role", () => {
@@ -99,27 +136,41 @@ describe("migration 039 locks an issued invoice", () => {
   });
 });
 
-describe("the premise: no route writes a frozen column on an invoice", () => {
-  const frozen = frozenColumns();
+describe("the premise: no invoice route writes outside the writable list", () => {
+  const writable = writableColumns();
   const routes = routeWrites();
 
   it("found the routes to check", () => {
     expect(routes.size).toBeGreaterThan(3);
-    expect(frozen.size).toBeGreaterThan(15);
+    expect(writable.size).toBe(6);
   });
 
-  it.each([...routes.keys()])("%s writes only unfrozen columns", (name) => {
+  it.each([...routes.keys()])("%s writes only writable columns", (name) => {
     if (OFFERTE_ONLY.has(name)) return; // trigger does not apply to quotations
     const written = routes.get(name)!;
-    const collisions = [...written].filter((c) => frozen.has(c));
-    expect(collisions).toEqual([]);
+    const blocked = [...written].filter((c) => !writable.has(c));
+    expect(blocked).toEqual([]);
   });
 
-  it("leaves the payment and dunning columns writable", () => {
-    // The lifecycle has to keep working: this is what the first proposed fix
-    // would have broken.
+  it("save only writes converted_document_* to a quotation", () => {
+    // save is on the exemption list above, so the reason has to hold: it writes
+    // those columns to the SOURCE document of a conversion, and a Rechnung is
+    // only ever converted FROM an Offerte. If that guard were ever loosened,
+    // the trigger would start refusing the write in production.
+    const route = readFileSync("src/app/api/dokument/save/route.ts", "utf8");
+    const idx = route.indexOf("converted_document_id:");
+    expect(idx).toBeGreaterThan(-1);
+    const before = route.slice(Math.max(0, idx - 400), idx);
+    expect(before).toMatch(/typ === "rechnung" && sourceDocumentId/);
+    // And the client only ever declares an Offerte as the source.
+    const form = readFileSync("src/app/(app)/dokument/neu/page.tsx", "utf8");
+    expect(form).toMatch(/sourceDocumentTyp:\s*sourceDocumentId \? "offerte"/);
+  });
+
+  it("keeps the payment and dunning lifecycle open", () => {
+    // What the first proposed fix in this audit would have broken.
     for (const column of ["status", "storniert_at", "storno_grund", "payment_received_at", "mahnstufe", "last_mahnung_at"]) {
-      expect(frozen.has(column), `${column} must stay writable`).toBe(false);
+      expect(writable.has(column), `${column} must stay writable`).toBe(true);
     }
   });
 });

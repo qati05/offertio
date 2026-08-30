@@ -40,3 +40,27 @@ UPDATE public.dokumente SET converted_document_id='11111111-1111-4111-8111-11111
 
 \echo '=== Endstand ==='
 SELECT nummer, status, betrag, mahnstufe FROM public.dokumente ORDER BY nummer;
+
+\echo '=== MUSS SCHEITERN: ausgestellte Rechnung loeschen (Aufbewahrungspflicht) ==='
+INSERT INTO public.dokumente (id,user_id,typ,nummer,kundenname,betrag,datum,status,pdf_url)
+VALUES ('55555555-5555-4555-8555-555555555555','22222222-2222-4222-8222-222222222222',
+        'rechnung','RE-2026-0099','Muster AG',5000.00,'2026-08-01','gesendet','user/echt.pdf');
+DELETE FROM public.dokumente WHERE nummer='RE-2026-0099';
+
+\echo '=== MUSS SCHEITERN: pdf_url einer gestellten Rechnung austauschen ==='
+UPDATE public.dokumente SET pdf_url='user/gefaelscht.pdf' WHERE nummer='RE-2026-0099';
+\echo '=== MUSS SCHEITERN: share_token einer gestellten Rechnung aendern ==='
+UPDATE public.dokumente SET share_token=gen_random_uuid() WHERE nummer='RE-2026-0099';
+\echo '=== MUSS SCHEITERN: created_at rueckdatieren ==='
+UPDATE public.dokumente SET created_at='2020-01-01' WHERE nummer='RE-2026-0099';
+
+\echo '=== MUSS GEHEN: Entwurf loeschen ==='
+INSERT INTO public.dokumente (id,user_id,typ,nummer,kundenname,betrag,datum,status)
+VALUES ('77777777-7777-4777-8777-777777777777','22222222-2222-4222-8222-222222222222',
+        'rechnung','RE-2026-0098','Muster AG',10.00,'2026-08-01','entwurf');
+DELETE FROM public.dokumente WHERE nummer='RE-2026-0098';
+\echo '=== MUSS GEHEN: Offerte loeschen ==='
+DELETE FROM public.dokumente WHERE typ='offerte';
+
+\echo '=== Endstand nach Runde 2 ==='
+SELECT nummer, status, betrag, pdf_url FROM public.dokumente ORDER BY nummer;

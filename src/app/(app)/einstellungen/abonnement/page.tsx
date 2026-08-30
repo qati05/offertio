@@ -80,7 +80,13 @@ export default function AbonnementPage() {
   const inTrial = isInTrial(trialEndsAt);
   const pro = isPro(plan);
   const { currency, prices } = getPricing(profile?.land);
-  const checkoutReady = isCheckoutConfigured("pro_monthly");
+  // Each plan is checked separately. Gating both buttons on the monthly key
+  // meant that if only one of the two environment variables were set, the other
+  // button would render with getCheckoutUrl's "#upgrade" fallback — a dead link
+  // and exactly the failure this page exists to remove.
+  const monthlyReady = isCheckoutConfigured("pro_monthly");
+  const yearlyReady = isCheckoutConfigured("pro_yearly");
+  const checkoutReady = monthlyReady || yearlyReady;
 
   if (loading) {
     return (
@@ -150,15 +156,22 @@ export default function AbonnementPage() {
 
           {checkoutReady ? (
             <div className="mt-5 flex flex-wrap gap-3">
-              <a
-                href={getCheckoutUrl("pro_monthly", email, userId)}
-                className="btn-premium btn-premium-primary"
-              >
-                Monatlich — {currency} {prices.monthly}
-              </a>
-              <a href={getCheckoutUrl("pro_yearly", email, userId)} className="btn-premium">
-                Jährlich — {currency} {prices.yearly}
-              </a>
+              {monthlyReady && (
+                <a
+                  href={getCheckoutUrl("pro_monthly", email, userId)}
+                  className="btn-premium btn-premium-primary"
+                >
+                  Monatlich — {currency} {prices.monthly}
+                </a>
+              )}
+              {yearlyReady && (
+                <a
+                  href={getCheckoutUrl("pro_yearly", email, userId)}
+                  className={monthlyReady ? "btn-premium" : "btn-premium btn-premium-primary"}
+                >
+                  Jährlich — {currency} {prices.yearly}
+                </a>
+              )}
             </div>
           ) : (
             /* An unconfigured checkout must say so. A button that goes nowhere

@@ -66,6 +66,16 @@ describe("the subscription page", () => {
     expect(source).toContain("isCheckoutConfigured");
   });
 
+  it("checks each plan separately", () => {
+    // Gating both buttons on the monthly key would render the yearly one with
+    // getCheckoutUrl's "#upgrade" fallback if only that variable were missing —
+    // a dead link, which is the failure this page exists to remove.
+    expect(source).toContain('isCheckoutConfigured("pro_monthly")');
+    expect(source).toContain('isCheckoutConfigured("pro_yearly")');
+    expect(source).toMatch(/monthlyReady &&/);
+    expect(source).toMatch(/yearlyReady &&/);
+  });
+
   it("shows what the user has now, not only what they could buy", () => {
     expect(source).toMatch(/isInTrial|trialDaysRemaining/);
     expect(source).toContain("isPro");
