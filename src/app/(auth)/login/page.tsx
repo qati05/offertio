@@ -345,7 +345,13 @@ export default function LoginPage() {
             </button>
           </div>
 
+          {/* §1 of the AGB says registration is the act of acceptance, so the
+              terms have to be readable from the screen where that happens —
+              §305 Abs. 2 BGB asks for a reasonable opportunity to take notice
+              before they become part of the contract. */}
           <div className="auth-footer-links">
+            <Link href="/agb">AGB</Link>
+            <span style={{ color: "var(--app-border)" }}>·</span>
             <Link href="/datenschutz">Datenschutz</Link>
             <span style={{ color: "var(--app-border)" }}>·</span>
             <Link href="/impressum">Impressum</Link>
