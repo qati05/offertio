@@ -12,6 +12,7 @@ import { formatMoney } from "@/lib/money-format";
 import { getSteuerHinweis, getEffektiverMwstSatz, type Steuerfall } from "@/lib/reverse-charge";
 import { formatSwissDate } from "@/lib/dates";
 import { resolveAccentPalette } from "@/lib/pdf-colors";
+import { QR_BILL_PT, QR_BILL_PAGE_BOTTOM_PT } from "@/lib/qr-bill-layout";
 
 function fmtIBAN(iban: string) {
   return iban.replace(/\s/g, "").replace(/(.{4})/g, "$1 ").trim();
@@ -91,7 +92,7 @@ export default function PDFFarbig({
 
   // Styles are derived inline to pick up the dynamic accent color.
   const s = StyleSheet.create({
-    page: { fontFamily: "Helvetica", fontSize: 9, color: "#1A1916" },
+    page: { fontFamily: "Helvetica", fontSize: 9, color: "#1A1916" , paddingBottom: QR_BILL_PAGE_BOTTOM_PT },
     // Wide colored header band — covers the top of the page.
     headerBand: {
       backgroundColor: accent,
@@ -202,12 +203,12 @@ export default function PDFFarbig({
     // QR (reuses the Modern layout so the dashed-line Swiss QR receipt renders
     // the same across templates — changing only the Zahlteil title color).
     qrSection: {
-      position: "absolute" as const, bottom: 0, left: 0, right: 0, height: 105,
+      position: "absolute" as const, bottom: 0, left: 0, right: 0, height: QR_BILL_PT.stripHeight,
       borderTopWidth: 1, borderTopColor: "#000", borderTopStyle: "dashed" as const,
       flexDirection: "row",
     },
     qrReceipt: {
-      width: 175, padding: "8 10",
+      width: QR_BILL_PT.receiptWidth, padding: "8 10",
       borderRightWidth: 1, borderRightColor: "#000", borderRightStyle: "dashed" as const,
     },
     qrPayment: { flex: 1, padding: "8 16", flexDirection: "row" },
@@ -219,7 +220,9 @@ export default function PDFFarbig({
     qrSecVal: { fontSize: 7, lineHeight: 1.3, color: "#1A1916" },
     qrAmtRow: { flexDirection: "row", marginTop: 6 },
     qrAmtCol: { marginRight: 16 },
-    qrImage: { width: 80, height: 80, marginRight: 12 },
+    qrImage: {
+    width: QR_BILL_PT.code,
+    height: QR_BILL_PT.code, marginRight: 12 },
     qrPayInfo: { flex: 1 },
     qrPlaceholder: {
       position: "absolute" as const, bottom: 40, left: 48, right: 48,

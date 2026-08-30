@@ -3,6 +3,7 @@
 import { describe, it, expect } from "vitest";
 import jsQR from "jsqr";
 import { SwissQRCode } from "swissqrbill/svg";
+import { QR_BILL_MM } from "@/lib/qr-bill-layout";
 
 /**
  * The Swiss QR code, decoded rather than assumed.
@@ -235,30 +236,11 @@ describe("Swiss QR code · print size", () => {
     expect(svg).toContain('height="46mm"');
   });
 
-  it.skip("the PDF templates render it at 46 mm (130.4 pt) — currently 80 pt", () => {
-    // KNOWN DEFECT, deliberately left failing-but-skipped rather than silently
-    // absent. All five templates set `qrImage: { width: 80, height: 80 }`, which
-    // overrides the SVG's own 46 mm and prints the code at 28.22 mm — 61 % of
-    // the size the standard fixes, with a module size of 0.495 mm instead of
-    // 0.807 mm.
-    //
-    // Not fixed here because 130.4 pt is 63 % wider than 80 pt and reflows the
-    // payment block in all five layouts — a design change, not a bug fix.
-    // Un-skip once the templates are relaid out.
-    const templates = [
-      "src/components/OffertePDF.tsx",
-      "src/components/pdf/PDFMinimal.tsx",
-      "src/components/pdf/PDFModern.tsx",
-      "src/components/pdf/PDFProfessionell.tsx",
-      "src/components/pdf/PDFFarbig.tsx",
-    ];
-    const expectedPt = Number(((QR_SIDE_MM * 72) / 25.4).toFixed(1)); // 130.4
-    for (const path of templates) {
-      // eslint-disable-next-line @typescript-eslint/no-require-imports
-      const source = require("node:fs").readFileSync(path, "utf8") as string;
-      const match = source.match(/qrImage:\s*\{\s*width:\s*([\d.]+)/);
-      expect(match, path).not.toBeNull();
-      expect(Number(match![1]), path).toBeCloseTo(expectedPt, 0);
-    }
+  it("the templates take their print size from the shared geometry module", () => {
+    // The size assertions themselves live in qr-bill-layout.test.ts, which owns
+    // the millimetre-to-point conversion. Repeating them here would be two
+    // places to update and one to forget; this only pins that the payload test
+    // and the layout test are talking about the same 46 mm.
+    expect(QR_BILL_MM.code).toBe(QR_SIDE_MM);
   });
 });

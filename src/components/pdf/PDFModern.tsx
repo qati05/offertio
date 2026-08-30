@@ -12,13 +12,14 @@ import { getDachConfig } from "@/lib/dach";
 import { formatMoney } from "@/lib/money-format";
 import { getSteuerHinweis, getEffektiverMwstSatz } from "@/lib/reverse-charge";
 import { formatSwissDate } from "@/lib/dates";
+import { QR_BILL_PT, QR_BILL_PAGE_BOTTOM_PT } from "@/lib/qr-bill-layout";
 
 function fmtIBAN(iban: string) {
   return iban.replace(/\s/g, "").replace(/(.{4})/g, "$1 ").trim();
 }
 
 const m = StyleSheet.create({
-  page: { fontFamily: "Helvetica", fontSize: 9, color: "#1A1916" },
+  page: { fontFamily: "Helvetica", fontSize: 9, color: "#1A1916" , paddingBottom: QR_BILL_PAGE_BOTTOM_PT },
   // Full-width dark header — no horizontal padding on page, handled inside
   header: {
     backgroundColor: "#1A1916",
@@ -93,15 +94,17 @@ const m = StyleSheet.create({
   notiz: { marginTop: 26, padding: "10 14", backgroundColor: "#F2F0EC", borderRadius: 4, fontSize: 8, color: "#555", lineHeight: 1.5 },
   notizLabel: { fontSize: 7, fontFamily: "Helvetica-Bold", letterSpacing: 0.5, textTransform: "uppercase" as const, color: "#999", marginBottom: 4 },
   // QR
-  qrSection: { position: "absolute" as const, bottom: 0, left: 0, right: 0, height: 105, borderTopWidth: 1, borderTopColor: "#000", borderTopStyle: "dashed" as const, flexDirection: "row" },
-  qrReceipt: { width: 175, padding: "8 10", borderRightWidth: 1, borderRightColor: "#000", borderRightStyle: "dashed" as const },
+  qrSection: { position: "absolute" as const, bottom: 0, left: 0, right: 0, height: QR_BILL_PT.stripHeight, borderTopWidth: 1, borderTopColor: "#000", borderTopStyle: "dashed" as const, flexDirection: "row" },
+  qrReceipt: { width: QR_BILL_PT.receiptWidth, padding: "8 10", borderRightWidth: 1, borderRightColor: "#000", borderRightStyle: "dashed" as const },
   qrPayment: { flex: 1, padding: "8 16", flexDirection: "row" },
   qrTitle: { fontSize: 11, fontFamily: "Helvetica-Bold", marginBottom: 6 },
   qrSecLabel: { fontSize: 6, fontFamily: "Helvetica-Bold", letterSpacing: 0.3, textTransform: "uppercase" as const, marginBottom: 2, marginTop: 4 },
   qrSecVal: { fontSize: 7, lineHeight: 1.3 },
   qrAmtRow: { flexDirection: "row", marginTop: 6 },
   qrAmtCol: { marginRight: 16 },
-  qrImage: { width: 80, height: 80, marginRight: 12 },
+  qrImage: {
+    width: QR_BILL_PT.code,
+    height: QR_BILL_PT.code, marginRight: 12 },
   qrPayInfo: { flex: 1 },
   qrPlaceholder: { position: "absolute" as const, bottom: 40, left: 48, right: 48, borderTopWidth: 0.5, borderTopColor: "#e0e0e0", paddingTop: 12 },
   qrPlaceholderText: { fontSize: 7, color: "#999", textAlign: "center" as const },

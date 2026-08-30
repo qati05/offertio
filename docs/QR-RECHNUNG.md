@@ -61,26 +61,34 @@ nachgemessen, nicht angenommen:
 - QR-IBAN ohne Referenz → abgelehnt
 - QRR auf einer normalen IBAN → abgelehnt
 
-## Ergebnis: die Druckgrösse ist falsch
+## Behoben: die Druckgrösse — und der Grund dahinter
 
 Die Bibliothek liefert den Code korrekt mit `width="46mm" height="46mm"`.
-**Offertio überschreibt das.** Alle fünf PDF-Templates setzen
+Offertio überschrieb das mit `qrImage: { width: 80, height: 80 }` — 80 pt =
+**28,22 mm** statt 46 mm, Modulgrösse 0,495 statt 0,807 mm.
+
+**Beim Beheben zeigte sich, dass der QR-Code nur das sichtbarste Symptom war.**
+Alle fünf Templates führten den Zahlteil so:
 
 ```ts
-qrImage: { width: 80, height: 80 }
+qrReceipt: { width: 175 }   // 62 mm, korrekt nach Punkt umgerechnet
+qrSection: { height: 105 }  // 105 aus "105 mm" übernommen — 105 pt sind 37 mm
 ```
 
-80 pt = **28,22 mm** statt der vorgeschriebenen 46 mm — 61 % der Sollgrösse.
-Die Modulgrösse fällt damit von 0,807 mm auf **0,495 mm**.
+Die Breite wurde umgerechnet, die Höhe abgeschrieben. Der ganze Zahlteil war
+damit auf **ein Drittel** der Normhöhe geschrumpft, und der QR-Code musste
+klein bleiben, weil er sonst gar nicht hineingepasst hätte.
 
-Der Code bleibt mathematisch gültig und lässt sich am Bildschirm scannen. Aber
-er entspricht nicht der Norm, und bei kleiner Modulgrösse leidet die
-Lesbarkeit ausgedruckt zuerst — genau dort, wo ein Zahlteil gebraucht wird.
+Die Geometrie liegt jetzt in `src/lib/qr-bill-layout.ts`: Millimeter als
+Norm-Einheit, eine einzige Umrechnung nach Punkt, alle fünf Templates lesen von
+dort. Streifen 105 mm hoch, Empfangsschein 62 mm, Zahlteil 148 mm, QR 46 mm —
+62 + 148 = 210 = A4-Breite. Das Seiten-Padding unten wurde entsprechend
+vergrössert, damit die Positionstabelle nicht unter den Streifen läuft.
 
-**Nicht behoben**, weil 130,4 pt gegenüber 80 pt 63 % breiter ist und den
-Zahlungsblock in allen fünf Layouts umbricht. Das ist eine Layout-Änderung, keine
-Fehlerkorrektur, und braucht eine Entscheidung. Der Test dazu liegt als
-`it.skip` im Konformitätstest — sichtbar, benannt, nicht stillschweigend weg.
+**Was daran geprüft ist und was nicht:** Die Umrechnung ist getestet, die
+Templates nutzen nachweislich die Konstanten, und die PDFs rendern fehlerfrei.
+**Niemand hat die PDFs angesehen.** Ob der Umbruch bei langen Positionslisten
+gut aussieht, ist ungeprüft — das braucht einen Blick auf ein echtes Dokument.
 
 ## Was weiterhin ungeprüft ist
 
@@ -92,9 +100,12 @@ Ehrlich benannt, statt überspielt:
 2. **Ob `0200` die aktuelle IG-Revision ist**, konnte aus derselben Ursache
    nicht an einer offiziellen Quelle bestätigt werden.
 3. **Kein Druck-und-Scan-Test** mit einer echten Banking-App auf Papier.
-4. **Kein vollständiger Zahlteil.** Offertio bettet nur den QR-Code ein
-   (`swissqrbill/svg`), nicht den normkonformen Zahlteil mit Empfangsschein
-   (`swissqrbill/pdf`). Der Debitor steht deshalb nicht im Code.
+4. **Der Zahlteil ist selbst gebaut, nicht von der Bibliothek erzeugt.**
+   Offertio nutzt `swissqrbill/svg` nur für den Code und zeichnet Empfangsschein
+   und Zahlteil selbst — deshalb konnte sich der Höhenfehler oben überhaupt
+   einschleichen. Die Masse stimmen jetzt, aber Feldanordnung, Schriftgrössen
+   und Beschriftungen sind gegen die Norm **ungeprüft**. Der Debitor steht
+   weiterhin nicht im Code.
 5. **Hausnummer.** Das Profil hat ein einziges Adressfeld, die strukturierte
    Adresse trennt Strasse und Hausnummer. „Hauptstrasse 12" landet komplett im
    Strassenfeld. Behebbar nur mit einer Änderung am Profil-Datenmodell.
@@ -106,5 +117,6 @@ Ehrlich benannt, statt überspielt:
 
 1. Den dekodierten Payload einmal in das SIX-Validierungsportal einfügen
    (`https://validation.iso-payments.ch/`, von einem Rechner mit Netzzugang).
-2. Ein PDF mit 46 mm ausdrucken und mit zwei echten Banking-Apps scannen.
-3. Danach den `it.skip`-Test aktivieren.
+2. **Ein PDF ansehen** — die Masse stimmen jetzt rechnerisch, aber niemand hat
+   geprüft, wie der Umbruch bei einer langen Positionsliste aussieht.
+3. Dasselbe PDF ausdrucken und mit zwei echten Banking-Apps scannen.

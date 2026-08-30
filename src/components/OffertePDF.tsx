@@ -15,12 +15,13 @@ import PDFModern from "./pdf/PDFModern";
 import PDFMinimal from "./pdf/PDFMinimal";
 import PDFProfessionell from "./pdf/PDFProfessionell";
 import PDFFarbig from "./pdf/PDFFarbig";
+import { QR_BILL_PT, QR_BILL_PAGE_BOTTOM_PT } from "@/lib/qr-bill-layout";
 
 const s = StyleSheet.create({
   page: {
     fontFamily: "Helvetica",
     fontSize: 9,
-    padding: "40 48 80 48",
+    padding: `40 48 ${QR_BILL_PAGE_BOTTOM_PT} 48`,
     color: "#1a1a1a",
   },
   header: {
@@ -176,14 +177,14 @@ const s = StyleSheet.create({
     bottom: 0,
     left: 0,
     right: 0,
-    height: 105,
+    height: QR_BILL_PT.stripHeight,
     borderTopWidth: 1,
     borderTopColor: "#000",
     borderTopStyle: "dashed" as const,
     flexDirection: "row",
   },
   qrReceipt: {
-    width: 175,
+    width: QR_BILL_PT.receiptWidth,
     padding: "8 10",
     borderRightWidth: 1,
     borderRightColor: "#000",
@@ -219,8 +220,8 @@ const s = StyleSheet.create({
     marginRight: 16,
   },
   qrImage: {
-    width: 80,
-    height: 80,
+    width: QR_BILL_PT.code,
+    height: QR_BILL_PT.code,
     marginRight: 12,
   },
   qrPaymentInfo: {
