@@ -90,3 +90,28 @@ export function checkStatusTransition(input: StatusTransitionInput): StatusTrans
 
   return { ok: true };
 }
+
+/**
+ * The question asked before an invoice is cancelled.
+ *
+ * Cancellation is the one terminal transition in the product: the number stays
+ * permanently taken, and checkStatusTransition above refuses every way back
+ * out. That deserves a question, and the question has to say so plainly —
+ * "storniert" alone does not tell a cleaning company that nothing can be undone.
+ *
+ * Kept next to the transition rules rather than in its own file so the wording
+ * and the rule it describes stay in one place, and pure so the wording can be
+ * asserted without rendering the archive.
+ */
+export function getStornoConfirmation(nummer: string, kundenname?: string | null): string {
+  const empfaenger =
+    typeof kundenname === "string" && kundenname.trim().length > 0
+      ? ` an ${kundenname.trim()}`
+      : "";
+  return (
+    `Rechnung ${nummer}${empfaenger} stornieren?\n\n` +
+    "Die Stornierung lässt sich nicht rückgängig machen. Die Rechnungsnummer bleibt " +
+    "dauerhaft vergeben und kann nicht neu verwendet werden.\n\n" +
+    "Grund (optional):"
+  );
+}

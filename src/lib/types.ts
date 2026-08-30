@@ -127,7 +127,22 @@ export interface DokumentHistorie {
   datum: string;
   /** Service/delivery date — mandatory for DE/AT invoices */
   leistungsdatum?: string | null;
-  status: "entwurf" | "gesendet" | "angenommen" | "abgelaufen" | "bezahlt" | "ueberfaellig";
+  /**
+   * "storniert" was missing here even though migration 033 has allowed it since
+   * February and /api/dokument/storno writes it. A cancelled invoice therefore
+   * had no type-level existence in the archive, which is why the status
+   * dropdown never offered it and rendered a cancelled invoice as "Entwurf".
+   */
+  status:
+    | "entwurf"
+    | "gesendet"
+    | "angenommen"
+    | "abgelaufen"
+    | "bezahlt"
+    | "ueberfaellig"
+    | "storniert";
+  /** When the invoice was cancelled. Set together with status = storniert. */
+  storniert_at?: string | null;
   /** Paid timestamp (ISO). NULL until the user marks the invoice paid. */
   payment_received_at?: string | null;
   /** Reminder stage: 0 = none, 1 = Zahlungserinnerung, 2 = 1. Mahnung, 3 = 2. Mahnung */

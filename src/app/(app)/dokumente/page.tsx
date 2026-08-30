@@ -10,6 +10,8 @@ import { getDachConfig } from "@/lib/dach";
 import { buildDokumentCsv } from "@/lib/export";
 import { groupDocumentsByCustomer } from "@/lib/customer-folders";
 import { computeDocumentStatus, getStatus, MAHNSTUFE_SHORT, MAX_MAHNSTUFE, isMahnungCandidate } from "@/lib/dokument-status";
+import { checkStornoTransition } from "@/lib/dokument-immutability";
+import { getStornoConfirmation } from "@/lib/status-transitions";
 import type { DokumentHistorie, Profile } from "@/lib/types";
 
 /** Status options available per document type */
@@ -51,6 +53,12 @@ export default function DokumentePage() {
   const [statusFilter, setStatusFilter] = useState<"alle" | "offen" | "bezahlt" | "ueberfaellig">("alle");
   const [expandedCustomer, setExpandedCustomer] = useState<string | null>(null);
   const [updatingId, setUpdatingId] = useState<string | null>(null);
+  /**
+   * Until now every failed row action reverted in silence — the archive had no
+   * way at all to tell the user that something did not work. Cancelling must
+   * not be the first irreversible action shipped without one.
+   */
+  const [toast, setToast] = useState<string | null>(null);
   const [showExport, setShowExport] = useState(false);
   const [exportFrom, setExportFrom] = useState("");
   const [exportTo, setExportTo] = useState("");
@@ -138,6 +146,53 @@ export default function DokumentePage() {
   }, [source]);
 
   /** Escalate to the next Mahnstufe for an overdue Rechnung. */
+  /**
+   * Cancelling an invoice. The route existed, was hardened and tested, and had
+   * no caller anywhere in the interface — while the immutability error told the
+   * user in so many words to "storniere sie".
+   *
+   * Cancellation is terminal, so unlike the other row actions this one asks
+   * first. The prompt carries the warning and collects the optional reason in
+   * one dialog: pressing Cancel returns null and aborts, an empty field means
+   * "no reason given".
+   *
+   * Not optimistic, deliberately. The other actions guess the new state and
+   * revert on failure; here a wrong guess would show an invoice as cancelled
+   * that is not, which is exactly the kind of thing the archive must never lie
+   * about. The row updates from the server's answer.
+   */
+  const handleStorno = useCallback(async (doc: DokumentHistorie) => {
+    if (!doc.id || source === "local") return;
+
+    const grund = window.prompt(getStornoConfirmation(doc.nummer, doc.kundenname));
+    if (grund === null) return;
+
+    setUpdatingId(doc.id);
+    try {
+      const res = await fetch("/api/dokument/storno", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: doc.id, grund: grund.trim() || undefined }),
+      });
+      const body = await res.json().catch(() => null);
+      if (!res.ok) {
+        setToast(body?.error ?? "Stornierung fehlgeschlagen. Bitte versuche es erneut.");
+        return;
+      }
+      setHistory((prev) =>
+        prev.map((d) =>
+          d.id === doc.id
+            ? { ...d, status: "storniert", storniert_at: body?.document?.storniert_at ?? null }
+            : d,
+        ),
+      );
+    } catch {
+      setToast("Verbindung zum Server fehlgeschlagen. Bitte versuche es erneut.");
+    } finally {
+      setUpdatingId(null);
+    }
+  }, [source]);
+
   const handleMahnung = useCallback(async (doc: DokumentHistorie) => {
     if (!doc.id || source === "local") return;
     const nextStufe = Math.min((doc.mahnstufe ?? 0) + 1, MAX_MAHNSTUFE);
@@ -264,8 +319,14 @@ export default function DokumentePage() {
     const canEdit = !!doc.id && source === "cloud";
     const mahnstufe = doc.mahnstufe ?? 0;
     const isPaid = !!doc.payment_received_at || doc.status === "bezahlt";
-    const canMahnen = isRechnung && canEdit && !isPaid && isMahnungCandidate(doc, zahlungsfrist) && mahnstufe < MAX_MAHNSTUFE;
-    const canMarkPaid = isRechnung && canEdit && !isPaid && doc.status !== "entwurf";
+    const isCancelled = doc.status === "storniert";
+    const canMahnen = isRechnung && canEdit && !isPaid && !isCancelled && isMahnungCandidate(doc, zahlungsfrist) && mahnstufe < MAX_MAHNSTUFE;
+    const canMarkPaid = isRechnung && canEdit && !isPaid && !isCancelled && doc.status !== "entwurf";
+    // Same rule the storno route enforces, imported rather than restated: an
+    // issued invoice may be cancelled, a draft is deleted instead, a quotation
+    // has nothing to cancel, and a cancellation is terminal.
+    const canStorno =
+      canEdit && checkStornoTransition({ typ: doc.typ, currentStatus: doc.status }).ok;
 
     return (
       <div
@@ -338,8 +399,8 @@ export default function DokumentePage() {
               ⚠ {MAHNSTUFE_SHORT[mahnstufe] || `Stufe ${mahnstufe}`} versendet
             </div>
           )}
-          {!compact && (canMarkPaid || canMahnen) && (
-            <div className="mt-2 flex items-center gap-2">
+          {!compact && (canMarkPaid || canMahnen || canStorno) && (
+            <div className="mt-2 flex flex-wrap items-center gap-2">
               {canMarkPaid && (
                 <button
                   type="button"
@@ -386,6 +447,27 @@ export default function DokumentePage() {
                       : "2. Mahnung senden"}
                 </button>
               )}
+              {canStorno && (
+                <button
+                  type="button"
+                  className="mahnwesen-action-btn"
+                  onClick={() => void handleStorno(doc)}
+                  disabled={isUpdating}
+                  style={{
+                    fontSize: 12,
+                    fontWeight: 600,
+                    padding: "4px 10px",
+                    borderRadius: 8,
+                    border: "1px solid var(--app-border)",
+                    background: "transparent",
+                    color: "var(--app-text-muted)",
+                    cursor: isUpdating ? "wait" : "pointer",
+                    opacity: isUpdating ? 0.6 : 1,
+                  }}
+                >
+                  Stornieren
+                </button>
+              )}
             </div>
           )}
           {compact && (
@@ -398,7 +480,12 @@ export default function DokumentePage() {
           <div className="text-sm font-bold tabular-nums" style={{ color: "var(--app-text)" }}>
             {currency} {doc.betrag.toLocaleString("de-CH", { minimumFractionDigits: 2 })}
           </div>
-          {canEdit ? (
+          {/* A cancelled invoice gets a static badge, never the dropdown. Its
+              status is not in statusOptionsFor, and a controlled <select> with
+              no matching <option> displays the FIRST option instead — so a
+              cancelled invoice showed up as "Entwurf". Cancellation is also
+              terminal, so there is nothing to choose. */}
+          {canEdit && !isCancelled ? (
             <div className="relative">
               <select
                 disabled={isUpdating}
@@ -672,6 +759,32 @@ export default function DokumentePage() {
           </div>
         )}
       </div>
+
+      {toast && (
+        <div
+          role="status"
+          aria-live="polite"
+          className="fixed inset-x-4 bottom-6 z-50 mx-auto max-w-md rounded-xl px-4 py-3 text-sm shadow-lg"
+          style={{
+            background: "var(--app-card)",
+            border: "1px solid var(--app-border)",
+            color: "var(--app-text)",
+          }}
+        >
+          <div className="flex items-start gap-3">
+            <span className="flex-1 leading-6">{toast}</span>
+            <button
+              type="button"
+              onClick={() => setToast(null)}
+              aria-label="Meldung schliessen"
+              className="shrink-0 text-lg leading-none"
+              style={{ color: "var(--app-text-muted)", minWidth: 44, minHeight: 44 }}
+            >
+              ×
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
