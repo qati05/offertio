@@ -166,6 +166,42 @@ export default function DokumentePage() {
   }, [source]);
 
   /**
+   * Open the stored PDF in a new tab.
+   *
+   * The archive has always selected pdf_url and never rendered it — the only
+   * consumer was the recipient's public page. So the user could not retrieve
+   * their own document, which is the first thing anyone asks an archive for.
+   *
+   * The bucket is private, so the link has to be signed. The authenticated user
+   * may read their own folder ("Users can view own pdfs", migration 013), so
+   * the browser mints the URL itself and no route is needed.
+   *
+   * The tab is opened synchronously, before the await. Opening it afterwards is
+   * blocked by Safari and Firefox because the click is no longer the current
+   * user gesture — the same reason handleSend pre-opens its WhatsApp tab.
+   */
+  const handleOpenPdf = useCallback(async (doc: DokumentHistorie) => {
+    if (!doc.pdf_url) return;
+    const tab = typeof window !== "undefined" ? window.open("about:blank", "_blank") : null;
+    try {
+      const supabase = createSupabaseBrowser();
+      const { data, error } = await supabase.storage
+        .from("pdfs")
+        .createSignedUrl(doc.pdf_url, 60);
+      if (error || !data?.signedUrl) {
+        tab?.close();
+        setToast("Das PDF konnte nicht geöffnet werden. Bitte versuche es erneut.");
+        return;
+      }
+      if (tab && !tab.closed) tab.location.href = data.signedUrl;
+      else window.open(data.signedUrl, "_blank");
+    } catch {
+      tab?.close();
+      setToast("Verbindung zum Server fehlgeschlagen. Bitte versuche es erneut.");
+    }
+  }, [source]);
+
+  /**
    * Cancelling an invoice. The route existed, was hardened and tested, and had
    * no caller anywhere in the interface — while the immutability error told the
    * user in so many words to "storniere sie".
@@ -359,6 +395,8 @@ export default function DokumentePage() {
     // has nothing to cancel, and a cancellation is terminal.
     const canStorno =
       canEdit && checkStornoTransition({ typ: doc.typ, currentStatus: doc.status }).ok;
+    // The row carries pdf_url whenever the document was saved to the cloud.
+    const canOpenPdf = !!doc.pdf_url && source === "cloud";
 
     return (
       <div
@@ -431,8 +469,27 @@ export default function DokumentePage() {
               ⚠ {MAHNSTUFE_SHORT[mahnstufe] || `Stufe ${mahnstufe}`} versendet
             </div>
           )}
-          {!compact && (canMarkPaid || canMahnen || canStorno) && (
+          {!compact && (canMarkPaid || canMahnen || canStorno || canOpenPdf) && (
             <div className="mt-2 flex flex-wrap items-center gap-2">
+              {canOpenPdf && (
+                <button
+                  type="button"
+                  className="mahnwesen-action-btn"
+                  onClick={() => void handleOpenPdf(doc)}
+                  style={{
+                    fontSize: 12,
+                    fontWeight: 600,
+                    padding: "4px 10px",
+                    borderRadius: 8,
+                    border: "1px solid var(--app-border)",
+                    background: "transparent",
+                    color: "var(--app-text)",
+                    cursor: "pointer",
+                  }}
+                >
+                  PDF öffnen
+                </button>
+              )}
               {canMarkPaid && (
                 <button
                   type="button"
