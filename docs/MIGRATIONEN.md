@@ -1,7 +1,21 @@
 # Migrationen — Stand der Live-Datenbank
 
 Stand **29.08.2026**, Projekt `osexdcaqlggnaubeezqo` (Offertio, eu-central-1).
-Alle Migrationen **000–036 sind eingespielt**. Nachgemessen, nicht angenommen.
+Migrationen **000–036 sind eingespielt**. Nachgemessen, nicht angenommen.
+
+> ⚠️ **037 liegt im Repo, ist aber NICHT eingespielt.** Die Verbindung zur
+> Live-Datenbank war zum Zeitpunkt der Erstellung gesperrt. Die Migration
+> entzieht der Browser-Rolle die Schreibrechte auf `dokument_counter` — ohne
+> sie kann jeder Nutzer sein eigenes Monatskontingent per Direktzugriff auf
+> einen negativen Wert setzen und das Free-Limit dauerhaft aushebeln.
+> Nach dem Einspielen prüfen:
+>
+> ```sql
+> SELECT has_table_privilege('authenticated','public.dokument_counter','UPDATE');
+> -- erwartet: false
+> SELECT has_table_privilege('authenticated','public.dokument_counter','SELECT');
+> -- erwartet: true  (check-limit und save lesen die Tabelle)
+> ```
 
 ## Was vorher schiefstand
 
