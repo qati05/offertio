@@ -3,7 +3,16 @@
 Stand **29.08.2026**, Projekt `osexdcaqlggnaubeezqo` (Offertio, eu-central-1).
 Migrationen **000–036 sind eingespielt**. Nachgemessen, nicht angenommen.
 
-> ⚠️ **037 und 038 liegen im Repo, sind aber NICHT eingespielt.**
+> ⚠️ **037, 038 und 039 liegen im Repo, sind aber NICHT eingespielt.**
+>
+> **039** macht eine ausgestellte Rechnung in der Datenbank selbst
+> unveränderbar. Bisher lebte diese Regel nur in `/api/dokument/save` — der
+> Browser spricht aber direkt mit PostgREST, ein eingeloggter Nutzer konnte
+> seine eigene gestellte Rechnung also mit dem eigenen Token umschreiben
+> (zweimal unabhängig reproduziert). Der Trigger lässt Zahlung und Mahnwesen
+> weiter zu und friert nur den Inhalt ein. **Gegen echtes PostgreSQL 16
+> geprüft**, nicht nur gelesen: fünf Angriffe abgewiesen, acht legitime
+> Schreibvorgänge erlaubt — reproduzierbar über `scripts/db/README.md`.
 >
 > **038** trägt `abgelehnt` in die Status-Whitelist nach. Die Liste aus 033 hat
 > diesen Status übersehen — geschrieben wird er von `/api/public/reject`, wenn
