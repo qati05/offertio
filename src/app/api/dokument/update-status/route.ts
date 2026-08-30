@@ -4,6 +4,7 @@ import { createSupabaseServer } from "@/lib/supabase-server";
 import { isAllowedOrigin, isValidUUID, sanitize } from "@/lib/security";
 import { rateLimitAsync } from "@/lib/rate-limit";
 import { logger } from "@/lib/logger";
+import { checkStatusTransition } from "@/lib/status-transitions";
 
 const VALID_STATUSES = new Set([
   "entwurf",
@@ -62,6 +63,37 @@ export async function PATCH(request: NextRequest) {
       { error: `status must be one of: ${[...VALID_STATUSES].join(", ")}` },
       400,
     );
+  }
+
+  // Where the document is coming from decides whether it may go there at all.
+  // Validating only the TARGET status left the archive's dropdown able to move
+  // an issued invoice back to "entwurf", which switches off the immutability
+  // check in /api/dokument/save — one click, and the next save may rewrite
+  // Betrag, Nummer and Kunde. Read the stored row first.
+  const { data: current, error: currentError } = await supabase
+    .from("dokumente")
+    .select("status, typ")
+    .eq("id", id)
+    .eq("user_id", user.id)
+    .maybeSingle();
+
+  if (currentError) {
+    logger.error("update-status:read", currentError, { documentId: id });
+    return json({ error: "Database error" }, 500);
+  }
+  if (!current) {
+    return json({ error: "Dokument nicht gefunden." }, 404);
+  }
+
+  const transition = checkStatusTransition({
+    typ: current.typ ?? "rechnung",
+    currentStatus: current.status,
+    nextStatus: status,
+  });
+  if (!transition.ok) {
+    // 409, not the 500 the CHECK constraint from migration 033 would otherwise
+    // produce: the user gets told why, in German.
+    return json({ error: transition.message, code: transition.code }, 409);
   }
 
   // RLS ensures only the owner can update their own documents.
