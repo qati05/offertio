@@ -1,4 +1,3 @@
-/** @vitest-environment node */
 
 import { createElement } from "react";
 import { describe, expect, it } from "vitest";

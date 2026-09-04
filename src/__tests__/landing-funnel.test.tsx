@@ -1,3 +1,8 @@
+/**
+ * @vitest-environment jsdom
+ *
+ * The suite defaults to `node`. This file needs a DOM.
+ */
 import { createElement, type ReactNode } from "react";
 import { render, screen } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";

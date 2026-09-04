@@ -1,3 +1,9 @@
+/**
+ * @vitest-environment jsdom
+ *
+ * The suite defaults to `node`; this file needs a DOM.
+ * Parses the generated ZUGFeRD XML with DOMParser.
+ */
 import { describe, it, expect } from "vitest";
 import { buildZugferdXml } from "@/lib/zugferd-xml";
 import type { OfferteData } from "@/lib/types";

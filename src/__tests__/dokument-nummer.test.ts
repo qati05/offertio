@@ -1,3 +1,10 @@
+/**
+ * @vitest-environment jsdom
+ *
+ * The suite defaults to `node`; this file needs a DOM.
+ * Exercises the browser branch of dokument-nummer.ts,
+ * which returns a placeholder when `window` is undefined.
+ */
 import { describe, it, expect, beforeEach } from "vitest";
 import { peekNextNummer, commitNummer, getDokumentCount } from "@/lib/dokument-nummer";
 

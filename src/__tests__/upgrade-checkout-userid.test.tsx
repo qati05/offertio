@@ -1,3 +1,9 @@
+/**
+ * @vitest-environment jsdom
+ *
+ * The suite defaults to `node`; this file needs a DOM.
+ * React Testing Library renders components.
+ */
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import { render, screen, fireEvent } from "@testing-library/react";
 import UpgradeScreen from "@/components/UpgradeScreen";

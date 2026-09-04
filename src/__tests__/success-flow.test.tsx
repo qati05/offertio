@@ -1,3 +1,9 @@
+/**
+ * @vitest-environment jsdom
+ *
+ * The suite defaults to `node`; this file needs a DOM.
+ * React Testing Library renders components.
+ */
 ﻿import { createElement, type ReactNode } from "react";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { describe, expect, it, vi, beforeEach } from "vitest";
