@@ -20,11 +20,11 @@ export class PdfErrorBoundary extends React.Component<Props, State> {
     return { hasError: true };
   }
 
-  componentDidCatch(_error: Error) {
+  override componentDidCatch(_error: Error) {
     // Error already captured via getDerivedStateFromError — fallback UI shown
   }
 
-  render() {
+  override render() {
     if (this.state.hasError) {
       return (
         <div className="flex flex-col items-center justify-center gap-3 p-8 text-center bg-red-50 border border-red-200 rounded-lg">

@@ -341,7 +341,6 @@ export default function OffertePDF(props: OffertePDFProps) {
 
   const dachConfig = getDachConfig(profil.land);
   const { mwstTermLabel, pdfUidLabel, pdfMwstNrLabel, leistungsdatumRequired, hasQrBill: landHasQrBill } = dachConfig;
-  const isCH = profil.land === "CH";
 
   // Per-country primary / secondary company ID shown in the PDF header.
   // DE: primary = Steuernummer, secondary = USt-IdNr. (uid_mwst)
@@ -385,12 +384,6 @@ export default function OffertePDF(props: OffertePDFProps) {
 
   const creditorName =
     profil.firmenname || `${profil.vorname} ${profil.nachname}`.trim();
-  const creditorAddress = [
-    profil.adresse,
-    `${profil.plz} ${profil.ort}`.trim(),
-  ]
-    .filter(Boolean)
-    .join("\n");
 
   const hasQR = landHasQrBill && !!qrCodeDataUrl;
   const typLabel = dokumentTyp === "rechnung" ? "Rechnung" : "Offerte";

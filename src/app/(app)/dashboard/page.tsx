@@ -14,7 +14,7 @@ import {
   TRIAL_DAYS,
 } from "@/lib/payment";
 import { trackUpgradeClick } from "@/lib/analytics";
-import { computeDocumentStatus, countOpenActions, getStatus, statusBadgeVariants } from "@/lib/dokument-status";
+import { computeDocumentStatus, getStatus, statusBadgeVariants } from "@/lib/dokument-status";
 import { getDachConfig } from "@/lib/dach";
 import DashboardInsights from "@/components/DashboardInsights";
 import { countDueSchedules } from "@/lib/recurring";
@@ -130,8 +130,6 @@ export default function DashboardPage() {
   const trialDaysLeft = trialDaysRemaining(trialEndsAt);
   const remaining = proUser || userInTrial ? Infinity : (serverRemaining ?? 5);
   const companyName = profil?.firmenname || profil?.vorname || "Offertio";
-  const reminderCount = countOpenActions(history, profil?.zahlungsfrist ?? 30);
-  const totalDocs = history.length;
 
   const hour = new Date().getHours();
   const greeting = hour < 12 ? "Guten Morgen" : hour < 18 ? "Guten Tag" : "Guten Abend";

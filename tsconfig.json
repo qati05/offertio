@@ -9,6 +9,21 @@
     "allowJs": true,
     "skipLibCheck": true,
     "strict": true,
+    // Beyond `strict`. Each of these was measured against the code base before
+    // being switched on: all five reported zero errors once the dead code they
+    // surfaced was removed, so they cost nothing today and stop a class of
+    // defect from being introduced later.
+    //
+    // `noUncheckedIndexedAccess` is deliberately NOT enabled here. It reports
+    // 146 errors, and every one of them is a decision about what an
+    // out-of-range index should mean in code that prices invoices and builds
+    // QR payloads. That is a change to review deliberately, not a flag to flip
+    // in passing. See docs/boilerplate-comparison.md.
+    "noImplicitReturns": true,
+    "noFallthroughCasesInSwitch": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noImplicitOverride": true,
     "noEmit": true,
     "esModuleInterop": true,
     "module": "esnext",

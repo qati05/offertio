@@ -1,6 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
 import {
-  FREE_LIMIT,
   TRIAL_DAYS,
   getPricing,
   isPro,

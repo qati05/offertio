@@ -100,7 +100,7 @@ export default function DashboardInsights({ history, currency }: Props) {
             <span className="kicker">Top Kunden</span>
           </div>
           <div className="surface">
-            {insights.topCustomers.slice(0, 3).map((customer, i, arr) => {
+            {insights.topCustomers.slice(0, 3).map((customer, _i, arr) => {
               const max = arr[0].revenue || 1;
               const pct = Math.max(6, Math.round((customer.revenue / max) * 100));
               const slug = toCustomerSlug(customer.name);

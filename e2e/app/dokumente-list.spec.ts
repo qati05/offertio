@@ -16,8 +16,6 @@ test.describe("Document list — /dokumente", () => {
     // Wait for page to load
     await page.waitForLoadState("networkidle");
 
-    // Status filter chips (entwurf, gesendet, bezahlt, etc.)
-    const chips = page.locator("[class*='chip'], [class*='filter']");
     // At minimum, should have status filter options available
     await expect(
       page.locator("text=/Alle|Entwurf|Gesendet|Bezahlt/i").first(),

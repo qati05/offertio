@@ -10,10 +10,6 @@ test.describe("Document creation — Offerte", () => {
   });
 
   test("loads offerte editor by default", async ({ page }) => {
-    // Document number is auto-populated
-    const nummerInput = page.locator("input[placeholder*='OF-']").or(
-      page.locator("input").filter({ hasText: /OF-/ }),
-    );
     // Editor should have a date field
     await expect(page.locator("input[type='date']").first()).toBeVisible();
   });

@@ -6,7 +6,6 @@ import { useEffect, useState, useCallback, useRef, useMemo } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { createSupabaseBrowser } from "@/lib/supabase-browser";
 import { peekNextNummer, commitNummer } from "@/lib/dokument-nummer";
-import { useOnlineStatus } from "@/components/OfflineBanner";
 import { findReusableCustomer, getCustomerDisplayName, mergeCustomerIntoDraft } from "@/lib/customers";
 import { classifySaveResponse, type SendOutcome } from "@/lib/send-outcome";
 import { getSendConfirmation } from "@/lib/send-confirmation";
@@ -28,7 +27,6 @@ import type { Profile, Vorlage, Position, KundenInfo, RabattInfo, DokumentTyp, C
 export default function DokumentNeuPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const isOnline = useOnlineStatus();
 
   const initialTyp = (searchParams.get("typ") === "rechnung" ? "rechnung" : "offerte") as DokumentTyp;
   const [dokumentTyp, setDokumentTyp] = useState<DokumentTyp>(initialTyp);
@@ -450,9 +448,6 @@ export default function DokumentNeuPage() {
 
   // exkl. mode: prices are net, VAT added on top
   // inkl. mode: prices already include VAT, VAT is extracted
-  const subtotal = preisMode === "exkl"
-    ? grossSubtotal
-    : r2(grossSubtotal / (1 + mwstSatz / 100));
   const nettoNachRabatt = preisMode === "exkl"
     ? grossNachRabatt
     : r2(grossNachRabatt / (1 + mwstSatz / 100));
@@ -469,17 +464,6 @@ export default function DokumentNeuPage() {
 
   const cur = currency; // shorthand
 
-  function formatDate(d: string): string {
-    if (!d) return "";
-    return new Date(d).toLocaleDateString("de-CH", {
-      day: "2-digit",
-      month: "2-digit",
-      year: "numeric",
-    });
-  }
-
-  const datumFormatiert = formatDate(datum);
-  const gueltigBisFormatiert = formatDate(gueltigBis);
   const supportedPdfLogoTypes = new Set(["image/png", "image/jpeg", "image/jpg", "image/webp"]);
 
   const generatePdfBlob = useCallback(async () => {
@@ -1248,22 +1232,6 @@ export default function DokumentNeuPage() {
     );
   }
 
-  const kundeDisplay = kunde.name || kunde.firma || "Kunde";
-  const kundeAdresse = [
-    kunde.adresse,
-    kunde.adresse2,
-    [kunde.plz, kunde.ort].filter(Boolean).join(" "),
-  ]
-    .filter(Boolean)
-    .join(", ");
-  const firmenInitials = profil?.firmenname
-    ? profil.firmenname
-        .split(" ")
-        .map((w) => w[0])
-        .join("")
-        .slice(0, 2)
-        .toUpperCase()
-    : "OF";
 
   return (
     <div className="mx-auto max-w-4xl px-5 pb-8">

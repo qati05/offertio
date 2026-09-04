@@ -8,9 +8,6 @@ test.describe("Dark mode", () => {
     await expect(page.locator("h1")).toContainText("Cockpit", { timeout: 10_000 });
 
     // Check that the page has dark theme applied
-    // The app uses [data-theme="dark"] on html element
-    const theme = await page.locator("html").getAttribute("data-theme");
-
     // Alternatively check background color of the body/main container
     const bgColor = await page.locator("body").evaluate(
       (el) => getComputedStyle(el).backgroundColor,
