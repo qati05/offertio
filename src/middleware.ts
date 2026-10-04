@@ -1,5 +1,6 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
+import { isOwner } from "@/lib/owner";
 
 function buildCsp(nonce: string): string {
   return [
@@ -94,6 +95,22 @@ export async function middleware(request: NextRequest) {
     const url = request.nextUrl.clone();
     url.pathname = "/login";
     return NextResponse.redirect(url);
+  }
+
+  // Single-user installation: a valid session is not enough, it has to be the
+  // owner's. See src/lib/owner.ts for why this sits next to, and not instead of,
+  // the sign-up switch in the Supabase dashboard.
+  if (!isOwner(user, process.env.OWNER_EMAIL)) {
+    await supabase.auth.signOut();
+    const url = request.nextUrl.clone();
+    url.pathname = "/login";
+    url.search = "?error=not_owner";
+    const refusal = NextResponse.redirect(url);
+    // signOut clears the session cookies on supabaseResponse; carry that over
+    // or the stranger stays logged in and is bounced on every request.
+    supabaseResponse.cookies.getAll().forEach((cookie) => refusal.cookies.set(cookie));
+    refusal.headers.set("Content-Security-Policy", csp);
+    return refusal;
   }
 
   if (!path.startsWith("/onboarding") && !path.startsWith("/einstellungen") && !path.startsWith("/api/")) {

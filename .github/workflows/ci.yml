@@ -120,6 +120,9 @@ jobs:
     env:
       E2E_USER_EMAIL: ${{ secrets.E2E_USER_EMAIL }}
       E2E_USER_PASSWORD: ${{ secrets.E2E_USER_PASSWORD }}
+      # The middleware only admits the owner. Without this the test account
+      # logs in and is immediately bounced back to /login.
+      OWNER_EMAIL: ${{ secrets.E2E_USER_EMAIL }}
     steps:
       - uses: actions/checkout@v4
       - name: Report whether credentials are configured

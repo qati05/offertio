@@ -5,26 +5,29 @@ test.describe("Login page", () => {
     await page.goto("/login");
   });
 
-  test("renders login form", async ({ page }) => {
+  test("renders the sign-in form", async ({ page }) => {
     await expect(page.locator("input[type='email']")).toBeVisible();
-    await expect(page.getByRole("button", { name: /Konto erstellen/i })).toBeVisible();
+    await expect(page.locator("input[type='password']")).toBeVisible();
+    await expect(page.locator("form").getByRole("button", { name: "Anmelden" })).toBeVisible();
   });
 
-  test("switches between signup and login mode", async ({ page }) => {
-    // Default: signup mode
-    await expect(page.getByRole("button", { name: /Konto erstellen/i })).toBeVisible();
+  test("offers no way to register", async ({ page }) => {
+    // Single-user installation: the account is created once by the owner.
+    await expect(page.getByRole("button", { name: /Konto erstellen/i })).toHaveCount(0);
+    await expect(page.getByRole("button", { name: /Registrieren/i })).toHaveCount(0);
+  });
 
-    // Switch to login mode
-    await page.getByRole("button", { name: "Anmelden" }).click();
-    await expect(page.locator("form").getByRole("button", { name: "Anmelden" })).toBeVisible();
+  test("switches to the passwordless link and back", async ({ page }) => {
+    await page.getByRole("button", { name: /Login-Link/i }).click();
+    await expect(page.locator("input[type='password']")).toHaveCount(0);
+    await expect(page.getByRole("button", { name: "Link senden" })).toBeVisible();
 
-    // Switch back to signup
-    await page.getByRole("button", { name: "Registrieren" }).click();
-    await expect(page.getByRole("button", { name: /Konto erstellen/i })).toBeVisible();
+    await page.getByRole("button", { name: /Zurück zum Passwort-Login/i }).click();
+    await expect(page.locator("input[type='password']")).toBeVisible();
   });
 
   test("shows validation for empty submit", async ({ page }) => {
-    await page.getByRole("button", { name: /Konto erstellen/i }).click();
+    await page.locator("form").getByRole("button", { name: "Anmelden" }).click();
 
     // Browser native validation on required email field
     const emailInput = page.locator("input[type='email']");
@@ -34,9 +37,8 @@ test.describe("Login page", () => {
     expect(validity).toBe(true);
   });
 
-  test("shows password field after email entry", async ({ page }) => {
-    await page.fill("input[type='email']", "test@example.com");
-    // Password field should be visible in signup/password mode
-    await expect(page.locator("input[type='password']")).toBeVisible();
+  test("tells a refused stranger why", async ({ page }) => {
+    await page.goto("/login?error=not_owner");
+    await expect(page.getByText(/nicht freigeschaltet/i)).toBeVisible();
   });
 });
