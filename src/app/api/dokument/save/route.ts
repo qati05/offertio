@@ -5,7 +5,6 @@ import { getSupabaseAdmin } from "@/lib/supabase-admin";
 import { getCustomerDisplayName, makePrimaryCustomerLookupKey } from "@/lib/customers";
 import { checkContentEdit } from "@/lib/dokument-immutability";
 import { checkInvoiceRequirements } from "@/lib/invoice-requirements";
-import { FREE_LIMIT, hasActiveAccess } from "@/lib/payment";
 import { validatePositionen } from "@/lib/price-precision";
 import { checkReverseChargeEligibility, isReverseCharge, type Steuerfall } from "@/lib/reverse-charge";
 import { isAllowedOrigin, isValidBase64, isSafeDocumentIdentifier, isValidUUID, stripControlChars } from "@/lib/security";
@@ -253,39 +252,6 @@ export async function POST(request: NextRequest) {
           return json({ error: "USt-1-TG-Referenz ist zu lang (max. 200 Zeichen)." }, 400);
         }
         normalizedUst1tgReferenz = stripControlChars(ust1tgReferenz);
-      }
-    }
-
-    // ── Free-plan quota ───────────────────────────────────────────────────
-    // Enforced here, not only in the client. The form calls
-    // /api/dokument/check-limit before saving, but nothing stopped a direct
-    // POST to this route from creating unlimited documents on the free plan.
-    //
-    // Only for NEW documents: re-saving an existing one is an edit, and
-    // charging quota for it would let a user lose access to their own draft.
-    // The counter is still incremented by the client after a successful save,
-    // so this reads a value that has not yet counted the document being
-    // created — hence >= rather than >.
-    if (!existingDocumentId) {
-      const { data: planProfile } = await supabase
-        .from("profiles")
-        .select("plan, trial_ends_at")
-        .eq("id", user.id)
-        .maybeSingle();
-
-      if (!hasActiveAccess(planProfile?.plan ?? "free", planProfile?.trial_ends_at ?? null)) {
-        const now = new Date();
-        const monat = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
-        const { data: counter } = await supabase
-          .from("dokument_counter")
-          .select("anzahl")
-          .eq("user_id", user.id)
-          .eq("monat", monat)
-          .maybeSingle();
-
-        if ((counter?.anzahl ?? 0) >= FREE_LIMIT) {
-          return json({ error: "Monatslimit erreicht", remaining: 0 }, 403);
-        }
       }
     }
 

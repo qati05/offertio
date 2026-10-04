@@ -11,8 +11,6 @@ import { findReusableCustomer, getCustomerDisplayName, mergeCustomerIntoDraft } 
 import { classifySaveResponse, type SendOutcome } from "@/lib/send-outcome";
 import { getSendConfirmation } from "@/lib/send-confirmation";
 import { getDachConfig } from "@/lib/dach";
-import { isPro, FREE_LIMIT } from "@/lib/payment";
-import UpgradeScreen from "@/components/UpgradeScreen";
 import {
   getReverseChargeCasesForLand,
   getReverseChargeHinweis,
@@ -36,7 +34,6 @@ export default function DokumentNeuPage() {
   const [vorlagen, setVorlagen] = useState<Vorlage[]>([]);
   const [loading, setLoading] = useState(true);
   // Server-side document limit — null = not yet loaded (optimistic: allow until confirmed)
-  const [serverAllowed, setServerAllowed] = useState<boolean | null>(null);
   const [sending, setSending] = useState(false);
   const [toast, setToast] = useState("");
   const [fieldErrors, setFieldErrors] = useState<Record<string, boolean>>({});
@@ -84,7 +81,6 @@ export default function DokumentNeuPage() {
   const [eRechnungLoading, setERechnungLoading] = useState(false);
 
   // UI state
-  const [freePlanRemaining, setFreePlanRemaining] = useState<number | null>(null);
   const [draftRestored, setDraftRestored] = useState(false);
   const [draftRestoredAt, setDraftRestoredAt] = useState<string | null>(null);
 
@@ -225,11 +221,10 @@ export default function DokumentNeuPage() {
       return;
     }
 
-    const [profilRes, vorlagenRes, customersRes, limitRes] = await Promise.all([
+    const [profilRes, vorlagenRes, customersRes] = await Promise.all([
       supabase.from("profiles").select("*").eq("id", user.id).maybeSingle(),
       supabase.from("vorlagen").select("*").order("created_at", { ascending: false }).limit(500),
       supabase.from("customers").select("*").eq("user_id", user.id).order("updated_at", { ascending: false }).limit(200),
-      fetch("/api/dokument/check-limit"),
     ]);
 
     if (profilRes.data) {
@@ -313,18 +308,6 @@ export default function DokumentNeuPage() {
       if (sourceDoc?.converted_document_id && sourceDoc.converted_document_id !== cloudDraftId) {
         showToast(`Hinweis: Zu dieser Offerte existiert bereits Rechnung ${sourceDoc.converted_document_nummer || ""}.`);
       }
-    }
-
-    // Server is the source of truth for the document limit
-    if (limitRes.ok) {
-      const limitData = await limitRes.json();
-      setServerAllowed(limitData.allowed !== false);
-      if (limitData.remaining !== undefined && !isPro(limitData.plan)) {
-        setFreePlanRemaining(limitData.remaining);
-      }
-    } else {
-      // On error, fall back to allowing creation (fail open for UX, server re-checks on send)
-      setServerAllowed(true);
     }
 
     setLoading(false);
@@ -609,8 +592,9 @@ export default function DokumentNeuPage() {
     if (!profil) return;
 
     const supabase = createSupabaseBrowser();
-    // Whitelist: never write privileged server-only columns (plan, ls_*, plan_expires_at).
-    // Those are set exclusively by the webhook handler.
+    // Whitelist: never write the billing columns (plan, ls_*, plan_expires_at).
+    // Nothing in the app writes them any more, and migration 035 revokes them
+    // from the browser's role, so including one would fail the whole upsert.
     const { error } = await supabase.from("profiles").upsert(
       {
         id: profil.id,
@@ -724,27 +708,6 @@ export default function DokumentNeuPage() {
 
     try {
       await persistProfileIfNeeded();
-
-      // Server-side limit check before creating document
-      if (profil && !isPro(profil.plan)) {
-        try {
-          const limitRes = await fetch("/api/dokument/check-limit");
-          if (!limitRes.ok) throw new Error("Limit-Check fehlgeschlagen");
-          const limitData = await limitRes.json();
-          if (!limitData.allowed) {
-            showToast("Monatslimit erreicht — bitte auf Pro upgraden.");
-            setSending(false);
-            waWindow?.close();
-            return;
-          }
-        } catch (e) {
-          // Limit check failed — user sees toast below
-          showToast("Verbindung zum Server fehlgeschlagen. Bitte versuche es erneut.");
-          setSending(false);
-          waWindow?.close();
-          return;
-        }
-      }
 
       let blob: Blob;
       try {
@@ -978,23 +941,6 @@ export default function DokumentNeuPage() {
             "WhatsApp geöffnet. Das PDF liegt auf deinem Gerät — bitte manuell anhängen.",
           );
         }
-      }
-
-      // Increment counters only after the server confirms the increment.
-      try {
-        const incrRes = await fetch("/api/dokument/check-limit", { method: "POST" });
-        if (incrRes.ok) {
-          const incrData = await incrRes.json();
-          if (incrData.remaining !== undefined) {
-            setFreePlanRemaining(incrData.remaining);
-            setServerAllowed(incrData.remaining > 0);
-          }
-        } else if (incrRes.status === 403) {
-          setFreePlanRemaining(0);
-          setServerAllowed(false);
-        }
-      } catch (e) {
-        // Counter increment failed — non-blocking, document already saved
       }
 
       trackDocumentCreated(dokumentTyp, delivery);
@@ -1277,17 +1223,6 @@ export default function DokumentNeuPage() {
         </span>
         <div style={{ width: 36 }} />
       </div>
-
-      {/* Upgrade screen when server confirms limit reached */}
-      {serverAllowed === false && profil && (
-        <UpgradeScreen
-          email={profil.email}
-          land={profil.land}
-          userId={profil.id}
-          trialEndsAt={profil.trial_ends_at ?? null}
-          usedDocuments={freePlanRemaining !== null ? FREE_LIMIT - freePlanRemaining : undefined}
-        />
-      )}
 
       <div>
         <div>
@@ -2384,34 +2319,6 @@ export default function DokumentNeuPage() {
         </button>
       </div>
 
-      {/* Free plan document counter */}
-      {freePlanRemaining !== null && freePlanRemaining <= 5 && (
-        <div style={{
-          marginTop: 10,
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          gap: 6,
-          fontSize: 12,
-          color: freePlanRemaining <= 1 ? "var(--color-error)" : "var(--app-text-muted)",
-        }}>
-          <span style={{
-            display: "inline-block",
-            padding: "2px 8px",
-            borderRadius: 99,
-            background: freePlanRemaining <= 1 ? "rgba(180,35,24,0.08)" : "rgba(0,0,0,0.05)",
-            fontWeight: 600,
-          }}>
-            {freePlanRemaining === 0
-              ? "Monatslimit erreicht — "
-              : `Noch ${freePlanRemaining} von 5 kostenlosen Dokumenten — `}
-            <a href="/einstellungen/abonnement" style={{ color: "var(--color-primary)", textDecoration: "none" }}>
-              Pro freischalten
-            </a>
-          </span>
-        </div>
-      )}
-
       {profil?.land === "DE" && dokumentTyp === "rechnung" && (
         <button
           onClick={handleErechnung}
@@ -2442,7 +2349,7 @@ export default function DokumentNeuPage() {
           className="btn-primary"
           style={{ width: "100%", padding: "14px 0", fontSize: 15 }}
           onClick={handleSend}
-          disabled={sending || (!downloadPdf && !sharePdf && !whatsappPdf && !emailPdf) || serverAllowed === false}
+          disabled={sending || (!downloadPdf && !sharePdf && !whatsappPdf && !emailPdf)}
           aria-busy={sending || undefined}
         >
           {sending ? "Wird gesendet…" : sendBtnLabel}

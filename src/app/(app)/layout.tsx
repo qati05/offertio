@@ -9,7 +9,6 @@ import type { TranslationKey } from "@/lib/i18n";
 import { createSupabaseBrowser } from "@/lib/supabase-browser";
 import OfflineBanner from "@/components/OfflineBanner";
 import PwaInstallPrompt from "@/components/PwaInstallPrompt";
-import PlanExpiryBanner from "@/components/PlanExpiryBanner";
 import CommandPalette from "@/components/CommandPalette";
 import ShortcutsOverlay from "@/components/ShortcutsOverlay";
 import { I18nProvider, useT } from "@/lib/i18n";
@@ -435,7 +434,6 @@ function AppLayoutInner({ children }: { children: React.ReactNode }) {
           paddingBottom: isFocusMode ? "0" : "calc(60px + env(safe-area-inset-bottom, 0px))",
         }}
       >
-        {profile && <PlanExpiryBanner profile={profile} />}
         {children}
       </main>
 

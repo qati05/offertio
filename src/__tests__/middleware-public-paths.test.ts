@@ -71,7 +71,6 @@ describe("middleware · previously covered public paths", () => {
       "/blog/qr-rechnung-schweiz-2026",
       "/branchen/maler",
       "/vergleich/offertio-vs-bexio",
-      "/api/webhooks/lemon-squeezy",
       "/api/health",
       "/manifest.json",
       "/robots.txt",
@@ -79,5 +78,14 @@ describe("middleware · previously covered public paths", () => {
     ]) {
       expect(isPublicPath(path)).toBe(true);
     }
+  });
+});
+
+describe("middleware · single-user installation", () => {
+  it("does not leave a webhook path open now that there is no webhook", () => {
+    // A public path with no route behind it is an unauthenticated door that
+    // leads nowhere today and somewhere unreviewed tomorrow.
+    expect(isPublicPath("/api/webhooks/lemon-squeezy")).toBe(false);
+    expect(isPublicPath("/api/webhooks/anything")).toBe(false);
   });
 });

@@ -52,12 +52,6 @@ describe("send reuses the cloud draft instead of creating a second document", ()
     );
   });
 
-  it("the route only charges quota when there is no existing document", () => {
-    // The other half of the double-charge: the guard this fix relies on.
-    const route = readFileSync("src/app/api/dokument/save/route.ts", "utf8");
-    expect(route).toContain("if (!existingDocumentId)");
-  });
-
   it("the route excludes the current document when resolving the number", () => {
     // Without this, passing existingDocumentId would prevent the duplicate but
     // still renumber the invoice.

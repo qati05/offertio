@@ -8,7 +8,6 @@ import { useRouter, useSearchParams } from "next/navigation";
 import OffertioLogo from "@/components/OffertioLogo";
 import { createSupabaseBrowser } from "@/lib/supabase-browser";
 import { trackEmailCapture, trackLoginPageView } from "@/lib/analytics";
-import { getCheckoutUrl } from "@/lib/payment";
 
 type EmailMode = "magic" | "password";
 
@@ -23,7 +22,6 @@ const MODE_COPY = {
 export default function LoginPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const wantsPro = searchParams.get("plan") === "pro";
   // The middleware sends a logged-in stranger here with ?error=not_owner.
   const notOwner = searchParams.get("error") === "not_owner";
   const [emailMode, setEmailMode] = useState<EmailMode>("password");
@@ -41,17 +39,8 @@ export default function LoginPage() {
     void bootstrap();
   }, []);
 
-  function redirectAfterAuth(onboardingComplete: boolean, email?: string, userId?: string) {
-    if (!onboardingComplete) {
-      router.replace(wantsPro ? "/onboarding?plan=pro" : "/onboarding");
-      return;
-    }
-    if (wantsPro) {
-      const checkoutUrl = getCheckoutUrl("pro_yearly", email, userId);
-      router.replace(checkoutUrl !== "#upgrade" ? checkoutUrl : "/einstellungen/abonnement");
-      return;
-    }
-    router.replace("/dashboard");
+  function redirectAfterAuth(onboardingComplete: boolean) {
+    router.replace(onboardingComplete ? "/dashboard" : "/onboarding");
   }
 
   async function bootstrap() {
@@ -67,7 +56,7 @@ export default function LoginPage() {
         .eq("id", user.id)
         .maybeSingle();
 
-      redirectAfterAuth(!!profile?.onboarding_complete, user.email, user.id);
+      redirectAfterAuth(!!profile?.onboarding_complete);
     }
   }
 
@@ -133,7 +122,7 @@ export default function LoginPage() {
         .maybeSingle();
 
       router.refresh();
-      redirectAfterAuth(!!profile?.onboarding_complete, user.email, user.id);
+      redirectAfterAuth(!!profile?.onboarding_complete);
       return;
     }
 
@@ -174,18 +163,7 @@ export default function LoginPage() {
         <section className="auth-card animate-flow">
           <div className="text-center">
             <OffertioLogo size={36} href={undefined} />
-            {wantsPro ? (
-              <div
-                className="mx-auto mt-4 inline-flex items-center gap-2 rounded-full px-3 py-1.5 text-xs font-semibold"
-                style={{ background: "rgba(200,121,61,0.10)", color: "var(--color-primary)", border: "1px solid rgba(200,121,61,0.2)" }}
-              >
-                <span>Pro freischalten</span>
-                <span style={{ opacity: 0.5 }}>→</span>
-                <span>nach dem Login direkt weiter</span>
-              </div>
-            ) : (
-              <div className="auth-region-badge">CH · DE · AT</div>
-            )}
+            <div className="auth-region-badge">CH · DE · AT</div>
             <h1 className="auth-title">{MODE_COPY.title}</h1>
             <p className="auth-body">{MODE_COPY.body}</p>
           </div>

@@ -75,9 +75,4 @@ describe("the premise the revoke depends on", () => {
       .map((f) => f.replace("src/", ""));
     expect(writers).toEqual([]);
   });
-
-  it("the counter is incremented through the SECURITY DEFINER function", () => {
-    const route = readFileSync("src/app/api/dokument/check-limit/route.ts", "utf8");
-    expect(route).toContain("increment_dokument_counter");
-  });
 });

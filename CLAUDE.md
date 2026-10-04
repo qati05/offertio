@@ -106,7 +106,7 @@ erscheinen.
 Next.js 15 App Router · React 19 · TypeScript · Vitest · Playwright ·
 Tailwind 4 · Supabase (Auth, Postgres, RLS, Storage) ·
 `@react-pdf/renderer` (5 Layouts) · `pdf-lib` · `swissqrbill` ·
-Upstash Redis Rate-Limiting · Lemon Squeezy Webhooks.
+Upstash Redis Rate-Limiting.
 
 **Die Compliance-Logik liegt bewusst in getrennten reinen Modulen** unter
 `src/lib/`, nicht in den Route-Handlern: `reverse-charge.ts`,

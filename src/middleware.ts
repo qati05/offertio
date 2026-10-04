@@ -43,7 +43,6 @@ export function isPublicPath(path: string): boolean {
     // "/viewer/…", "/api/public" would also open "/api/publications".
     path.startsWith("/view/") ||
     path.startsWith("/api/public/") ||
-    path.startsWith("/api/webhooks/") ||
     path === "/api/health" ||
     path.startsWith("/_next/") ||
     path === "/sw.js" ||

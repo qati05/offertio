@@ -6,21 +6,12 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { createSupabaseBrowser } from "@/lib/supabase-browser";
-import {
-  isPro,
-  getCheckoutUrl,
-  isInTrial,
-  trialDaysRemaining,
-  TRIAL_DAYS,
-} from "@/lib/payment";
-import { trackUpgradeClick } from "@/lib/analytics";
 import { computeDocumentStatus, countOpenActions, getStatus, statusBadgeVariants } from "@/lib/dokument-status";
 import { getDachConfig } from "@/lib/dach";
 import DashboardInsights from "@/components/DashboardInsights";
 import { countDueSchedules } from "@/lib/recurring";
 import type { Profile, DokumentHistorie } from "@/lib/types";
 
-const FREE_DOCS = 5;
 const ease = [0.16, 1, 0.3, 1] as const;
 
 /** Read cached history from localStorage synchronously (returns [] on miss/error). */
@@ -48,7 +39,6 @@ export default function DashboardPage() {
     typeof window === "undefined" ||
     (!localStorage.getItem("dokument-history") && !localStorage.getItem("offertio-profile-cache"))
   );
-  const [serverRemaining, setServerRemaining] = useState<number | null>(null);
   /** Recurring series whose generation date has passed. A count, never an amount. */
   const [faelligeSerien, setFaelligeSerien] = useState(0);
   const [, setHistorySource] = useState<"local" | "cloud">("cloud");
@@ -60,7 +50,7 @@ export default function DashboardPage() {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
 
-    const [profilRes, docsRes, limitRes, recurringRes] = await Promise.all([
+    const [profilRes, docsRes, recurringRes] = await Promise.all([
       supabase.from("profiles").select("*").eq("id", user.id).maybeSingle(),
       // Dashboard stats & recent list only need summary columns. Keep the
       // heavy jsonb payload (positionen/rabatt/notiz) out of this query.
@@ -72,7 +62,6 @@ export default function DashboardPage() {
         .eq("user_id", user.id)
         .order("datum", { ascending: false })
         .limit(200),
-      fetch("/api/dokument/check-limit").catch(() => null),
       fetch("/api/recurring").catch(() => null),
     ]);
 
@@ -110,25 +99,9 @@ export default function DashboardPage() {
       setHistorySource("cloud");
     }
 
-    if (limitRes?.ok) {
-      try {
-        const limitData = await limitRes.json();
-        setServerRemaining(typeof limitData.remaining === "number" ? limitData.remaining : null);
-      } catch {
-        setServerRemaining(null);
-      }
-    } else {
-      setServerRemaining(null);
-    }
-
     setLoading(false);
   }
 
-  const proUser = isPro(profil?.plan);
-  const trialEndsAt = profil?.trial_ends_at ?? null;
-  const userInTrial = isInTrial(trialEndsAt);
-  const trialDaysLeft = trialDaysRemaining(trialEndsAt);
-  const remaining = proUser || userInTrial ? Infinity : (serverRemaining ?? 5);
   const companyName = profil?.firmenname || profil?.vorname || "Offertio";
   const reminderCount = countOpenActions(history, profil?.zahlungsfrist ?? 30);
   const totalDocs = history.length;
@@ -144,7 +117,6 @@ export default function DashboardPage() {
   const openDocs = history.filter((d) =>
     ["gesendet", "angenommen", "ueberfaellig"].includes(d.status)
   );
-  const used = FREE_DOCS - Math.max(0, Math.min(remaining, FREE_DOCS));
 
   return (
     <div style={{ minHeight: "100%", background: "var(--app-bg)", WebkitFontSmoothing: "antialiased" }}>
@@ -250,68 +222,6 @@ export default function DashboardPage() {
               <span style={{ fontSize: 12, color: "var(--color-primary-strong)", whiteSpace: "nowrap" }}>
                 Jetzt erstellen →
               </span>
-            </Link>
-          </motion.div>
-        )}
-
-        {/* ── Trial banner ─────────────────────────────── */}
-        {!loading && !proUser && userInTrial && (
-          <motion.div
-            initial={{ opacity: 0, y: 6 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.4, delay: 0.1, ease }}
-            style={{
-              marginBottom: 16,
-              padding: "14px 18px",
-              borderRadius: 14,
-              background: "var(--color-primary-soft, rgba(200,121,61,0.08))",
-              border: "1px solid var(--color-primary, #c8793d)",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "space-between",
-              gap: 12,
-              flexWrap: "wrap",
-            }}
-          >
-            <div>
-              <div style={{
-                fontSize: 11,
-                fontWeight: 700,
-                letterSpacing: "0.12em",
-                textTransform: "uppercase",
-                color: "var(--color-primary-strong, #a8622e)",
-                marginBottom: 4,
-              }}>
-                {TRIAL_DAYS}-Tage-Test · Vollzugriff
-              </div>
-              <div style={{
-                fontSize: 14,
-                lineHeight: 1.5,
-                color: "var(--app-text)",
-                margin: 0,
-              }}>
-                {trialDaysLeft === 1
-                  ? "Dein Test läuft morgen ab."
-                  : trialDaysLeft === 0
-                    ? "Dein Test endet heute."
-                    : `Noch ${trialDaysLeft} Tage mit allen Features.`}
-              </div>
-            </div>
-            <Link
-              href="/einstellungen/abonnement"
-              onClick={() => trackUpgradeClick("dashboard-trial-banner")}
-              style={{
-                padding: "8px 14px",
-                borderRadius: 10,
-                background: "var(--color-primary)",
-                color: "#fff",
-                fontSize: 13,
-                fontWeight: 600,
-                textDecoration: "none",
-                whiteSpace: "nowrap",
-              }}
-            >
-              Auf Pro wechseln
             </Link>
           </motion.div>
         )}
@@ -498,59 +408,6 @@ export default function DashboardPage() {
           )}
         </motion.section>
 
-        {/* ── Plan Advisor ─────────────────────────────── */}
-        {!loading && !proUser && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 0.4, delay: 0.45 }}
-            style={{ marginTop: 48 }}
-          >
-            <div style={{
-              background: "var(--app-card)",
-              border: "1px solid var(--app-border)",
-              borderRadius: 16,
-              padding: "18px 20px",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "space-between",
-              gap: 20,
-            }}>
-              <div style={{ flex: 1, minWidth: 0 }}>
-                {/* Progress track */}
-                <div style={{
-                  width: "100%", height: 2,
-                  background: "var(--app-card-muted)",
-                  borderRadius: 1, overflow: "hidden", marginBottom: 10,
-                }}>
-                  <div style={{
-                    height: "100%",
-                    width: `${Math.min((used / FREE_DOCS) * 100, 100)}%`,
-                    background: remaining <= 1 ? "#A8622E" : "var(--color-primary)",
-                    borderRadius: 1,
-                    transition: "width 0.8s var(--ease-out-expo)",
-                  }} />
-                </div>
-                <div style={{
-                  fontSize: 13, lineHeight: 1.6,
-                  color: "var(--app-text)", fontWeight: 500,
-                }}>
-                  {remaining === 0
-                    ? "Du hast Großes vor. Zeit für Pro."
-                    : `${remaining} ${remaining === 1 ? "Dokument" : "Dokumente"} verbleiben diesen Monat.`}
-                </div>
-              </div>
-              <a
-                href={getCheckoutUrl("pro_yearly", profil?.email, profil?.id)}
-                className="btn-premium btn-premium-primary"
-                style={{ flexShrink: 0 }}
-                onClick={() => trackUpgradeClick("dashboard")}
-              >
-                Pro freischalten
-              </a>
-            </div>
-          </motion.div>
-        )}
       </div>
     </div>
   );
