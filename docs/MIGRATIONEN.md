@@ -1,8 +1,32 @@
 # Migrationen — Stand der Live-Datenbank
 
 Stand **29.08.2026**, Projekt `osexdcaqlggnaubeezqo` (Offertio, eu-central-1).
-Migrationen **000–036 sind eingespielt**. Nachgemessen, nicht angenommen.
+Migrationen **000–036 sind eingespielt** (Stand dieser Messung; die Datenbank ist inzwischen pausiert). Nachgemessen, nicht angenommen.
 
+> 🔴 **041 ist zwingend, bevor die App benutzt wird — und sie ist NICHT eingespielt.**
+>
+> Migration **035 ist live** und hat dem Browser-Nutzer das Recht auf `profiles.id`
+> entzogen. PostgREST schreibt jeden Upsert als
+> `ON CONFLICT (id) DO UPDATE SET …, "id" = EXCLUDED."id"`, braucht dieses Recht
+> also, und ohne es scheitern **Onboarding, Profil speichern und die
+> Profilsicherung im Editor mit `permission denied`** — bei jedem Nutzer.
+> Gemessen gegen PostgREST 12.2.3 (`scripts/db/postgrest-smoke.py`), nicht
+> vermutet. **041** gibt dieses eine Recht zurück. Das ist sicher, weil die
+> Zeilenregel `auth.uid() = id` verhindert, dass jemand `id` auf einen fremden
+> Wert setzt — auch das ist gemessen: Der Versuch wird jetzt von der Zeilenregel
+> abgewiesen, vorher vom fehlenden Recht. `plan`, `trial_ends_at` und die
+> `ls_*`-Spalten bleiben gesperrt.
+>
+> **Nicht geprüft:** der Zustand der echten Datenbank. Das Projekt steht auf
+> `INACTIVE` (pausiert), die Verbindung läuft in einen Timeout. Ob dort `id` schon
+> geschrieben werden darf, ist ungeprüft; die Messung gilt für die Repo-Dateien
+> 000–041 auf einem frischen PostgreSQL 16.
+>
+> Reihenfolge fürs Einspielen: **041** (zwingend), **039 + 040** (gestellte
+> Rechnung unveränderbar und nicht löschbar — empfohlen), 038 nur wenn das
+> Unterschreiben je eingeschaltet wird, 037 ist seit dem Entfernen des
+> Free-Limits ohne Zweck.
+>
 > ⚠️ **037 bis 040 liegen im Repo, sind aber NICHT eingespielt.**
 >
 > **040** schliesst zwei Wege um 039 herum, die das Red Team gefunden und

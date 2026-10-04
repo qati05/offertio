@@ -1,0 +1,45 @@
+-- Migration 041: give the browser role UPDATE on profiles.id, because PostgREST
+-- needs it to upsert.
+--
+-- THE BUG THIS REPAIRS (introduced by migration 035, applied to the live DB)
+--
+-- 035 took UPDATE on profiles away from the browser role and granted it back
+-- column by column, leaving `id` out "so the primary key cannot be rewritten".
+-- The intent was sound and it was never run through PostgREST.
+--
+-- PostgREST does not write the SQL you would write by hand. For an upsert it
+-- generates
+--
+--   INSERT INTO profiles (...) VALUES (...)
+--   ON CONFLICT (id) DO UPDATE SET ..., "id" = EXCLUDED."id", ...
+--
+-- — the conflict column is in the SET list too. PostgreSQL checks UPDATE
+-- privilege on every column named in SET, so with no UPDATE on `id` the whole
+-- statement fails: "permission denied for table profiles" (HTTP 403).
+--
+-- Three call sites upsert a profile from the browser: onboarding, the profile
+-- settings page, and the editor's persistProfileIfNeeded. All three failed, for
+-- every user. Nobody can finish onboarding or save their company details.
+-- Reproduced against PostgREST 12.2.3 with scripts/db/postgrest-smoke.py; the
+-- generated SQL is in that run's server log.
+--
+-- WHY GRANTING IT IS SAFE
+--
+-- The intent behind withholding it was "a user must not be able to rewrite
+-- their id". Row-level security already guarantees that. The UPDATE policy is
+--
+--   USING (auth.uid() = id)           -- no WITH CHECK
+--
+-- and for UPDATE, PostgreSQL applies the USING expression as the WITH CHECK
+-- when none is given. So the new row must also satisfy auth.uid() = id: the
+-- only value a user can ever write into `id` is their own, which is a no-op.
+-- scripts/db/postgrest-smoke.py checks this directly rather than trusting the
+-- argument: PATCH id to someone else's value is refused, and the row is still
+-- the caller's afterwards.
+--
+-- WHAT STAYS REVOKED
+--
+-- Everything else 035 withholds: plan, trial_ends_at, the ls_* columns,
+-- plan_expires_at, plan_cancelled_at. The smoke script checks those too.
+
+GRANT UPDATE (id) ON public.profiles TO authenticated;
