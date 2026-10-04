@@ -6,6 +6,7 @@ import {
   Image,
   StyleSheet,
 } from "@react-pdf/renderer";
+import QrCodeSvg from "./QrCodeSvg";
 import { getDachConfig } from "@/lib/dach";
 import { formatMoney } from "@/lib/money-format";
 import { getSteuerHinweis, getEffektiverMwstSatz } from "@/lib/reverse-charge";
@@ -277,7 +278,7 @@ export default function PDFMinimal({
             <View style={s.qrPayment}>
               <View>
                 <Text style={s.qrTitle}>Zahlteil</Text>
-                <Image src={qrCodeDataUrl!} style={s.qrImage} />
+                <QrCodeSvg dataUrl={qrCodeDataUrl!} style={s.qrImage} />
                 <View style={s.qrAmtRow}>
                   <View style={s.qrAmtCol}><Text style={s.qrSecLabel}>Währung</Text><Text style={s.qrSecVal}>CHF</Text></View>
                   <View><Text style={s.qrSecLabel}>Betrag</Text><Text style={s.qrSecVal}>{fmt(total)}</Text></View>

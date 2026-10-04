@@ -6,6 +6,7 @@
   Image,
   StyleSheet,
 } from "@react-pdf/renderer";
+import QrCodeSvg from "./pdf/QrCodeSvg";
 import type { Profile, Position, KundenInfo, RabattInfo, DokumentTyp } from "@/lib/types";
 import { getDachConfig } from "@/lib/dach";
 import { formatMoney } from "@/lib/money-format";
@@ -617,7 +618,7 @@ export default function OffertePDF(props: OffertePDFProps) {
             <View style={s.qrPayment}>
               <View>
                 <Text style={s.qrTitle}>Zahlteil</Text>
-                <Image src={qrCodeDataUrl} style={s.qrImage} />
+                <QrCodeSvg dataUrl={qrCodeDataUrl} style={s.qrImage} />
                 <View style={s.qrAmountRow}>
                   <View>
                     <Text style={s.qrSectionLabel}>Währung</Text>

@@ -96,6 +96,47 @@ Streifen belegt 35,4 % der Seitenhöhe.
 dass nichts abstürzt und nichts verlorengeht — nicht, ob das Ergebnis gut
 aussieht. Dafür braucht es einen Blick auf ein echtes Dokument.
 
+## Behoben: der QR-Code war gar nicht im PDF (04.10.2026)
+
+Das war der gravierendste Fund dieser Datei, und er blieb bis hierher unentdeckt,
+weil jede Prüfung oben **die SVG der Bibliothek** untersuchte und keine das
+fertige PDF.
+
+Alle fünf Vorlagen übergaben die SVG an `<Image src={…}>` von
+`@react-pdf/renderer`. Diese Komponente liest nur PNG und JPEG; im Quelltext von
+`@react-pdf/image` (Node- und Browser-Fassung) kommt „svg" nirgends vor. Ergebnis:
+Der Zahlteil wurde gezeichnet, die Fläche für den Code blieb **leer**. Gemessen:
+dasselbe PDF mit einem PNG enthält ein eingebettetes Bild, mit der QR-SVG null.
+Eine Rechnung, die so aussah, als wäre sie fertig, war nicht bezahlbar per
+Scan.
+
+Jetzt zeichnet `src/components/pdf/QrCodeSvg.tsx` die Rechtecke der SVG als
+Vektoren ins PDF. Lässt sich die SVG nicht lesen, **scheitert die PDF-Erzeugung**,
+statt einen Zahlteil ohne Code auszugeben.
+
+**Was daran gemessen ist:**
+
+- `qr-in-pdf.test.tsx` öffnet das fertige PDF und zählt die gefüllten Formen:
+  in allen fünf Vorlagen, mit IBAN und QR-IBAN, mindestens so viele wie die SVG
+  Rechtecke hat (z. B. 1691 bei 1690). Ohne QR: genau 1. Mit der alten
+  `<Image>`-Einbettung sind alle zehn Fälle rot.
+- **Einmalig von Hand, nicht automatisiert:** das PDF der Vorlage „classic" auf
+  300 dpi gerastert und mit einem unabhängigen Decoder (OpenCV) gelesen. Der
+  Code lässt sich aus dem PDF decodieren, der Payload stimmt (SPC / 0200 / IBAN /
+  Betrag / CHF / QRR mit 27-stelliger Referenz / EPD), Kantenlänge **46,0 mm**.
+- Das PDF angesehen: Code mit Schweizer Kreuz sitzt im Zahlteil.
+
+**Weiterhin ungeprüft:** der Browser. Die PDFs entstehen im Browser; die Messung
+lief in Node. Gleiche Bibliothek, aber nicht in einer echten Browser-Sitzung
+nachgestellt.
+
+**Beim Ansehen aufgefallen, nicht behoben (gegen die Norm ungeprüft):**
+
+- Die Beschriftungen „Währung" und „Betrag" stehen ohne Abstand nebeneinander
+  und lesen sich „WÄHRUNGBETRAG" (Vorlage „classic").
+- Es gibt kein Feld „Zahlbar durch". Ob die Norm es auch ohne Debitor als leeren
+  Rahmen verlangt, ist nicht geprüft.
+
 ## Was weiterhin ungeprüft ist
 
 Ehrlich benannt, statt überspielt:
@@ -105,7 +146,7 @@ Ehrlich benannt, statt überspielt:
    nicht hin. Geprüft ist der Payload gegen die Feldstruktur, nicht gegen SIX.
 2. **Ob `0200` die aktuelle IG-Revision ist**, konnte aus derselben Ursache
    nicht an einer offiziellen Quelle bestätigt werden.
-3. **Kein Druck-und-Scan-Test** mit einer echten Banking-App auf Papier.
+3. **Kein Druck-und-Scan-Test** mit einer echten Banking-App auf Papier. Der Decoder oben ist Software auf einem Raster, kein Handy auf Papier.
 4. **Der Zahlteil ist selbst gebaut, nicht von der Bibliothek erzeugt.**
    Offertio nutzt `swissqrbill/svg` nur für den Code und zeichnet Empfangsschein
    und Zahlteil selbst — deshalb konnte sich der Höhenfehler oben überhaupt

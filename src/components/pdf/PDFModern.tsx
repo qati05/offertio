@@ -7,6 +7,7 @@ import {
   Image,
   StyleSheet,
 } from "@react-pdf/renderer";
+import QrCodeSvg from "./QrCodeSvg";
 import type { Profile, Position, KundenInfo, RabattInfo, DokumentTyp } from "@/lib/types";
 import { getDachConfig } from "@/lib/dach";
 import { formatMoney } from "@/lib/money-format";
@@ -321,7 +322,7 @@ export default function PDFModern({
             <View style={m.qrPayment}>
               <View>
                 <Text style={m.qrTitle}>Zahlteil</Text>
-                <Image src={qrCodeDataUrl!} style={m.qrImage} />
+                <QrCodeSvg dataUrl={qrCodeDataUrl!} style={m.qrImage} />
                 <View style={m.qrAmtRow}>
                   <View style={m.qrAmtCol}><Text style={m.qrSecLabel}>Währung</Text><Text style={m.qrSecVal}>CHF</Text></View>
                   <View><Text style={m.qrSecLabel}>Betrag</Text><Text style={m.qrSecVal}>{fmt(total)}</Text></View>
