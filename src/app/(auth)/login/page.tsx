@@ -228,8 +228,6 @@ export default function LoginPage() {
             <Link href="/datenschutz">Datenschutz</Link>
             <span style={{ color: "var(--app-border)" }}>·</span>
             <Link href="/impressum">Impressum</Link>
-            <span style={{ color: "var(--app-border)" }}>·</span>
-            <Link href="/">Zur Landing</Link>
           </div>
         </section>
       </div>

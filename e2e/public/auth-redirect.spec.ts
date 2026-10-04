@@ -22,24 +22,28 @@ test.describe("Auth redirects (unauthenticated)", () => {
     await page.waitForURL("**/login");
   });
 
-  test("does NOT redirect public pages", async ({ request }) => {
-    for (const path of [
-      "/",
-      "/agb",
-      "/impressum",
-      "/blog",
-      "/blog/e-rechnung-deutschland-2026",
-      "/blog/qr-rechnung-schweiz-2026",
-      "/branchen/handwerker",
-      "/branchen/reinigung",
-      "/vergleich/offertio-vs-bexio",
-      "/vergleich/offertio-vs-sevdesk",
-      "/robots.txt",
-      "/sitemap.xml",
-    ]) {
+  test("redirects the start page to /login", async ({ page }) => {
+    // There is no landing page: without a session, "/" ends up at the login.
+    await page.goto("/");
+    await page.waitForURL("**/login");
+    await expect(page.locator("input[type='email']")).toBeVisible();
+  });
+
+  test("does NOT redirect the pages a stranger needs", async ({ request }) => {
+    for (const path of ["/agb", "/impressum", "/datenschutz", "/robots.txt", "/manifest.json"]) {
       const response = await request.get(path, { maxRedirects: 0 });
       expect(response.status(), `${path} should be publicly reachable`).toBeLessThan(400);
       expect(response.headers().location, `${path} should not redirect to login`).toBeUndefined();
+    }
+  });
+
+  test("serves no marketing pages any more", async ({ request }) => {
+    for (const path of ["/preise", "/blog", "/branchen/maler", "/vergleich/offertio-vs-bexio", "/sitemap.xml"]) {
+      const response = await request.get(path, { maxRedirects: 0 });
+      expect(
+        [301, 302, 307, 308, 404].includes(response.status()),
+        `${path} must not be served (got ${response.status()})`,
+      ).toBe(true);
     }
   });
 

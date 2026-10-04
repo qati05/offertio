@@ -25,17 +25,12 @@ function buildCsp(nonce: string): string {
 
 export function isPublicPath(path: string): boolean {
   return (
-    path === "/" ||
     path.startsWith("/login") ||
     path.startsWith("/confirm") ||
     path.startsWith("/callback") ||
     path.startsWith("/datenschutz") ||
     path.startsWith("/agb") ||
     path.startsWith("/impressum") ||
-    path.startsWith("/blog") ||
-    path.startsWith("/branchen") ||
-    path.startsWith("/vergleich") ||
-    path === "/preise" ||
     // Recipient-facing surface: authorised by the document's share_token via
     // the admin client, never by an auth cookie. Recipients are by definition
     // not logged in, so these must bypass the session check.
@@ -48,8 +43,7 @@ export function isPublicPath(path: string): boolean {
     path === "/sw.js" ||
     path === "/register-sw.js" ||
     path === "/manifest.json" ||
-    path === "/robots.txt" ||
-    path === "/sitemap.xml"
+    path === "/robots.txt"
   );
 }
 

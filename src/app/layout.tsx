@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import { headers } from "next/headers";
 import { Fraunces, DM_Sans, JetBrains_Mono } from "next/font/google";
 import CookieConsent from "@/components/CookieConsent";
-import { SITE_URL, siteUrl } from "@/lib/site";
 import "./globals.css";
 
 const fraunces = Fraunces({
@@ -28,43 +27,11 @@ const jetBrainsMono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  // metadataBase makes relative og:image / twitter:image URLs resolve correctly
-  // across environments; override via NEXT_PUBLIC_SITE_URL.
-  metadataBase: new URL(SITE_URL),
-  title: "Offertio - Mobile-first Offerten und Rechnungen für DACH-Betriebe",
-  description:
-    "Offertio hilft kleinen Betrieben in CH, DE und AT, Offerten und Rechnungen ohne Bürochaos direkt vom Handy zu erstellen, weiterzugeben und professionell zu organisieren.",
-  openGraph: {
-    title: "Offertio - Weniger Büro. Mehr erledigte Aufträge.",
-    description:
-      "Mobile-first Offerten und Rechnungen für Handwerk, Reinigung und Servicebetriebe in CH, DE und AT. Mit QR, SEPA und DACH-Logik im Hintergrund.",
-    images: [
-      {
-        url: siteUrl("/offertio/og-image.png"),
-        width: 1200,
-        height: 630,
-        alt: "Offertio - mobile-first Offerten und Rechnungen",
-      },
-    ],
-    type: "website",
-    locale: "de_CH",
-    alternateLocale: ["de_DE", "de_AT"],
-  },
-  twitter: {
-    card: "summary_large_image",
-    title: "Offertio - Mobile-first Offerten und Rechnungen",
-    description:
-      "Weniger Büro, mehr Klarheit im Alltag: Offertio bringt Offerten und Rechnungen dorthin, wo kleine Betriebe wirklich arbeiten.",
-    images: [siteUrl("/offertio/og-image.png")],
-  },
-  alternates: {
-    canonical: SITE_URL,
-    languages: {
-      "de-CH": SITE_URL,
-      "de-DE": SITE_URL,
-      "de-AT": SITE_URL,
-    },
-  },
+  title: "Offertio",
+  description: "Offerten und Rechnungen.",
+  // A private installation: nothing here is meant to be found. robots.txt says
+  // the same; this covers crawlers that ignore it and pages reached by link.
+  robots: { index: false, follow: false },
 };
 
 export default async function RootLayout({
@@ -91,29 +58,6 @@ export default async function RootLayout({
         <meta name="apple-mobile-web-app-status-bar-style" content="default" />
         <meta name="apple-mobile-web-app-title" content="Offertio" />
         <link rel="apple-touch-icon" href="/icon-192.svg" />
-        <script
-          nonce={nonce}
-          suppressHydrationWarning
-          type="application/ld+json"
-          dangerouslySetInnerHTML={{
-            __html: JSON.stringify({
-              "@context": "https://schema.org",
-              "@type": "SoftwareApplication",
-              name: "Offertio",
-              url: SITE_URL,
-              applicationCategory: "BusinessApplication",
-              applicationSubCategory: "InvoicingApplication",
-              operatingSystem: "Web, iOS, Android",
-              description:
-                "Mobile-first Angebots- und Rechnungssoftware für kleinere Betriebe in CH, DE und AT.",
-              offers: {
-                "@type": "Offer",
-                price: "0",
-                priceCurrency: "CHF",
-              },
-            }),
-          }}
-        />
       </head>
       <body>
         {children}

@@ -58,23 +58,17 @@ describe("middleware · protected paths stay protected", () => {
   });
 });
 
-describe("middleware · previously covered public paths", () => {
-  it("still allows marketing, legal and auth entry points", () => {
+describe("middleware · public paths that remain", () => {
+  it("still allows the legal and auth entry points", () => {
     for (const path of [
-      "/",
       "/login",
       "/callback",
       "/agb",
       "/datenschutz",
       "/impressum",
-      "/preise",
-      "/blog/qr-rechnung-schweiz-2026",
-      "/branchen/maler",
-      "/vergleich/offertio-vs-bexio",
       "/api/health",
       "/manifest.json",
       "/robots.txt",
-      "/sitemap.xml",
     ]) {
       expect(isPublicPath(path)).toBe(true);
     }
