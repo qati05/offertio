@@ -41,8 +41,10 @@ export function buildZugferdXml(data: OfferteData, leistungsdatum?: string): str
       : grossLineTotal * (rabatt.wert / 100)
     : 0;
 
-  const lineTotal = grossLineTotal - rabattBetrag;
-  const taxBasis = lineTotal;
+  // BT-106 is the sum of the line nets. A document discount is a header
+  // allowance (BG-20), not a silent reduction of that sum.
+  const allowance = Math.min(Math.max(rabattBetrag, 0), grossLineTotal);
+  const taxBasis = grossLineTotal - allowance;
   const taxAmount = taxBasis * (mwstSatz / 100);
   const grandTotal = taxBasis + taxAmount;
 
@@ -238,6 +240,17 @@ export function buildZugferdXml(data: OfferteData, leistungsdatum?: string): str
   tradeTax.ele("ram:CategoryCode").txt(vatCategoryCode);
   tradeTax.ele("ram:RateApplicablePercent").txt(String(mwstSatz));
 
+  if (allowance > 0) {
+    const allowanceNode = settlement.ele("ram:SpecifiedTradeAllowanceCharge");
+    allowanceNode.ele("ram:ChargeIndicator").ele("udt:Indicator").txt("false");
+    allowanceNode.ele("ram:ActualAmount").txt(money(allowance));
+    allowanceNode.ele("ram:Reason").txt((rabatt?.label || "Rabatt").slice(0, 100));
+    const allowanceTax = allowanceNode.ele("ram:CategoryTradeTax");
+    allowanceTax.ele("ram:TypeCode").txt("VAT");
+    allowanceTax.ele("ram:CategoryCode").txt(vatCategoryCode);
+    allowanceTax.ele("ram:RateApplicablePercent").txt(String(mwstSatz));
+  }
+
   // Payment terms — BT-9 (due date) + human-readable description
   const paymentTerms = settlement.ele("ram:SpecifiedTradePaymentTerms");
   paymentTerms
@@ -250,7 +263,10 @@ export function buildZugferdXml(data: OfferteData, leistungsdatum?: string): str
 
   // Monetary summation (BG-22)
   const summation = settlement.ele("ram:SpecifiedTradeSettlementHeaderMonetarySummation");
-  summation.ele("ram:LineTotalAmount").txt(money(lineTotal));
+  summation.ele("ram:LineTotalAmount").txt(money(grossLineTotal));
+  if (allowance > 0) {
+    summation.ele("ram:AllowanceTotalAmount").txt(money(allowance));
+  }
   summation.ele("ram:TaxBasisTotalAmount").txt(money(taxBasis));
   summation.ele("ram:TaxTotalAmount", { currencyID: currencyCode }).txt(money(taxAmount));
   summation.ele("ram:GrandTotalAmount").txt(money(grandTotal));

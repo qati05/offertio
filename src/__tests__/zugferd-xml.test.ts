@@ -190,6 +190,18 @@ describe("buildZugferdXml", () => {
     expect(xml).toContain("2082.50");
   });
 
+  it("books a document discount as a header allowance, not as a reduced line sum", () => {
+    const xml = buildZugferdXml({
+      ...baseData,
+      rabatt: { aktiv: true, label: "Fruehbucher", modus: "prozent", wert: 10 },
+    });
+    expect(xml).toContain("<ram:LineTotalAmount>1750.00</ram:LineTotalAmount>");
+    expect(xml).toContain("<ram:AllowanceTotalAmount>175.00</ram:AllowanceTotalAmount>");
+    expect(xml).toContain("<ram:TaxBasisTotalAmount>1575.00</ram:TaxBasisTotalAmount>");
+    expect(xml).toContain("<udt:Indicator>false</udt:Indicator>");
+    expect(xml).toContain("Fruehbucher");
+  });
+
   it("contains EUR currency code", () => {
     const xml = buildZugferdXml(baseData);
     expect(xml).toContain("EUR");

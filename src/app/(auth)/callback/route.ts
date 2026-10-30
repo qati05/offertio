@@ -1,6 +1,7 @@
 import { createSupabaseServer } from "@/lib/supabase-server";
 import { NextRequest, NextResponse } from "next/server";
 import type { EmailOtpType } from "@supabase/supabase-js";
+import { resolvePostAuthPath } from "@/lib/auth-redirect";
 
 /**
  * All redirect destinations in this route are hardcoded relative paths.
@@ -54,9 +55,9 @@ export async function GET(request: NextRequest) {
     .eq("id", user.id)
     .maybeSingle();
 
-  if (!profile?.onboarding_complete) {
-    return NextResponse.redirect(new URL("/onboarding", request.url));
-  }
-
-  return NextResponse.redirect(new URL("/dashboard", request.url));
+  const destination = resolvePostAuthPath({
+    type: searchParams.get("type"),
+    onboardingComplete: !!profile?.onboarding_complete,
+  });
+  return NextResponse.redirect(new URL(destination, request.url));
 }

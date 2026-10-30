@@ -67,9 +67,6 @@ export async function POST(request: NextRequest) {
       leistungsdatum,
       status,
       sourceDocumentId,
-      sourceDocumentNummer,
-      sourceDocumentNumber,
-      sourceDocumentTyp,
       existingDocumentId,
       positionen,
       mwstSatz,
@@ -310,7 +307,23 @@ export async function POST(request: NextRequest) {
     const resolvedNummer = await resolveUniqueNummer(nummer, existingDocumentId || null);
     // ---
 
-    const relationNumber = sourceDocumentNummer || sourceDocumentNumber || null;
+    let verifiedSource: { id: string; nummer: string } | null = null;
+    if (typ === "rechnung" && sourceDocumentId) {
+      const { data: sourceDoc, error: sourceError } = await admin
+        .from("dokumente")
+        .select("id, nummer")
+        .eq("id", sourceDocumentId)
+        .eq("user_id", user.id)
+        .eq("typ", "offerte")
+        .maybeSingle();
+      if (sourceError) {
+        logger.error("dokument-save:source", sourceError, { userId: user.id, sourceDocumentId });
+      } else if (sourceDoc?.id && sourceDoc.nummer) {
+        verifiedSource = { id: sourceDoc.id, nummer: sourceDoc.nummer };
+      }
+    }
+
+    const relationNumber = verifiedSource?.nummer || null;
     const documentPayload: Record<string, unknown> = {
       user_id: user.id,
       typ,
@@ -329,9 +342,9 @@ export async function POST(request: NextRequest) {
       leistungsdatum: leistungsdatum || null,
       pdf_url: fileName,
       status: normalizedStatus,
-      source_document_id: sourceDocumentId || null,
+      source_document_id: verifiedSource?.id || null,
       source_document_nummer: relationNumber,
-      source_document_typ: sourceDocumentTyp || null,
+      source_document_typ: verifiedSource ? "offerte" : null,
     };
 
     // Only include carryover columns when the client actually sent them.
@@ -404,7 +417,7 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    if (typ === "rechnung" && sourceDocumentId && insertedDocument?.id) {
+    if (typ === "rechnung" && verifiedSource && insertedDocument?.id) {
       const { error: relationError } = await admin
         .from("dokumente")
         .update({
@@ -412,8 +425,9 @@ export async function POST(request: NextRequest) {
           converted_document_nummer: insertedDocument.nummer,
           converted_document_typ: typ,
         })
-        .eq("id", sourceDocumentId)
-        .eq("user_id", user.id);
+        .eq("id", verifiedSource.id)
+        .eq("user_id", user.id)
+        .eq("typ", "offerte");
 
       if (relationError) {
         logger.error("db-update-source-dokument", relationError);

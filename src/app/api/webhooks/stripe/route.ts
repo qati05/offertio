@@ -32,6 +32,8 @@ type GrantResult = {
 /**
  * Stripe webhook. Signature is verified before any database write.
  * `checkout.session.completed` (paid) sets profiles.plan = 'lifetime'.
+ * `charge.refunded` and succeeded `refund.created` / `refund.updated`
+ * revoke that plan and release the confirmed founder seat.
  * Deliveries are idempotent on the Stripe event id.
  */
 export async function POST(request: NextRequest) {
@@ -88,12 +90,31 @@ export async function POST(request: NextRequest) {
       return json({ ok: true, result: (data as GrantResult | null)?.reason ?? "released" });
     }
 
+    if (decision.action === "revoke") {
+      const { data, error } = await admin.rpc("revoke_lifetime_for_refund", {
+        p_event_id: decision.eventId,
+        p_event_type: decision.eventType,
+        p_user_id: decision.userId,
+        p_customer_id: decision.customerId,
+        p_payment_intent_id: decision.paymentIntentId,
+        p_session_id: decision.sessionId,
+        p_amount: decision.amount,
+        p_currency: decision.currency,
+      });
+      if (error) {
+        logger.error("webhook:stripe:revoke", error, { eventId: decision.eventId });
+        return json({ error: "Processing failed" }, 500);
+      }
+      return json({ ok: true, result: (data as GrantResult | null)?.reason ?? "revoked" });
+    }
+
     const { data, error } = await admin.rpc("grant_lifetime_seat", {
       p_event_id: decision.eventId,
       p_event_type: decision.eventType,
       p_user_id: decision.userId,
       p_session_id: decision.sessionId,
       p_customer_id: decision.customerId,
+      p_payment_intent_id: decision.paymentIntentId,
       p_seat_limit: seatLimitParam(getFounderSeatLimit()),
     });
 

@@ -98,7 +98,7 @@ export default function DatenschutzPage() {
             Sie haben das Recht auf Auskunft, Berichtigung, Löschung und <strong>Datenportabilität</strong> (Art. 17 & 20 DSGVO / Art. 32 DSG).
           </p>
           <ul style={{ paddingLeft: 20, marginTop: 8 }}>
-            <li><strong>Datenexport:</strong> Sie können Ihre gesamten Daten (Profil, Dokumente, Kunden) in den Einstellungen als JSON-Datei herunterladen.</li>
+            <li><strong>Datenexport:</strong> Sie können in den Einstellungen jederzeit Ihre Offerten, Rechnungen und Kunden als CSV sowie die PDFs als ZIP herunterladen. Ein JSON-Export von Profil, Dokumenten, Kunden und Vorlagen steht ebenfalls bereit. Der Export enthält nur Ihre eigenen Daten.</li>
             <li><strong>Kontolöschung:</strong> Sie können Ihr Konto jederzeit in den Einstellungen löschen. Die Löschung entfernt Ihre Profildaten und Vorlagen.</li>
           </ul>
           <p style={{ marginTop: 8 }}>
