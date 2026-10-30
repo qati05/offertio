@@ -8,6 +8,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import OffertioLogo from "@/components/OffertioLogo";
 import { createSupabaseBrowser } from "@/lib/supabase-browser";
 import { trackEmailCapture, trackLoginPageView } from "@/lib/analytics";
+import { parseAuthNext } from "@/lib/auth-next";
 
 type EmailMode = "magic" | "password" | "signup";
 
@@ -28,6 +29,7 @@ export default function LoginPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const wantsPro = searchParams.get("plan") === "pro";
+  const nextPath = parseAuthNext(searchParams.get("next"));
   const showGoogleAuth = process.env.NEXT_PUBLIC_GOOGLE_AUTH_ENABLED === "true";
   const [emailMode, setEmailMode] = useState<EmailMode>("signup");
   const [email, setEmail] = useState("");
@@ -40,10 +42,21 @@ export default function LoginPage() {
 
   useEffect(() => {
     trackLoginPageView(document.referrer || "direct");
+    if (nextPath) {
+      document.cookie = `offertio_auth_next=${encodeURIComponent(nextPath)}; Path=/; Max-Age=900; SameSite=Lax`;
+    } else {
+      document.cookie = "offertio_auth_next=; Path=/; Max-Age=0; SameSite=Lax";
+    }
     void bootstrap();
+    // nextPath is fixed for this page load; bootstrap reads the latest redirect helper.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   function redirectAfterAuth(onboardingComplete: boolean) {
+    if (nextPath) {
+      router.replace(nextPath);
+      return;
+    }
     if (!onboardingComplete) {
       router.replace(wantsPro ? "/onboarding?plan=pro" : "/onboarding");
       return;
@@ -190,7 +203,7 @@ export default function LoginPage() {
 
     if (data.session) {
       router.refresh();
-      router.replace(wantsPro ? "/onboarding?plan=pro" : "/onboarding");
+      router.replace(nextPath ?? (wantsPro ? "/onboarding?plan=pro" : "/onboarding"));
       return;
     }
 

@@ -87,10 +87,20 @@ export async function middleware(request: NextRequest) {
   if (!user) {
     const url = request.nextUrl.clone();
     url.pathname = "/login";
+    if (path === "/gruenderplatz" || path === "/einrichtung") {
+      url.search = "";
+      url.searchParams.set("next", path);
+    }
     return NextResponse.redirect(url);
   }
 
-  if (!path.startsWith("/onboarding") && !path.startsWith("/einstellungen") && !path.startsWith("/api/")) {
+  if (
+    !path.startsWith("/onboarding") &&
+    !path.startsWith("/einstellungen") &&
+    !path.startsWith("/api/") &&
+    path !== "/gruenderplatz" &&
+    path !== "/einrichtung"
+  ) {
     const { data: profile } = await supabase
       .from("profiles")
       .select("onboarding_complete, land, uid_mwst, steuernummer, fn_nr")

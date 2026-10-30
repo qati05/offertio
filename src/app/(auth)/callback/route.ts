@@ -1,6 +1,7 @@
 import { createSupabaseServer } from "@/lib/supabase-server";
 import { NextRequest, NextResponse } from "next/server";
 import type { EmailOtpType } from "@supabase/supabase-js";
+import { parseAuthNext } from "@/lib/auth-next";
 
 /**
  * All redirect destinations in this route are hardcoded relative paths.
@@ -54,9 +55,9 @@ export async function GET(request: NextRequest) {
     .eq("id", user.id)
     .maybeSingle();
 
-  if (!profile?.onboarding_complete) {
-    return NextResponse.redirect(new URL("/onboarding", request.url));
-  }
-
-  return NextResponse.redirect(new URL("/dashboard", request.url));
+  const requested = parseAuthNext(request.cookies.get("offertio_auth_next")?.value);
+  const destination = requested ?? (profile?.onboarding_complete ? "/dashboard" : "/onboarding");
+  const response = NextResponse.redirect(new URL(destination, request.url));
+  response.cookies.set("offertio_auth_next", "", { path: "/", maxAge: 0 });
+  return response;
 }

@@ -354,6 +354,16 @@ html { overflow-x: hidden; max-width: 100vw; }
   .cta-primary:active {
     transform: translateY(0);
   }
+  .cta-primary:focus-visible {
+    outline: 2px solid #F0EDE8;
+    outline-offset: 3px;
+  }
+  .cta-primary:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+  }
 
   .cta-secondary {
     display: inline-flex;

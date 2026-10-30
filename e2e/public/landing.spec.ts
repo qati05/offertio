@@ -12,11 +12,10 @@ test.describe("Landing page", () => {
     // Navbar with logo
     await expect(page.locator("nav")).toBeVisible();
 
-    // CTA buttons exist
-    const ctaLinks = page.getByRole("link", {
-      name: /Jetzt (kostenlos )?starten|Kostenlos starten|Jetzt ausprobieren/i,
-    });
-    await expect(ctaLinks.first()).toBeVisible();
+    const cta = page.getByRole("link", { name: "Gründerplatz sichern, CHF 249" })
+      .or(page.getByRole("button", { name: "Gründerplatz sichern, CHF 249" }));
+    await expect(cta.first()).toBeVisible();
+    await expect(cta).toHaveCount(3);
   });
 
   test("navigation to login", async ({ page }) => {

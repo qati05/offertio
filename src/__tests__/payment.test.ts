@@ -3,6 +3,7 @@ import {
   FREE_LIMIT,
   TRIAL_DAYS,
   LIFETIME_PRICE_CHF,
+  LIFETIME_PRODUCT_NAME,
   getPricing,
   isPro,
   isLifetime,
@@ -251,7 +252,8 @@ describe("payment.ts", () => {
     it("is a one-time CHF 249 offer", () => {
       expect(LIFETIME_PRICE_CHF).toBe(249);
       expect(LIFETIME_FEATURES.length).toBeGreaterThan(0);
-      expect(LIFETIME_FEATURES.some((feature) => feature.includes("Abo"))).toBe(true);
+      expect(LIFETIME_FEATURES.some((feature) => feature.includes("2 Jahre inklusive"))).toBe(true);
+      expect(LIFETIME_PRODUCT_NAME).toBe("Gründerplatz");
     });
   });
 
