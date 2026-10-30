@@ -25,6 +25,7 @@
     "pdf-lib": "^1.17.1",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
+    "stripe": "^23.1.0",
     "swissqrbill": "^4.3.0",
     "xmlbuilder2": "^4.0.3",
     "zod": "^4.3.6"

@@ -1,17 +1,16 @@
 /**
  * Canonical public site URL.
  *
- * Set `NEXT_PUBLIC_SITE_URL` in the environment (e.g. `https://example.com`)
- * to override. The default matches `public/sitemap.xml` and
- * `public/robots.txt`. Keeping the value env-driven means the marketing
- * metadata (canonicals, og:image, JSON-LD) follows whatever domain is
- * ultimately chosen without a code change.
+ * Set `NEXT_PUBLIC_SITE_URL` in the environment (e.g. `https://getoffertio.ch`)
+ * to override. The default is the production apex. `www.getoffertio.ch`
+ * redirects to the apex (see vercel.json). Canonicals, sitemap and JSON-LD
+ * follow this value.
  */
 export const SITE_URL: string = (
-  process.env.NEXT_PUBLIC_SITE_URL ?? "https://offertio.io"
+  process.env.NEXT_PUBLIC_SITE_URL ?? "https://getoffertio.ch"
 ).replace(/\/+$/, "");
 
-/** Absolute URL helper: `siteUrl("/blog")` → `"https://offertio.io/blog"`. */
+/** Absolute URL helper: `siteUrl("/blog")` → `"https://getoffertio.ch/blog"`. */
 export function siteUrl(path: string = "/"): string {
   return `${SITE_URL}${path.startsWith("/") ? path : `/${path}`}`;
 }

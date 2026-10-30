@@ -75,13 +75,15 @@ Migration path if needed:
 - SQL migrations are versioned
 - auth and storage migration would require dedicated effort
 
-### Lemon Squeezy
+### Stripe
 
-Used for subscriptions and checkout. Replacing it would mainly affect:
+Used for the one-time Gründerplatz (CHF 249, Checkout `mode=payment`) and for setting `profiles.plan` to `lifetime`. Lemon Squeezy is no longer used; its webhook route returns 410.
 
-- checkout URLs
-- webhook handling
-- plan reconciliation logic
+Replacement scope if Stripe were ever swapped again:
+
+- `src/lib/stripe-billing.ts` and `src/lib/stripe-server.ts`
+- `/api/checkout/lifetime` and `/api/webhooks/stripe`
+- migration `032_lifetime_founder_seats.sql`
 
 ### Resend
 

@@ -15,7 +15,7 @@ export default function AGBPage() {
         <div style={{ fontSize: 14, lineHeight: 1.7, color: "var(--color-text)" }}>
           <h2 style={{ fontSize: 18, marginTop: 32, marginBottom: 12 }}>1. Geltungsbereich</h2>
           <p>
-            Diese AGB gelten für die Nutzung der Webapplikation Offertio (offertio.ch),
+            Diese AGB gelten für die Nutzung der Webapplikation Offertio (getoffertio.ch),
             betrieben von Offertio. Mit der Registrierung akzeptieren Sie diese Bedingungen.
           </p>
 
@@ -33,15 +33,15 @@ export default function AGBPage() {
           <h2 style={{ fontSize: 18, marginTop: 32, marginBottom: 12 }}>3. Kostenlose & kostenpflichtige Nutzung</h2>
           <p>
             Der Free-Plan erlaubt die Erstellung von bis zu 5 Dokumenten pro Monat.
-            Für unbegrenzte Nutzung ist ein Pro-Abonnement erforderlich. Preise und
-            Zahlungsbedingungen werden auf der Webseite ausgewiesen.
+            Der Gründerplatz ist eine einmalige Zahlung (CHF 249, Karte oder TWINT) und hebt
+            die Free-Limits dauerhaft auf. Es gibt kein Abo. Preise stehen auf der Webseite.
           </p>
 
-          <h2 style={{ fontSize: 18, marginTop: 32, marginBottom: 12 }}>4. Kündigung</h2>
+          <h2 style={{ fontSize: 18, marginTop: 32, marginBottom: 12 }}>4. Laufzeit</h2>
           <p>
-            Das Pro-Abonnement kann jederzeit zum Ende der Abrechnungsperiode gekündigt werden.
-            Nach der Kündigung wird der Account auf den Free-Plan zurückgestuft.
+            Der Gründerplatz hat keine Laufzeit und keine automatische Verlängerung.
             Die Kontolöschung ist jederzeit in den Einstellungen möglich.
+            Gesetzliche Aufbewahrungspflichten für bereits erstellte Rechnungen bleiben beim Nutzer.
           </p>
 
           <h2 style={{ fontSize: 18, marginTop: 32, marginBottom: 12 }}>5. Haftungsausschluss</h2>

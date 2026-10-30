@@ -1,12 +1,13 @@
 import { Metadata } from "next";
 import Link from "next/link";
+import { SITE_URL, siteUrl } from "@/lib/site";
 
 export const metadata: Metadata = {
   title: "Rechnungsprogramm für Maler & Lackierer – Offerten vom Handy | Offertio",
   description:
     "Offertio ist die Rechnungssoftware für Maler und Lackierer in CH, DE und AT. Angebot und Rechnung in 60 Sekunden – direkt vom Handy beim Kunden vor Ort.",
   alternates: {
-    canonical: "https://offertio.io/branchen/maler",
+    canonical: siteUrl("/branchen/maler"),
   },
 };
 
@@ -25,8 +26,8 @@ export default function MalerPage() {
             provider: {
               "@type": "Organization",
               name: "Offertio",
-              url: "https://offertio.io",
-              logo: "https://offertio.io/icon-192.svg",
+              url: SITE_URL,
+              logo: siteUrl("/icon-192.svg"),
             },
             areaServed: ["CH", "DE", "AT"],
             serviceType: "InvoicingApplication, OfferManagementSoftware",

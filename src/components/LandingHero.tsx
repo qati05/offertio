@@ -396,7 +396,7 @@ export default function LandingHero() {
 
   const isFormStep = step >= 1;
   const activeNav = isFormStep ? "docs" : "dashboard";
-  const urlBar = isFormStep ? "offert.io/dokument/neu" : "offert.io/dashboard";
+  const urlBar = isFormStep ? "getoffertio.ch/dokument/neu" : "getoffertio.ch/dashboard";
 
   return (
     <section className="relative min-h-screen pt-24 sm:pt-28 lg:pt-36 pb-16 lg:pb-24 flex items-center">

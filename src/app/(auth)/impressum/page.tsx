@@ -20,7 +20,8 @@ export default function ImpressumPage() {
 
           <h2 style={{ fontSize: 18, marginTop: 32, marginBottom: 12 }}>Kontakt</h2>
           <p>
-            E-Mail: <a href="mailto:info@offertio.ch" style={{ color: "var(--color-primary)" }}>info@offertio.ch</a>
+            Webseite: getoffertio.ch<br />
+            E-Mail: <a href="mailto:info@getoffertio.ch" style={{ color: "var(--color-primary)" }}>info@getoffertio.ch</a>
           </p>
 
           <h2 style={{ fontSize: 18, marginTop: 32, marginBottom: 12 }}>Rechtsform</h2>

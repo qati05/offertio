@@ -21,16 +21,18 @@ The example source of truth is [`.env.local.example`](../.env.local.example).
 
 | Variable | Required | Purpose |
 | --- | --- | --- |
-| `NEXT_PUBLIC_SUPABASE_URL` | Yes | Supabase project URL |
+| `NEXT_PUBLIC_SUPABASE_URL` | Yes | Supabase project URL. Project region must be `eu-central-2` (Zurich) |
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Yes | Browser/server auth client key |
 | `SUPABASE_SERVICE_ROLE_KEY` | Yes for admin routes/webhooks | Server-only privileged DB access |
+| `NEXT_PUBLIC_SITE_URL` | Yes in production | Canonical origin, `https://getoffertio.ch`. `www` redirects to the apex |
 
 ### Email
 
 | Variable | Required | Purpose |
 | --- | --- | --- |
-| `RESEND_API_KEY` | Optional but required for server email | Enables `/api/send-offerte` server email sending |
-| `RESEND_FROM_EMAIL` | Recommended | Sender identity for outgoing mail |
+| `RESEND_API_KEY` | Optional but required for server email | API key created in the Resend **EU** region (`eu-west-1`, Ireland). Resend has no Zurich region |
+| `RESEND_FROM_EMAIL` | Recommended | Sender on the verified domain, e.g. `offerte@getoffertio.ch` |
+| `RESEND_API_BASE_URL` | Optional | Only if Resend assigns this key a dedicated EU API host. Otherwise leave unset; `https://api.resend.com` routes by the key's region |
 
 If `RESEND_API_KEY` is absent, the app falls back to client-side sharing instead of server mail delivery.
 
@@ -43,15 +45,36 @@ If `RESEND_API_KEY` is absent, the app falls back to client-side sharing instead
 
 If these are absent, the app falls back to in-memory rate limiting.
 
-### Payments
+### Payments (Stripe)
+
+Lemon Squeezy is retired. `POST /api/webhooks/lemon-squeezy` returns `410` and does not change plans. Disable that webhook in the Lemon dashboard.
+
+The paid product is a one-time **Gründerplatz / Lifetime** at **CHF 249** (`mode=payment`). A verified `checkout.session.completed` (or `checkout.session.async_payment_succeeded`) sets `profiles.plan` to `lifetime`, which removes the free-plan document limit. Founder seats default to 20 (`STRIPE_FOUNDER_SEAT_LIMIT`). `0` disables the cap. Checkout refuses when the cap is reached.
+
+Without `STRIPE_SECRET_KEY` and `STRIPE_WEBHOOK_SECRET` the upgrade screen stays visible and the checkout button stays disabled.
 
 | Variable | Required | Purpose |
 | --- | --- | --- |
-| `NEXT_PUBLIC_LS_PRO_MONTHLY` | Optional | Lemon Squeezy checkout URL for monthly plan |
-| `NEXT_PUBLIC_LS_PRO_YEARLY` | Optional | Lemon Squeezy checkout URL for yearly plan |
-| `NEXT_PUBLIC_LS_EARLY_MONTHLY` | Optional | Early access monthly checkout |
-| `NEXT_PUBLIC_LS_EARLY_YEARLY` | Optional | Early access yearly checkout |
-| `LEMON_SQUEEZY_WEBHOOK_SECRET` | Required if webhooks enabled | Validates Lemon Squeezy webhook signatures |
+| `STRIPE_SECRET_KEY` | Optional until checkout is live | Secret API key. Server only |
+| `STRIPE_WEBHOOK_SECRET` | Required for plan updates | Verifies `Stripe-Signature` on `/api/webhooks/stripe` |
+| `STRIPE_LIFETIME_PRICE_ID` | Optional | Dashboard Price id for the CHF 249 one-time price. Empty = inline `price_data` |
+| `STRIPE_FOUNDER_SEAT_LIMIT` | Optional | Cap of Gründerplätze. Default `20`. `0` = no cap |
+
+Apply migration `032_lifetime_founder_seats.sql` before enabling the webhook. It adds the lifetime columns, the seat reservation functions, and a trigger that stops a signed-in user from setting `plan` themselves.
+
+### Data residency (nDSG)
+
+Production domain: **getoffertio.ch** (canonical) and **www.getoffertio.ch** (301 to the apex, see `vercel.json`).
+
+| Piece | Region | Notes |
+| --- | --- | --- |
+| Vercel Functions | `fra1` (Frankfurt, EU) | Set in `vercel.json` `regions` and `export const preferredRegion = "fra1"` on the root layout and payment routes. Vercel has no Zurich region; Frankfurt is the closest |
+| Supabase Postgres, Auth, Storage | `eu-central-2` (Zurich) | Create the project in this region. Do not restore it into a US project |
+| Resend | EU `eu-west-1` (Ireland) | Create the API key in the EU region and verify `getoffertio.ch` there |
+| Stripe | Card + TWINT, currency CHF | Payment data is processed by Stripe. Enable TWINT under Payment methods. If TWINT is off, Checkout falls back to card |
+| Upstash | EU if available | Rate-limit tokens only |
+
+`www` must be added as a domain on the Vercel project. The redirect in `vercel.json` sends it to `https://getoffertio.ch`.
 
 ### Analytics
 
@@ -84,17 +107,34 @@ Operational notes:
 - avoid out-of-band schema edits without backfilling a migration file
 - review Auth settings and security advisors regularly
 
-### Resend
-
-Resend is used for sending generated documents by email. If disabled, the app still works but server-side send is downgraded.
-
 ### Upstash Redis
 
 Used by `src/lib/rate-limit.ts` to protect public-facing APIs and reduce abuse.
 
-### Lemon Squeezy
+### Stripe
 
-Used for checkout and plan upgrades. Webhooks write plan state back to `profiles.plan`.
+Used for the one-time Gründerplatz checkout and for writing `profiles.plan = 'lifetime'` from a signature-verified webhook. Card and TWINT are requested for CHF. If TWINT is not enabled on the Stripe account, checkout is retried with card only.
+
+The app keeps working when Stripe keys are absent: the upgrade UI is visible and checkout is disabled.
+
+Stripe dashboard steps before going live:
+
+1. Use a Stripe account that can charge **CHF**. Enable **Cards** and **TWINT** under Settings → Payment methods. TWINT only works for CHF one-time payments.
+2. Optional: create a Product named `Lifetime / Gründerplatz` with a one-time Price of **CHF 249.00**. Copy the Price id into `STRIPE_LIFETIME_PRICE_ID`. If the variable is empty, Checkout sends the amount inline.
+3. Developers → API keys: put the secret key in `STRIPE_SECRET_KEY`. No publishable key is required.
+4. Developers → Webhooks → Add endpoint `https://getoffertio.ch/api/webhooks/stripe`.
+5. Subscribe to `checkout.session.completed`, `checkout.session.async_payment_succeeded`, and `checkout.session.expired`.
+6. Copy the signing secret into `STRIPE_WEBHOOK_SECRET`.
+7. Set `STRIPE_FOUNDER_SEAT_LIMIT=20` (or another cap). Apply the Supabase migration first.
+8. Send a test event from the webhook page, or pay with a test card (`4242…`) and confirm `profiles.plan` becomes `lifetime`.
+
+### Supabase region
+
+The production Supabase project must be **eu-central-2 (Zurich)** so profile, customer, and document data stays in Switzerland.
+
+### Resend
+
+Resend sends transactional mail when `RESEND_API_KEY` is set. Use an API key in the **EU region** (`eu-west-1`) and the verified sending domain **getoffertio.ch**. If the key is absent, the app falls back to client-side sharing.
 
 ### Analytics providers
 
@@ -119,9 +159,12 @@ npm run build
 
 4. Confirm auth settings:
 
-- email redirects point to the correct production domain
+- email redirects point to `https://getoffertio.ch` (and `https://www.getoffertio.ch` if both hosts are allowed)
 - leaked password protection is enabled in Supabase Auth
 - Google provider is enabled if Google login is intended
+- Stripe webhook endpoint is `https://getoffertio.ch/api/webhooks/stripe`
+- Vercel project domains are `getoffertio.ch` and `www.getoffertio.ch`
+- Supabase project region is `eu-central-2`
 
 ### After deploy
 
@@ -148,7 +191,7 @@ Recent operationally important migrations:
 - `009_atomic_counter.sql`
 - `010_production_hardening.sql`
 - `011_waitlist_insert_only.sql` (legacy lead-capture hardening)
-- `012_waitlist_policy_constraints.sql` (legacy lead-capture hardening)
+- `032_lifetime_founder_seats.sql`
 
 ## Runbooks
 
@@ -161,25 +204,28 @@ Check:
 - `NEXT_PUBLIC_GOOGLE_AUTH_ENABLED` only if provider is actually configured
 - session middleware behavior in `src/middleware.ts`
 
-### Email send failures
-
-Check:
-
-- `RESEND_API_KEY`
-- `RESEND_FROM_EMAIL`
-- sender domain verification in Resend
-- API logs for `/api/send-offerte`
-
-If Resend is absent, the route intentionally returns a fallback method rather than hard-failing the product.
-
 ### Upgrade flow failures
 
 Check:
 
-- checkout URLs in payment env vars
-- `LEMON_SQUEEZY_WEBHOOK_SECRET`
-- webhook endpoint reachability
-- profile plan updates in Supabase
+- `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, and optional `STRIPE_LIFETIME_PRICE_ID`
+- `STRIPE_FOUNDER_SEAT_LIMIT` and `founder_seats` / `profiles.plan = 'lifetime'`
+- migration `032_lifetime_founder_seats.sql` applied
+- webhook endpoint `https://getoffertio.ch/api/webhooks/stripe` and the signing secret
+- Stripe events `checkout.session.completed`, `checkout.session.async_payment_succeeded`, `checkout.session.expired`
+- TWINT enabled for CHF; card-only fallback is expected if it is not
+- profile plan updates in Supabase (`plan = lifetime`)
+
+### Email send failures
+
+Check:
+
+- `RESEND_API_KEY` was created in the EU region
+- `RESEND_FROM_EMAIL` uses `@getoffertio.ch`
+- sender domain `getoffertio.ch` is verified in that same Resend region
+- API logs for `/api/send-offerte`
+
+If Resend is absent, the route intentionally returns a fallback method rather than hard-failing the product.
 
 ### Rate-limit anomalies
 

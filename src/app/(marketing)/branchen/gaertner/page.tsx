@@ -1,12 +1,13 @@
 import { Metadata } from "next";
 import Link from "next/link";
+import { SITE_URL, siteUrl } from "@/lib/site";
 
 export const metadata: Metadata = {
   title: "Rechnungssoftware für Gärtner & Landschaftsbau – Offerten vom Handy | Offertio",
   description:
     "Offertio ist die Rechnungssoftware für Gärtner und Landschaftsgärtner in CH, DE und AT. Offerte und Rechnung in 60 Sekunden – direkt beim Kunden im Garten.",
   alternates: {
-    canonical: "https://offertio.io/branchen/gaertner",
+    canonical: siteUrl("/branchen/gaertner"),
   },
 };
 
@@ -25,8 +26,8 @@ export default function GaertnerPage() {
             provider: {
               "@type": "Organization",
               name: "Offertio",
-              url: "https://offertio.io",
-              logo: "https://offertio.io/icon-192.svg",
+              url: SITE_URL,
+              logo: siteUrl("/icon-192.svg"),
             },
             areaServed: ["CH", "DE", "AT"],
             serviceType: "InvoicingApplication, OfferManagementSoftware",

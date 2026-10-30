@@ -23,10 +23,16 @@ export interface Profile {
   sprache: string;
   beruf: string;
   zahlungsfrist: number;
-  plan: "free" | "pro_monthly" | "pro_yearly";
-  /** Lemon Squeezy subscription ID for customer portal access */
+  plan: "free" | "pro_monthly" | "pro_yearly" | "lifetime";
+  /** Stripe Customer id for the one-time Gründerplatz payment */
+  stripe_customer_id?: string | null;
+  /** Checkout Session that granted lifetime access */
+  stripe_checkout_session_id?: string | null;
+  /** When the Gründerplatz payment was confirmed */
+  lifetime_purchased_at?: string | null;
+  /** Legacy Lemon Squeezy subscription ID. No longer written. */
   ls_subscription_id?: string | null;
-  /** Lemon Squeezy customer ID for portal access */
+  /** Legacy Lemon Squeezy customer ID. No longer written. */
   ls_customer_id?: string | null;
   /** When the current Pro period ends (ISO timestamp) */
   plan_expires_at?: string | null;

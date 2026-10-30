@@ -9,4 +9,4 @@ Disallow: /onboarding
 Disallow: /callback
 Disallow: /confirm
 
-Sitemap: https://offertio.io/sitemap.xml
+Sitemap: https://getoffertio.ch/sitemap.xml

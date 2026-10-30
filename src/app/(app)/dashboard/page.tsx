@@ -8,7 +8,6 @@ import { motion, AnimatePresence } from "framer-motion";
 import { createSupabaseBrowser } from "@/lib/supabase-browser";
 import {
   isPro,
-  getCheckoutUrl,
   isInTrial,
   trialDaysRemaining,
   TRIAL_DAYS,
@@ -257,7 +256,7 @@ export default function DashboardPage() {
                 whiteSpace: "nowrap",
               }}
             >
-              Auf Pro wechseln
+              Gründerplatz sichern
             </Link>
           </motion.div>
         )}
@@ -482,17 +481,17 @@ export default function DashboardPage() {
                   color: "var(--app-text)", fontWeight: 500,
                 }}>
                   {remaining === 0
-                    ? "Du hast Großes vor. Zeit für Pro."
+                    ? "Du hast Grosses vor. Zeit für den Gründerplatz."
                     : `${remaining} ${remaining === 1 ? "Dokument" : "Dokumente"} verbleiben diesen Monat.`}
                 </div>
               </div>
               <a
-                href={getCheckoutUrl("pro_yearly", profil?.email, profil?.id)}
+                href="/einstellungen/abonnement"
                 className="btn-premium btn-premium-primary"
                 style={{ flexShrink: 0 }}
                 onClick={() => trackUpgradeClick("dashboard")}
               >
-                Pro freischalten
+                Gründerplatz sichern
               </a>
             </div>
           </motion.div>

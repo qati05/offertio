@@ -1,6 +1,5 @@
 "use client";
 
-import { getCheckoutUrl } from "@/lib/payment";
 import type { Profile } from "@/lib/types";
 
 interface Props {
@@ -17,8 +16,8 @@ interface Props {
 export default function PlanExpiryBanner({ profile }: Props) {
   const { plan, plan_cancelled_at, plan_expires_at } = profile;
 
-  // Only relevant for Pro users
-  if (plan === "free") return null;
+  // Lifetime has no renewal date. Free users have nothing to renew.
+  if (plan === "free" || plan === "lifetime") return null;
   if (!plan_cancelled_at && !plan_expires_at) return null;
 
   const now = Date.now();
@@ -31,7 +30,7 @@ export default function PlanExpiryBanner({ profile }: Props) {
   if (expiresAt && expiresAt < now) return null;
 
   const isCancelled = !!plan_cancelled_at;
-  const renewUrl = getCheckoutUrl("pro_yearly", profile.email, profile.id);
+  const renewUrl = "/einstellungen/abonnement";
 
   let message: string;
   if (isCancelled && daysUntilExpiry !== null) {
@@ -56,15 +55,13 @@ export default function PlanExpiryBanner({ profile }: Props) {
       }}
     >
       <span className="font-medium">{message}</span>
-      {renewUrl !== "#upgrade" && (
-        <a
-          href={renewUrl}
-          className="shrink-0 rounded-lg px-3 py-1.5 text-xs font-semibold transition hover:opacity-80"
-          style={{ background: "var(--color-error)", color: "white" }}
-        >
-          Jetzt verlängern
-        </a>
-      )}
+      <a
+        href={renewUrl}
+        className="shrink-0 rounded-lg px-3 py-1.5 text-xs font-semibold transition hover:opacity-80"
+        style={{ background: "var(--color-error)", color: "white" }}
+      >
+        Gründerplatz sichern
+      </a>
     </div>
   );
 }

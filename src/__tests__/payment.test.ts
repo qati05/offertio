@@ -2,8 +2,10 @@ import { describe, it, expect, beforeEach, vi } from "vitest";
 import {
   FREE_LIMIT,
   TRIAL_DAYS,
+  LIFETIME_PRICE_CHF,
   getPricing,
   isPro,
+  isLifetime,
   isInTrial,
   trialDaysRemaining,
   hasActiveAccess,
@@ -11,9 +13,8 @@ import {
   incrementMonthlyDocCount,
   canCreateDocument,
   remainingFreeDocuments,
-  getCheckoutUrl,
-  isCheckoutConfigured,
   PRO_FEATURES,
+  LIFETIME_FEATURES,
 } from "@/lib/payment";
 
 describe("payment.ts", () => {
@@ -81,6 +82,12 @@ describe("payment.ts", () => {
     it("returns true for legacy 'pro'", () => {
       expect(isPro("pro")).toBe(true);
     });
+
+    it("returns true for lifetime and removes the free-plan gate", () => {
+      expect(isLifetime("lifetime")).toBe(true);
+      expect(isPro("lifetime")).toBe(true);
+      expect(isLifetime("free")).toBe(false);
+    });
   });
 
   // ── Monthly doc count ──
@@ -111,6 +118,13 @@ describe("payment.ts", () => {
 
     it("always true for pro_yearly", () => {
       expect(canCreateDocument("pro_yearly")).toBe(true);
+    });
+
+    it("always true for lifetime even past the free limit", () => {
+      for (let i = 0; i < FREE_LIMIT + 20; i++) incrementMonthlyDocCount();
+      expect(canCreateDocument("lifetime")).toBe(true);
+      expect(remainingFreeDocuments("lifetime")).toBe(Infinity);
+      expect(hasActiveAccess("lifetime", null)).toBe(true);
     });
 
     it("true for free when under limit", () => {
@@ -219,6 +233,7 @@ describe("payment.ts", () => {
     it("hasActiveAccess true when plan is pro even without trial", () => {
       expect(hasActiveAccess("pro_monthly", null)).toBe(true);
       expect(hasActiveAccess("pro_yearly", null)).toBe(true);
+      expect(hasActiveAccess("lifetime", null)).toBe(true);
     });
 
     it("hasActiveAccess true when plan is free but trial is active", () => {
@@ -232,28 +247,11 @@ describe("payment.ts", () => {
     });
   });
 
-  // ── getCheckoutUrl / isCheckoutConfigured ──
-  describe("getCheckoutUrl", () => {
-    it("returns #upgrade when env not set", () => {
-      expect(getCheckoutUrl("pro_monthly")).toBe("#upgrade");
-    });
-
-    it("reports missing checkout config", () => {
-      expect(isCheckoutConfigured("pro_monthly")).toBe(false);
-    });
-
-    it("returns #upgrade without appending email", () => {
-      expect(getCheckoutUrl("pro_monthly", "test@test.com")).toBe("#upgrade");
-    });
-
-    it("appends email to checkout URL", () => {
-      const oldEnv = process.env.NEXT_PUBLIC_LS_PRO_MONTHLY;
-      process.env.NEXT_PUBLIC_LS_PRO_MONTHLY = "https://checkout.example.com/buy/123";
-      const url = getCheckoutUrl("pro_monthly", "test@test.com");
-      expect(url).toContain("test%40test.com");
-      expect(url).toContain("checkout");
-      expect(isCheckoutConfigured("pro_monthly")).toBe(true);
-      process.env.NEXT_PUBLIC_LS_PRO_MONTHLY = oldEnv;
+  describe("Gründerplatz", () => {
+    it("is a one-time CHF 249 offer", () => {
+      expect(LIFETIME_PRICE_CHF).toBe(249);
+      expect(LIFETIME_FEATURES.length).toBeGreaterThan(0);
+      expect(LIFETIME_FEATURES.some((feature) => feature.includes("Abo"))).toBe(true);
     });
   });
 

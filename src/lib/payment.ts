@@ -6,6 +6,19 @@ import type { Land } from "./types";
 
 export const FREE_LIMIT = 5; // Documents per month for free plan
 
+/** One-time Gründerplatz. Amounts in the Stripe layer are rappen (24900). */
+export const LIFETIME_PRODUCT_NAME = "Lifetime / Gründerplatz";
+export const LIFETIME_PRICE_CHF = 249;
+
+export const LIFETIME_FEATURES = [
+  "Unlimitierte Dokumente",
+  "Swiss QR-Rechnung",
+  "E-Mail-Versand",
+  "DACH (CH/DE/AT)",
+  "3 Sprachen (de/fr/it)",
+  "Kein Abo, keine Verlängerung",
+] as const;
+
 // ── Pricing ──
 
 export interface PlanPricing {
@@ -28,10 +41,15 @@ export function getPricing(land?: Land | string): { currency: string; prices: Pl
 
 // ── Plan checks ──
 
-export type PlanType = "free" | "pro_monthly" | "pro_yearly";
+export type PlanType = "free" | "pro_monthly" | "pro_yearly" | "lifetime";
+
+/** One-time Gründerplatz. Removes the free-plan document limit. */
+export function isLifetime(plan?: string): boolean {
+  return plan === "lifetime";
+}
 
 export function isPro(plan?: string): boolean {
-  return plan === "pro_monthly" || plan === "pro_yearly" || plan === "pro";
+  return plan === "pro_monthly" || plan === "pro_yearly" || plan === "pro" || plan === "lifetime";
 }
 
 /**
@@ -108,32 +126,9 @@ function getMonthKey(): string {
   return `offertio_docs_${now.getFullYear()}_${now.getMonth() + 1}`;
 }
 
-// ── Lemon Squeezy checkout URLs ──
-
-export type CheckoutType = "pro_monthly" | "pro_yearly" | "early_monthly" | "early_yearly";
-
-const LS_ENV_KEYS: Record<CheckoutType, string> = {
-  pro_monthly: "NEXT_PUBLIC_LS_PRO_MONTHLY",
-  pro_yearly: "NEXT_PUBLIC_LS_PRO_YEARLY",
-  early_monthly: "NEXT_PUBLIC_LS_EARLY_MONTHLY",
-  early_yearly: "NEXT_PUBLIC_LS_EARLY_YEARLY",
-};
-
-export function isCheckoutConfigured(type: CheckoutType = "pro_monthly"): boolean {
-  const envKey = LS_ENV_KEYS[type];
-  return Boolean(typeof process !== "undefined" && process.env?.[envKey]);
-}
-
-export function getCheckoutUrl(type: CheckoutType = "pro_monthly", email?: string, userId?: string): string {
-  const envKey = LS_ENV_KEYS[type];
-  const base = (typeof process !== "undefined" && process.env?.[envKey]) || "#upgrade";
-  if (base === "#upgrade") return base;
-  const params = new URLSearchParams();
-  if (email) params.set("checkout[email]", email);
-  if (userId) params.set("checkout[custom][user_id]", userId);
-  const qs = params.toString();
-  return qs ? `${base}?${qs}` : base;
-}
+// Checkout is a server-created Stripe Session (see /api/checkout/lifetime).
+// Without STRIPE_SECRET_KEY and STRIPE_WEBHOOK_SECRET the upgrade UI stays
+// visible and the checkout button stays disabled.
 
 // ── Pro features list ──
 

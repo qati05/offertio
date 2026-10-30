@@ -32,8 +32,7 @@ defend primarily against:
 - **Next.js ↔ Supabase Storage**: PDFs stored under `${userId}/*.pdf`;
   the `isSafeDocumentIdentifier()` check guarantees no user-controlled
   path segment can escape their bucket prefix.
-- **Webhooks (Lemon Squeezy)**: HMAC-signature verified on every request.
-  Rejected requests never touch the database.
+- **Webhooks (Stripe)**: `Stripe-Signature` verified (HMAC-SHA256 over `timestamp.body`, timing-safe) on every request. Rejected requests never touch the database. Lemon Squeezy is retired and its route returns 410.
 
 ## 3. Key defenses (with file references)
 
@@ -103,7 +102,7 @@ State-changing requests from foreign origins are rejected with `403`.
 
 ## 5. Reporting a vulnerability
 
-Send details to `security@offertio.ch` with PoC. We acknowledge within
+Send details to `security@getoffertio.ch` with PoC. We acknowledge within
 72 h. Critical issues are patched and deployed within 7 days. A public
 write-up follows after fix deployment with credit (opt-in).
 

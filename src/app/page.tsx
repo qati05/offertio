@@ -1,5 +1,6 @@
 import { headers } from "next/headers";
 import { I18nProvider } from "@/lib/i18n";
+import { SITE_URL } from "@/lib/site";
 import LandingScrollReveal from "@/components/LandingScrollReveal";
 import LandingNavbar from "@/components/LandingNavbar";
 import LandingHero from "@/components/LandingHero";
@@ -71,7 +72,7 @@ const pricingJsonLd = {
   "@context": "https://schema.org",
   "@type": "SoftwareApplication",
   name: "Offertio",
-  url: "https://offert.io",
+  url: SITE_URL,
   offers: [
     {
       "@type": "Offer",
@@ -82,19 +83,10 @@ const pricingJsonLd = {
     },
     {
       "@type": "Offer",
-      name: "Meister",
-      price: "19",
+      name: "Gründerplatz",
+      price: "249",
       priceCurrency: "CHF",
-      billingDuration: "P1M",
-      description: "Unbegrenzte Dokumente, Logo & Branding, E-Mail-Versand, Vorlagen-Bibliothek, Offline-Modus.",
-    },
-    {
-      "@type": "Offer",
-      name: "Betrieb",
-      price: "39",
-      priceCurrency: "CHF",
-      billingDuration: "P1M",
-      description: "Alles aus Meister plus Team-Verwaltung, Rollen & Rechte, Shared Vorlagen.",
+      description: "Einmaliger lebenslanger Zugang. Unbegrenzte Dokumente, kein Abo.",
     },
   ],
 };

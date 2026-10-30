@@ -8,7 +8,6 @@ import { useRouter, useSearchParams } from "next/navigation";
 import OffertioLogo from "@/components/OffertioLogo";
 import { createSupabaseBrowser } from "@/lib/supabase-browser";
 import { trackEmailCapture, trackLoginPageView } from "@/lib/analytics";
-import { getCheckoutUrl } from "@/lib/payment";
 
 type EmailMode = "magic" | "password" | "signup";
 
@@ -44,14 +43,13 @@ export default function LoginPage() {
     void bootstrap();
   }, []);
 
-  function redirectAfterAuth(onboardingComplete: boolean, email?: string, userId?: string) {
+  function redirectAfterAuth(onboardingComplete: boolean) {
     if (!onboardingComplete) {
       router.replace(wantsPro ? "/onboarding?plan=pro" : "/onboarding");
       return;
     }
     if (wantsPro) {
-      const checkoutUrl = getCheckoutUrl("pro_yearly", email, userId);
-      router.replace(checkoutUrl !== "#upgrade" ? checkoutUrl : "/einstellungen/abonnement");
+      router.replace("/einstellungen/abonnement");
       return;
     }
     router.replace("/dashboard");
@@ -70,7 +68,7 @@ export default function LoginPage() {
         .eq("id", user.id)
         .maybeSingle();
 
-      redirectAfterAuth(!!profile?.onboarding_complete, user.email, user.id);
+      redirectAfterAuth(!!profile?.onboarding_complete);
     }
   }
 
@@ -155,7 +153,7 @@ export default function LoginPage() {
           .maybeSingle();
 
         router.refresh();
-        redirectAfterAuth(!!profile?.onboarding_complete, user.email, user.id);
+        redirectAfterAuth(!!profile?.onboarding_complete);
         return;
       }
 

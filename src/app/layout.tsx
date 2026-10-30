@@ -27,6 +27,9 @@ const jetBrainsMono = JetBrains_Mono({
   weight: ["400", "500"],
 });
 
+/** Vercel function region: Frankfurt, closest EU region to Switzerland. */
+export const preferredRegion = "fra1";
+
 export const metadata: Metadata = {
   // metadataBase makes relative og:image / twitter:image URLs resolve correctly
   // across environments; override via NEXT_PUBLIC_SITE_URL.
