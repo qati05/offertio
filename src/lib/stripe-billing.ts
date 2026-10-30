@@ -131,7 +131,7 @@ export function buildLifetimeLineItems(priceId: string | null): Record<string, u
         unit_amount: LIFETIME_PRICE_RAPPEN,
         product_data: {
           name: LIFETIME_PRODUCT_NAME,
-          description: "Einmaliger lebenslanger Zugang zu Offertio. Kein Abo.",
+          description: "Einmalig CHF 249. 2 Jahre inklusive, danach Gründerpreis CHF 9 pro Monat.",
         },
       },
     },

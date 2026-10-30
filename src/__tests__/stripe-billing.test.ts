@@ -240,7 +240,7 @@ describe("checkout configuration", () => {
         STRIPE_WEBHOOK_SECRET: "whsec_x",
         NEXT_PUBLIC_SUPABASE_URL: "https://example.supabase.co",
         SUPABASE_SERVICE_ROLE_KEY: "service",
-      } as NodeJS.ProcessEnv),
+      } as unknown as NodeJS.ProcessEnv),
     ).toBe(false);
     expect(
       isStripeCheckoutConfigured({
@@ -248,7 +248,7 @@ describe("checkout configuration", () => {
         STRIPE_WEBHOOK_SECRET: "whsec_x",
         NEXT_PUBLIC_SUPABASE_URL: "https://example.supabase.co",
         SUPABASE_SERVICE_ROLE_KEY: "service",
-      } as NodeJS.ProcessEnv),
+      } as unknown as NodeJS.ProcessEnv),
     ).toBe(true);
   });
 });

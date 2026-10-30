@@ -173,7 +173,7 @@ export async function POST(request: NextRequest) {
       session = await openLifetimeCheckout({
         userId: user.id,
         email: user.email,
-        successUrl: `${base}/einstellungen/abonnement?checkout=erfolg`,
+        successUrl: `${base}/einrichtung?checkout=erfolg`,
         cancelUrl: `${base}/einstellungen/abonnement?checkout=abgebrochen`,
         expiresAt: Math.floor(Date.now() / 1000) + CHECKOUT_TTL_SECONDS,
       });
