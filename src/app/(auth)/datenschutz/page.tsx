@@ -15,8 +15,8 @@ export default function DatenschutzPage() {
         <div style={{ fontSize: 14, lineHeight: 1.7, color: "var(--color-text)" }}>
           <h2 style={{ fontSize: 18, marginTop: 32, marginBottom: 12 }}>1. Verantwortliche Stelle</h2>
           <p>
-            Offertio (nachfolgend «wir») betreibt die Webapplikation offertio.ch. Für Fragen zum
-            Datenschutz wenden Sie sich bitte an: datenschutz@offertio.ch
+            Offertio (nachfolgend «wir») betreibt die Webapplikation getoffertio.ch. Für Fragen zum
+            Datenschutz wenden Sie sich bitte an: datenschutz@getoffertio.ch
           </p>
 
           <h2 style={{ fontSize: 18, marginTop: 32, marginBottom: 12 }}>2. Erhobene Daten</h2>
@@ -27,6 +27,7 @@ export default function DatenschutzPage() {
             <li>Kundendaten (Name, Adresse, E-Mail, UID-Nr. des Kunden) — serverseitig gespeichert für Dokumentwiederverwendung</li>
             <li>Erstellte Dokumente (Offerten, Rechnungen) — Metadaten und PDF-Dateien serverseitig in Supabase gespeichert</li>
             <li>Logo-Dateien (optional, in Supabase Storage)</li>
+            <li>Einrichtungsunterlagen von Gründern (Logo, Preisliste, Firmendaten) im privaten Speicher, nur für das eigene Konto sichtbar. Der Eingangszeitpunkt wird gespeichert. Eine Benachrichtigung geht an den Betreiber.</li>
             <li>Dokument-Entwürfe — temporär im lokalen Browser-Speicher (localStorage) für die aktive Sitzung</li>
           </ul>
 
@@ -43,8 +44,9 @@ export default function DatenschutzPage() {
 
           <h2 style={{ fontSize: 18, marginTop: 32, marginBottom: 12 }}>4. Datenspeicherung und Aufbewahrung</h2>
           <p>
-            Profildaten, Kundendaten und Dokument-Metadaten werden in einer Supabase-Datenbank
-            (Hosting: EU/CH) gespeichert. Generierte PDF-Dokumente werden in Supabase Storage (EU/CH) abgelegt.
+            Profildaten, Kundendaten und Dokumente liegen in Supabase, Projektregion eu-central-2 (Zürich).
+            Die Anwendung läuft auf Vercel, Functions-Region fra1 (Frankfurt, EU). PDF-Dateien liegen
+            im gleichen Supabase-Projekt.
           </p>
           <p style={{ marginTop: 8 }}>
             <strong>Gesetzliche Aufbewahrungspflichten:</strong> Als Nutzer sind Sie verpflichtet,
@@ -62,7 +64,10 @@ export default function DatenschutzPage() {
             Offertio nutzt folgende Auftragsverarbeiter, mit denen Datenschutzverträge (DPA/AVV) bestehen:
           </p>
           <ul style={{ paddingLeft: 20, marginTop: 8 }}>
-            <li><strong>Supabase Inc.</strong> — Datenbank, Authentifizierung und Dateispeicherung (EU-Hosting)</li>
+            <li><strong>Supabase</strong> — Datenbank, Authentifizierung und Dateispeicherung, Region eu-central-2 (Zürich)</li>
+            <li><strong>Vercel Inc.</strong> — Hosting der Anwendung, Functions-Region fra1 (Frankfurt, EU)</li>
+            <li><strong>Stripe</strong> — Zahlungsabwicklung des Gründerplatzes (Karte und TWINT, CHF)</li>
+            <li><strong>Resend</strong> — transaktionale E-Mails, nur wenn der Versand aktiv ist, EU-Region (Irland), Versanddomain getoffertio.ch</li>
             <li><strong>Google LLC</strong> — Google Analytics 4 (nur mit Ihrer Einwilligung, IP-Anonymisierung aktiv)</li>
           </ul>
 
@@ -94,7 +99,7 @@ export default function DatenschutzPage() {
             Sie haben das Recht auf Auskunft, Berichtigung, Löschung und <strong>Datenportabilität</strong> (Art. 17 & 20 DSGVO / Art. 32 DSG).
           </p>
           <ul style={{ paddingLeft: 20, marginTop: 8 }}>
-            <li><strong>Datenexport:</strong> Sie können Ihre gesamten Daten (Profil, Dokumente, Kunden) in den Einstellungen als JSON-Datei herunterladen.</li>
+            <li><strong>Datenexport:</strong> Sie können in den Einstellungen jederzeit Ihre Offerten, Rechnungen und Kunden als CSV sowie die PDFs als ZIP herunterladen. Ein JSON-Export von Profil, Dokumenten, Kunden und Vorlagen steht ebenfalls bereit. Der Export enthält nur Ihre eigenen Daten.</li>
             <li><strong>Kontolöschung:</strong> Sie können Ihr Konto jederzeit in den Einstellungen löschen. Die Löschung entfernt Ihre Profildaten und Vorlagen.</li>
           </ul>
           <p style={{ marginTop: 8 }}>
@@ -104,7 +109,7 @@ export default function DatenschutzPage() {
 
           <h2 style={{ fontSize: 18, marginTop: 32, marginBottom: 12 }}>9. Kontakt</h2>
           <p>
-            Bei Fragen zum Datenschutz kontaktieren Sie uns unter: datenschutz@offertio.ch
+            Bei Fragen zum Datenschutz kontaktieren Sie uns unter: datenschutz@getoffertio.ch
           </p>
         </div>
       </div>

@@ -9,13 +9,13 @@ export default function AGBPage() {
           Allgemeine Geschäftsbedingungen (AGB)
         </h1>
         <p style={{ color: "var(--color-text-muted)", fontSize: 13, marginBottom: 32 }}>
-          Zuletzt aktualisiert: März 2026
+          Zuletzt aktualisiert: Oktober 2026
         </p>
 
         <div style={{ fontSize: 14, lineHeight: 1.7, color: "var(--color-text)" }}>
           <h2 style={{ fontSize: 18, marginTop: 32, marginBottom: 12 }}>1. Geltungsbereich</h2>
           <p>
-            Diese AGB gelten für die Nutzung der Webapplikation Offertio (offertio.ch),
+            Diese AGB gelten für die Nutzung der Webapplikation Offertio (getoffertio.ch),
             betrieben von Offertio. Mit der Registrierung akzeptieren Sie diese Bedingungen.
           </p>
 
@@ -33,15 +33,19 @@ export default function AGBPage() {
           <h2 style={{ fontSize: 18, marginTop: 32, marginBottom: 12 }}>3. Kostenlose & kostenpflichtige Nutzung</h2>
           <p>
             Der Free-Plan erlaubt die Erstellung von bis zu 5 Dokumenten pro Monat.
-            Für unbegrenzte Nutzung ist ein Pro-Abonnement erforderlich. Preise und
-            Zahlungsbedingungen werden auf der Webseite ausgewiesen.
+            Der Gründerplatz ist eine einmalige Zahlung (CHF 249, Karte oder TWINT) und deckt
+            die ersten 2 Jahre. Danach gilt der Gründerpreis von CHF 9 pro Monat. Dieses
+            monatliche Abo wird später angebunden und startet nicht automatisch mit der
+            Einmalzahlung. Nach den 20 Gründerplätzen kostet Offertio regulär CHF 19 pro
+            Monat oder CHF 190 pro Jahr. Die Einrichtung kostet einmalig CHF 99.
           </p>
 
-          <h2 style={{ fontSize: 18, marginTop: 32, marginBottom: 12 }}>4. Kündigung</h2>
+          <h2 style={{ fontSize: 18, marginTop: 32, marginBottom: 12 }}>4. Laufzeit</h2>
           <p>
-            Das Pro-Abonnement kann jederzeit zum Ende der Abrechnungsperiode gekündigt werden.
-            Nach der Kündigung wird der Account auf den Free-Plan zurückgestuft.
-            Die Kontolöschung ist jederzeit in den Einstellungen möglich.
+            Die Einmalzahlung gilt für 2 Jahre ab Zahlungseingang. Danach gilt der
+            Gründerpreis von CHF 9 pro Monat. Die Einmalzahlung verlängert sich nicht
+            automatisch. Die Kontolöschung ist jederzeit in den Einstellungen möglich.
+            Gesetzliche Aufbewahrungspflichten für bereits erstellte Rechnungen bleiben beim Nutzer.
           </p>
 
           <h2 style={{ fontSize: 18, marginTop: 32, marginBottom: 12 }}>5. Haftungsausschluss</h2>

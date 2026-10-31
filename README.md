@@ -30,7 +30,7 @@ Offertio currently covers:
 - `pdf-lib` for post-processing and ZUGFeRD embedding
 - `Upstash Redis` for production rate limiting
 - `Resend` for transactional email sending
-- `Lemon Squeezy` for subscription checkout and webhooks
+- `Stripe` for the one-time Gründerplatz checkout (CHF 249) and webhooks
 - `Vitest` + Testing Library for unit and integration tests
 
 ## Repository Structure
@@ -121,7 +121,7 @@ Open [http://localhost:3000](http://localhost:3000).
 Offertio is designed so some services are optional:
 
 - Without `Resend`, the app falls back to client-side share/download behavior instead of server email sending.
-- Without `Lemon Squeezy`, upgrade UI remains visible but checkout is not live.
+- Without `Stripe` keys, the upgrade UI remains visible but checkout is disabled.
 - Without `Upstash`, development uses an in-memory rate-limit fallback.
 - Without `GA4` or `Meta Pixel`, analytics helpers remain no-ops.
 
@@ -158,7 +158,7 @@ Security controls in the current codebase include:
 - rate limiting with Upstash or memory fallback
 - auth enforcement with Supabase server sessions
 - row-level security in Supabase
-- HMAC verification for Lemon Squeezy webhooks
+- Stripe webhook signature verification (`/api/webhooks/stripe`)
 
 ## Testing Status
 

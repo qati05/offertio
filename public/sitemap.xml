@@ -4,95 +4,94 @@
 
   <!-- Homepage -->
   <url>
-    <loc>https://offertio.io/</loc>
+    <loc>https://getoffertio.ch/</loc>
     <changefreq>weekly</changefreq>
     <priority>1.0</priority>
-    <xhtml:link rel="alternate" hreflang="de-CH" href="https://offertio.io/" />
-    <xhtml:link rel="alternate" hreflang="de-DE" href="https://offertio.io/" />
-    <xhtml:link rel="alternate" hreflang="de-AT" href="https://offertio.io/" />
+    <xhtml:link rel="alternate" hreflang="de-CH" href="https://getoffertio.ch/" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://getoffertio.ch/" />
   </url>
 
   <!-- Preise (standalone SEO-Seite) -->
   <url>
-    <loc>https://offertio.io/preise</loc>
+    <loc>https://getoffertio.ch/preise</loc>
     <changefreq>monthly</changefreq>
     <priority>0.9</priority>
   </url>
 
   <!-- Blog -->
   <url>
-    <loc>https://offertio.io/blog</loc>
+    <loc>https://getoffertio.ch/blog</loc>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://offertio.io/blog/offerte-vorlage-schweiz</loc>
+    <loc>https://getoffertio.ch/blog/offerte-vorlage-schweiz</loc>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://offertio.io/blog/rechnung-ohne-mwst-schweiz</loc>
+    <loc>https://getoffertio.ch/blog/rechnung-ohne-mwst-schweiz</loc>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://offertio.io/blog/qr-rechnung-schweiz-2026</loc>
+    <loc>https://getoffertio.ch/blog/qr-rechnung-schweiz-2026</loc>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://offertio.io/blog/e-rechnung-deutschland-2026</loc>
+    <loc>https://getoffertio.ch/blog/e-rechnung-deutschland-2026</loc>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
 
   <!-- Branchen -->
   <url>
-    <loc>https://offertio.io/branchen/handwerker</loc>
+    <loc>https://getoffertio.ch/branchen/handwerker</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://offertio.io/branchen/reinigung</loc>
+    <loc>https://getoffertio.ch/branchen/reinigung</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://offertio.io/branchen/maler</loc>
+    <loc>https://getoffertio.ch/branchen/maler</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://offertio.io/branchen/gaertner</loc>
+    <loc>https://getoffertio.ch/branchen/gaertner</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
 
   <!-- Vergleich -->
   <url>
-    <loc>https://offertio.io/vergleich/offertio-vs-sevdesk</loc>
+    <loc>https://getoffertio.ch/vergleich/offertio-vs-sevdesk</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>https://offertio.io/vergleich/offertio-vs-bexio</loc>
+    <loc>https://getoffertio.ch/vergleich/offertio-vs-bexio</loc>
     <changefreq>monthly</changefreq>
     <priority>0.7</priority>
   </url>
 
   <!-- Legal -->
   <url>
-    <loc>https://offertio.io/impressum</loc>
+    <loc>https://getoffertio.ch/impressum</loc>
     <changefreq>yearly</changefreq>
     <priority>0.3</priority>
   </url>
   <url>
-    <loc>https://offertio.io/datenschutz</loc>
+    <loc>https://getoffertio.ch/datenschutz</loc>
     <changefreq>yearly</changefreq>
     <priority>0.3</priority>
   </url>
   <url>
-    <loc>https://offertio.io/agb</loc>
+    <loc>https://getoffertio.ch/agb</loc>
     <changefreq>yearly</changefreq>
     <priority>0.3</priority>
   </url>

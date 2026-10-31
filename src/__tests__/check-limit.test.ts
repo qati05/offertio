@@ -21,6 +21,7 @@ describe("check-limit logic", () => {
     it("returns false for free", () => expect(isPro("free")).toBe(false));
     it("returns false for undefined", () => expect(isPro(undefined)).toBe(false));
     it("returns false for empty string", () => expect(isPro("")).toBe(false));
+    it("returns true for lifetime", () => expect(isPro("lifetime")).toBe(true));
   });
 
   describe("remaining calculation", () => {
@@ -35,6 +36,10 @@ describe("check-limit logic", () => {
 
     it("returns Infinity for pro plan", () => {
       expect(calcRemaining("pro_monthly", 100)).toBe(Infinity);
+    });
+
+    it("returns Infinity for lifetime", () => {
+      expect(calcRemaining("lifetime", FREE_LIMIT + 99)).toBe(Infinity);
     });
 
     it("returns FREE_LIMIT when used is 0", () => {
@@ -76,6 +81,10 @@ describe("check-limit logic", () => {
 
     it("always allows pro users", () => {
       expect(isAllowed("pro_yearly", FREE_LIMIT + 99)).toBe(true);
+    });
+
+    it("always allows lifetime users past the free limit", () => {
+      expect(isAllowed("lifetime", FREE_LIMIT + 99)).toBe(true);
     });
 
     it("allows free user under limit", () => {

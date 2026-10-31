@@ -1,11 +1,12 @@
 import type { Metadata } from "next";
+import { siteUrl } from "@/lib/site";
 
 export const metadata: Metadata = {
   title: "Offertio vs. sevDesk: Welche Software passt zu dir? | Offertio",
   description:
     "Offertio oder sevDesk? Vergleich für Kleinbetriebe in der DACH-Region: Preise, Funktionen, Swiss QR-Rechnung und mobile Nutzung im direkten Vergleich.",
   alternates: {
-    canonical: "https://offertio.io/vergleich/offertio-vs-sevdesk",
+    canonical: siteUrl("/vergleich/offertio-vs-sevdesk"),
   },
 };
 

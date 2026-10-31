@@ -1,11 +1,12 @@
 import type { Metadata } from "next";
+import { siteUrl } from "@/lib/site";
 
 export const metadata: Metadata = {
   title: "Rechnungsprogramm für Reinigungsfirmen – Offerten & Rechnungen | Offertio",
   description:
     "Offertio: Das Rechnungsprogramm für Reinigungsfirmen und Putzfrauen in CH, DE und AT. Offerten und Rechnungen in 60 Sekunden – direkt vom Handy.",
   alternates: {
-    canonical: "https://offertio.io/branchen/reinigung",
+    canonical: siteUrl("/branchen/reinigung"),
   },
 };
 

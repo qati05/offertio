@@ -1,12 +1,13 @@
 import Link from "next/link";
 import { Metadata } from "next";
+import { SITE_URL, siteUrl } from "@/lib/site";
 
 export const metadata: Metadata = {
   title: "Rechnung ohne MwSt Schweiz: Was Kleinunternehmer wissen müssen | Offertio",
   description:
     "MwSt-befreit unter CHF 100 000 Umsatz? Erfahre, welche Pflichtangaben auf deine Rechnung gehören, wann du freiwillig optierst und wie Offertio das automatisch setzt.",
   alternates: {
-    canonical: "https://offertio.io/blog/rechnung-ohne-mwst-schweiz",
+    canonical: siteUrl("/blog/rechnung-ohne-mwst-schweiz"),
   },
 };
 
@@ -20,7 +21,7 @@ export default function RechnungOhneMwstSchweizPage() {
     author: {
       "@type": "Organization",
       name: "Offertio",
-      url: "https://offertio.io",
+      url: SITE_URL,
     },
     datePublished: "2026-04-15",
     dateModified: "2026-04-15",

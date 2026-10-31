@@ -1,6 +1,7 @@
 import { Metadata } from "next";
 import Link from "next/link";
 import { motion } from "framer-motion";
+import { siteUrl, SITE_URL } from "@/lib/site";
 
 export const metadata: Metadata = {
   title:
@@ -8,7 +9,7 @@ export const metadata: Metadata = {
   description:
     "Offertio ist die Offertensoftware für Handwerker in CH, DE und AT. Angebot und Rechnung in 60 Sekunden erstellen – direkt vom Handy auf der Baustelle.",
   alternates: {
-    canonical: "https://offertio.io/branchen/handwerker",
+    canonical: siteUrl("/branchen/handwerker"),
   },
 };
 
@@ -36,8 +37,8 @@ export default function HandwerkerPage() {
             provider: {
               "@type": "Organization",
               name: "Offertio",
-              url: "https://offertio.io",
-              logo: "https://offertio.io/icon-192.svg",
+              url: SITE_URL,
+              logo: siteUrl("/icon-192.svg"),
             },
             areaServed: ["CH", "DE", "AT"],
             serviceType:

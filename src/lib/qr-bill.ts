@@ -1,4 +1,5 @@
 import type { Profile } from "./types";
+import { clip, splitStreetAndBuilding } from "./qr-payload";
 
 /**
  * Thrown when the profile uses a QR-IBAN but no valid QRR reference can be
@@ -78,6 +79,63 @@ export interface QrBillData {
   qrReference: string | null;
 }
 
+export type SwissQrBillInput = {
+  creditor: {
+    account: string;
+    name: string;
+    address: string;
+    buildingNumber?: string;
+    zip: string;
+    city: string;
+    country: "CH" | "LI";
+  };
+  currency: "CHF";
+  amount?: number;
+  reference?: string;
+  message?: string;
+};
+
+/**
+ * Data passed to swissqrbill. Address type S (structured) is produced by
+ * splitting street and building number. Amounts below 0.01 are omitted
+ * because the SIX spec rejects 0.00.
+ */
+export function buildSwissQrBillInput(
+  profil: Profile,
+  total: number,
+  nummer: string,
+): { input: SwissQrBillInput; qrReference: string | null } | null {
+  const cleanIban = profil.iban?.replace(/\s/g, "").toUpperCase() ?? "";
+  if (!cleanIban.startsWith("CH") && !cleanIban.startsWith("LI")) return null;
+
+  const name = clip(profil.firmenname || `${profil.vorname} ${profil.nachname}`, 70);
+  const { street, buildingNumber } = splitStreetAndBuilding(profil.adresse || "");
+  const zip = clip(profil.plz || "", 16);
+  const city = clip(profil.ort || "", 35);
+  if (!name || !zip || !city) return null;
+
+  const creditor: SwissQrBillInput["creditor"] = {
+    account: cleanIban,
+    name,
+    address: clip(street, 70),
+    zip,
+    city,
+    country: cleanIban.startsWith("LI") ? "LI" : "CH",
+  };
+  if (buildingNumber) creditor.buildingNumber = clip(buildingNumber, 16);
+
+  const amount = Math.round(total * 100) / 100;
+  const bill: SwissQrBillInput = {
+    creditor,
+    currency: "CHF",
+  };
+  if (Number.isFinite(amount) && amount >= 0.01 && amount <= 999_999_999.99) {
+    bill.amount = amount;
+  }
+
+  return { input: bill, qrReference: null };
+}
+
 /**
  * Generates Swiss QR Code SVG data URL **and** returns the QRR reference when
  * a QR-IBAN is used.  Prefer this function over the legacy
@@ -98,10 +156,8 @@ export async function generateQrBillData(
   total: number,
   nummer: string,
 ): Promise<QrBillData | null> {
-  const cleanIban = profil.iban?.replace(/\s/g, "") ?? "";
-  if (!cleanIban.startsWith("CH")) {
-    return null;
-  }
+  const built = buildSwissQrBillInput(profil, total, nummer);
+  if (!built) return null;
 
   try {
     const [{ SwissQRCode }, { isQRIBAN, isIBANValid }] = await Promise.all([
@@ -109,42 +165,20 @@ export async function generateQrBillData(
       import("swissqrbill/utils"),
     ]);
 
-    if (!isIBANValid(cleanIban)) {
-      throw new IbanValidationError(cleanIban);
+    if (!isIBANValid(built.input.creditor.account)) {
+      throw new IbanValidationError(built.input.creditor.account);
     }
 
-    const isQrIban = isQRIBAN(cleanIban);
-
-    const creditor = {
-      account: cleanIban,
-      name: profil.firmenname || `${profil.vorname} ${profil.nachname}`.trim(),
-      address: profil.adresse || "",
-      zip: profil.plz || "",
-      city: profil.ort || "",
-      country: "CH" as const,
-    };
-
     let qrReference: string | null = null;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    let data: any;
-
-    if (isQrIban) {
+    const data: SwissQrBillInput = { ...built.input };
+    if (isQRIBAN(built.input.creditor.account)) {
       // QR-IBAN requires a structured 27-digit QRR reference.
       qrReference = generateQrrReference(nummer);
-      data = {
-        creditor,
-        currency: "CHF" as const,
-        amount: Math.round(total * 100) / 100,
-        reference: qrReference,
-      };
+      data.reference = qrReference;
     } else {
-      // Regular CH-IBAN: use unstructured message (reference type NON).
-      data = {
-        creditor,
-        currency: "CHF" as const,
-        amount: Math.round(total * 100) / 100,
-        message: nummer,
-      };
+      // Regular CH/LI IBAN: unstructured message, reference type NON.
+      const message = clip(nummer, 140);
+      if (message) data.message = message;
     }
 
     const qrCode = new SwissQRCode(data);

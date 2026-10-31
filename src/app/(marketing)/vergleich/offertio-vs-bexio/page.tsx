@@ -1,11 +1,12 @@
 import type { Metadata } from "next";
+import { siteUrl } from "@/lib/site";
 
 export const metadata: Metadata = {
   title: "Offertio vs. bexio: Günstige bexio-Alternative für Kleinbetriebe | Offertio",
   description:
     "Offertio oder bexio? Preise, Funktionen und Eignung im Vergleich. Offertio ist die günstige bexio-Alternative für Selbstständige und Kleinstbetriebe in der Schweiz.",
   alternates: {
-    canonical: "https://offertio.io/vergleich/offertio-vs-bexio",
+    canonical: siteUrl("/vergleich/offertio-vs-bexio"),
   },
 };
 

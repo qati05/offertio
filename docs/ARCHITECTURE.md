@@ -14,7 +14,7 @@ flowchart LR
   App --> Supabase["Supabase Auth + Postgres + Storage"]
   Api --> Supabase
   Api --> Resend["Resend"]
-  Api --> Lemon["Lemon Squeezy Webhooks"]
+  Api --> Stripe["Stripe Checkout + Webhooks"]
   Api --> Upstash["Upstash Redis"]
 ```
 
@@ -42,7 +42,9 @@ flowchart LR
 - `/api/send-offerte`
 - `/api/e-rechnung/generate`
 - `/api/account/delete`
-- `/api/webhooks/lemon-squeezy`
+- `/api/webhooks/stripe`
+- `/api/checkout/lifetime`
+- `/api/webhooks/lemon-squeezy` (retired, returns 410)
 
 ## Repository Boundaries
 
@@ -68,7 +70,8 @@ Contains UI building blocks and presentation-specific logic, including:
 Contains most domain and infrastructure logic:
 
 - `dach.ts` country-specific compliance and tax rules
-- `payment.ts` plan, pricing, and checkout URL helpers
+- `payment.ts` plan gating, including `lifetime`
+- `stripe-billing.ts` Checkout session, TWINT fallback, webhook signature
 - `profile.ts` profile completeness logic
 - `security.ts` validation and origin-safety helpers
 - `rate-limit.ts` rate limiting abstraction
@@ -207,7 +210,7 @@ Security controls are layered rather than concentrated in a single place.
 
 - Supabase row-level security
 - service-role client isolated to server-only code
-- HMAC validation on Lemon Squeezy webhooks
+- Stripe webhook signatures verified with a timing-safe compare before any plan write
 
 ## Observability and Analytics
 

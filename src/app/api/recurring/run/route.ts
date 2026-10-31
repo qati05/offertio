@@ -5,6 +5,7 @@ import { isAllowedOrigin } from "@/lib/security";
 import { rateLimitAsync } from "@/lib/rate-limit";
 import { logger } from "@/lib/logger";
 import { advanceByFrequency, type RecurringFrequency } from "@/lib/recurring";
+import { consumeFreeDocumentSlot } from "@/lib/document-quota";
 
 const MAX_GENERATED_PER_RUN = 50;
 
@@ -125,6 +126,16 @@ export async function POST(request: NextRequest) {
   const today = todayIso();
   const admin = getSupabaseAdmin();
 
+  const { data: profile, error: profileError } = await admin
+    .from("profiles")
+    .select("plan, trial_ends_at")
+    .eq("id", user.id)
+    .maybeSingle();
+  if (profileError) {
+    logger.error("recurring:run:profile", profileError);
+    return json({ error: "Datenbankfehler." }, 500);
+  }
+
   // Fetch all due schedules for this user in one round-trip.
   const { data: schedules, error: scheduleErr } = await admin
     .from("recurring_schedules")
@@ -188,6 +199,22 @@ export async function POST(request: NextRequest) {
       results.push({ schedule_id: schedule.id, status: "skipped", reason: "template_wrong_type" });
       skipped++;
       continue;
+    }
+
+    const slot = await consumeFreeDocumentSlot(
+      admin,
+      user.id,
+      profile?.plan,
+      profile?.trial_ends_at,
+    );
+    if (slot === "error") {
+      logger.error("recurring:run:quota", "consume failed", { scheduleId: schedule.id });
+      return json({ error: "Datenbankfehler." }, 500);
+    }
+    if (slot === "blocked") {
+      results.push({ schedule_id: schedule.id, status: "skipped", reason: "quota" });
+      skipped++;
+      break;
     }
 
     const period = schedule.next_generation_at; // YYYY-MM-DD

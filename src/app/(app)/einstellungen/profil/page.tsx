@@ -101,6 +101,29 @@ export default function ProfilPage() {
   const dachConfig = getDachConfig(form.land);
   const ibanError = validateIbanFormat(form.iban, dachConfig.ibanPrefix);
 
+  async function downloadExport(path: string, filename: string) {
+    try {
+      const res = await fetch(path);
+      if (!res.ok) {
+        setToast("Export fehlgeschlagen.");
+        setTimeout(() => setToast(""), 4000);
+        return;
+      }
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = filename;
+      a.click();
+      URL.revokeObjectURL(url);
+      setToast("Export heruntergeladen.");
+      setTimeout(() => setToast(""), 4000);
+    } catch {
+      setToast("Export fehlgeschlagen.");
+      setTimeout(() => setToast(""), 4000);
+    }
+  }
+
   useEffect(() => {
     void loadProfile();
   }, []);
@@ -775,46 +798,43 @@ export default function ProfilPage() {
         <div className="app-card" style={{ maxWidth: 640, marginTop: 40 }}>
           <div className="app-card-title">Daten exportieren</div>
           <p style={{ fontSize: 12, color: "var(--color-text-muted)", marginBottom: 12 }}>
-            Lade alle deine Daten als JSON-Datei herunter (Profil, Dokumente, Kunden, Vorlagen).
-            Gemäss DSGVO Art. 20 (Recht auf Datenportabilität).
+            Jederzeit verfügbar, nur für dein Konto: Offerten, Rechnungen und Kunden als CSV,
+            dazu alle PDFs als ZIP. Zusätzlich kannst du das Profil als JSON laden.
           </p>
-          <button
-            type="button"
-            onClick={async () => {
-              try {
-                const res = await fetch("/api/account/export");
-                if (!res.ok) {
-                  setToast("Export fehlgeschlagen.");
-                  setTimeout(() => setToast(""), 4000);
-                  return;
-                }
-                const blob = await res.blob();
-                const url = URL.createObjectURL(blob);
-                const a = document.createElement("a");
-                a.href = url;
-                a.download = `offertio-export-${new Date().toISOString().split("T")[0]}.json`;
-                a.click();
-                URL.revokeObjectURL(url);
-                setToast("Export heruntergeladen.");
-                setTimeout(() => setToast(""), 4000);
-              } catch {
-                setToast("Export fehlgeschlagen.");
-                setTimeout(() => setToast(""), 4000);
-              }
-            }}
-            style={{
-              background: "var(--color-primary)",
-              color: "#fff",
-              border: "none",
-              borderRadius: 8,
-              padding: "10px 20px",
-              fontSize: 13,
-              fontWeight: 600,
-              cursor: "pointer",
-            }}
-          >
-            Daten herunterladen
-          </button>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
+            <button
+              type="button"
+              onClick={() => downloadExport("/api/account/export?format=zip", `offertio-daten-${new Date().toISOString().split("T")[0]}.zip`)}
+              style={{
+                background: "var(--color-primary)",
+                color: "#fff",
+                border: "none",
+                borderRadius: 8,
+                padding: "10px 20px",
+                fontSize: 13,
+                fontWeight: 600,
+                cursor: "pointer",
+              }}
+            >
+              CSV und PDFs (ZIP)
+            </button>
+            <button
+              type="button"
+              onClick={() => downloadExport("/api/account/export", `offertio-export-${new Date().toISOString().split("T")[0]}.json`)}
+              style={{
+                background: "transparent",
+                color: "var(--app-text)",
+                border: "1px solid var(--app-border)",
+                borderRadius: 8,
+                padding: "10px 20px",
+                fontSize: 13,
+                fontWeight: 600,
+                cursor: "pointer",
+              }}
+            >
+              JSON herunterladen
+            </button>
+          </div>
         </div>
       )}
 

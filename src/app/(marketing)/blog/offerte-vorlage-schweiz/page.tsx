@@ -1,12 +1,13 @@
 import Link from "next/link";
 import { Metadata } from "next";
+import { SITE_URL, siteUrl } from "@/lib/site";
 
 export const metadata: Metadata = {
   title: "Offerte Vorlage Schweiz 2026: Was gehört rein & kostenlose Vorlage | Offertio",
   description:
     "Was gehört in eine Schweizer Offerte? Pflichtangaben, Aufbau, Beispiel und eine kostenlose digitale Vorlage — direkt im Browser, ohne Word oder Excel.",
   alternates: {
-    canonical: "https://offertio.io/blog/offerte-vorlage-schweiz",
+    canonical: siteUrl("/blog/offerte-vorlage-schweiz"),
   },
 };
 
@@ -20,7 +21,7 @@ export default function OfferteVorlagePage() {
     author: {
       "@type": "Organization",
       name: "Offertio",
-      url: "https://offertio.io",
+      url: SITE_URL,
     },
     datePublished: "2026-04-15",
     dateModified: "2026-04-15",

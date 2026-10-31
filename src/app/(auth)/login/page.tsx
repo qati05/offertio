@@ -8,11 +8,12 @@ import { useRouter, useSearchParams } from "next/navigation";
 import OffertioLogo from "@/components/OffertioLogo";
 import { createSupabaseBrowser } from "@/lib/supabase-browser";
 import { trackEmailCapture, trackLoginPageView } from "@/lib/analytics";
-import { getCheckoutUrl } from "@/lib/payment";
+import { parseAuthNext } from "@/lib/auth-next";
+import { passwordResetRedirect } from "@/lib/auth-redirect";
 
-type EmailMode = "magic" | "password" | "signup";
+type EmailMode = "magic" | "password" | "signup" | "reset";
 
-const MODE_COPY: Record<Exclude<EmailMode, "magic">, { title: string; body: string; button: string }> = {
+const MODE_COPY: Record<Exclude<EmailMode, "magic" | "reset">, { title: string; body: string; button: string }> = {
   signup: {
     title: "Konto erstellen",
     body: "Starte mit E-Mail und Passwort. Alles Weitere richtest du danach im Onboarding ein.",
@@ -29,6 +30,7 @@ export default function LoginPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const wantsPro = searchParams.get("plan") === "pro";
+  const nextPath = parseAuthNext(searchParams.get("next"));
   const showGoogleAuth = process.env.NEXT_PUBLIC_GOOGLE_AUTH_ENABLED === "true";
   const [emailMode, setEmailMode] = useState<EmailMode>("signup");
   const [email, setEmail] = useState("");
@@ -41,17 +43,28 @@ export default function LoginPage() {
 
   useEffect(() => {
     trackLoginPageView(document.referrer || "direct");
+    const secure = window.location.protocol === "https:" ? "; Secure" : "";
+    if (nextPath) {
+      document.cookie = `offertio_auth_next=${encodeURIComponent(nextPath)}; Path=/; Max-Age=900; SameSite=Lax${secure}`;
+    } else {
+      document.cookie = `offertio_auth_next=; Path=/; Max-Age=0; SameSite=Lax${secure}`;
+    }
     void bootstrap();
+    // nextPath is fixed for this page load; bootstrap reads the latest redirect helper.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  function redirectAfterAuth(onboardingComplete: boolean, email?: string, userId?: string) {
+  function redirectAfterAuth(onboardingComplete: boolean) {
+    if (nextPath) {
+      router.replace(nextPath);
+      return;
+    }
     if (!onboardingComplete) {
       router.replace(wantsPro ? "/onboarding?plan=pro" : "/onboarding");
       return;
     }
     if (wantsPro) {
-      const checkoutUrl = getCheckoutUrl("pro_yearly", email, userId);
-      router.replace(checkoutUrl !== "#upgrade" ? checkoutUrl : "/einstellungen/abonnement");
+      router.replace("/einstellungen/abonnement");
       return;
     }
     router.replace("/dashboard");
@@ -70,7 +83,7 @@ export default function LoginPage() {
         .eq("id", user.id)
         .maybeSingle();
 
-      redirectAfterAuth(!!profile?.onboarding_complete, user.email, user.id);
+      redirectAfterAuth(!!profile?.onboarding_complete);
     }
   }
 
@@ -131,6 +144,20 @@ export default function LoginPage() {
 
     const supabase = createSupabaseBrowser();
 
+    if (emailMode === "reset") {
+      const { error: resetError } = await supabase.auth.resetPasswordForEmail(normalizedEmail, {
+        redirectTo: passwordResetRedirect(window.location.origin),
+      });
+      if (resetError) {
+        setError(`Zurücksetzen fehlgeschlagen: ${resetError.message}`);
+        setLoading(false);
+        return;
+      }
+      setSuccess("Wenn ein Konto zu dieser E-Mail besteht, senden wir einen Link zum Zurücksetzen des Passworts.");
+      setLoading(false);
+      return;
+    }
+
     if (emailMode === "password") {
       const { error: authError } = await supabase.auth.signInWithPassword({
         email: normalizedEmail,
@@ -155,7 +182,7 @@ export default function LoginPage() {
           .maybeSingle();
 
         router.refresh();
-        redirectAfterAuth(!!profile?.onboarding_complete, user.email, user.id);
+        redirectAfterAuth(!!profile?.onboarding_complete);
         return;
       }
 
@@ -192,7 +219,7 @@ export default function LoginPage() {
 
     if (data.session) {
       router.refresh();
-      router.replace(wantsPro ? "/onboarding?plan=pro" : "/onboarding");
+      router.replace(nextPath ?? (wantsPro ? "/onboarding?plan=pro" : "/onboarding"));
       return;
     }
 
@@ -229,7 +256,15 @@ export default function LoginPage() {
     );
   }
 
-  const mode = emailMode === "magic" ? MODE_COPY.password : MODE_COPY[emailMode];
+  const mode = emailMode === "reset"
+    ? {
+        title: "Passwort zurücksetzen",
+        body: "Wir schicken dir einen Link. Danach wählst du ein neues Passwort.",
+        button: "Link senden",
+      }
+    : emailMode === "magic"
+      ? MODE_COPY.password
+      : MODE_COPY[emailMode];
 
   return (
     <div className="auth-shell">
@@ -306,7 +341,7 @@ export default function LoginPage() {
               autoFocus
             />
 
-            {emailMode !== "magic" && (
+            {emailMode !== "magic" && emailMode !== "reset" && (
               <input
                 type="password"
                 value={password}
@@ -331,17 +366,36 @@ export default function LoginPage() {
             </button>
           </form>
 
+          {emailMode === "password" && (
+            <div className="mt-3 text-center">
+              <button
+                type="button"
+                onClick={() => {
+                  setEmailMode("reset");
+                  setPassword("");
+                  setError("");
+                  setSuccess("");
+                }}
+                className="auth-link"
+              >
+                Passwort vergessen
+              </button>
+            </div>
+          )}
+
           <div className="mt-5 text-center">
             <button
               type="button"
               onClick={() => {
-                setEmailMode(emailMode === "magic" ? "password" : "magic");
+                setEmailMode(emailMode === "password" || emailMode === "signup" ? "magic" : "password");
                 setSuccess("");
                 setError("");
               }}
               className="auth-link"
             >
-              {emailMode === "magic" ? "Zurück zum Passwort-Login" : "Ohne Passwort per Login-Link fortfahren"}
+              {emailMode === "magic" || emailMode === "reset"
+                ? "Zurück zum Passwort-Login"
+                : "Ohne Passwort per Login-Link fortfahren"}
             </button>
           </div>
 

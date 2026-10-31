@@ -1,12 +1,13 @@
 import { Metadata } from "next";
 import Link from "next/link";
+import { SITE_URL, siteUrl } from "@/lib/site";
 
 export const metadata: Metadata = {
   title: "Preise & Pläne | Offertio — Rechnungssoftware für DACH",
   description:
-    "Offertio kostenlos testen: Free-Plan dauerhaft gratis (5 Dokumente/Monat) oder Pro ab CHF 20/Monat mit unbegrenzten Dokumenten, Logo und E-Mail-Versand.",
+    "Offertio kostenlos testen: Free-Plan dauerhaft gratis (5 Dokumente/Monat) oder Gründerplatz einmalig CHF 249 mit unbegrenzten Dokumenten.",
   alternates: {
-    canonical: "https://offertio.io/preise",
+    canonical: siteUrl("/preise"),
   },
 };
 
@@ -40,12 +41,12 @@ const faq = [
     a: "Du wechselst automatisch auf den Free-Plan (5 Dokumente/Monat). Kein Verlust deiner Daten, kein erzwungenes Upgrade. Du entscheidest, wenn du bereit bist.",
   },
   {
-    q: "Kann ich jederzeit kündigen?",
-    a: "Ja. Pro ist monatlich kündbar. Beim Jahresplan kannst du nach dem Jahr kündigen — keine versteckten Bindungsfristen.",
+    q: "Was ist der Gründerplatz?",
+    a: "Eine einmalige Zahlung von CHF 249. 2 Jahre inklusive, danach Gründerpreis CHF 9 pro Monat für immer.",
   },
   {
-    q: "Gibt es einen Rabatt für den Jahresplan?",
-    a: "Ja. Beim Jahresplan zahlst du CHF 240 — das entspricht CHF 20/Monat statt CHF 28/Monat. Du sparst 2 Monate.",
+    q: "Wie viele Gründerplätze gibt es?",
+    a: "20. Ist das Kontingent voll, lehnt der Checkout weitere Zahlungen ab.",
   },
   {
     q: "Für welche Länder ist Offertio geeignet?",
@@ -58,7 +59,7 @@ export default function PreisePage() {
     "@context": "https://schema.org",
     "@type": "SoftwareApplication",
     name: "Offertio",
-    url: "https://offertio.io",
+    url: SITE_URL,
     applicationCategory: "BusinessApplication",
     operatingSystem: "Web, iOS, Android",
     offers: [
@@ -71,19 +72,10 @@ export default function PreisePage() {
       },
       {
         "@type": "Offer",
-        name: "Pro Monatlich",
-        price: "28",
+        name: "Gründerplatz",
+        price: "249",
         priceCurrency: "CHF",
-        billingDuration: "P1M",
-        description: "Unbegrenzte Dokumente, Logo, E-Mail-Versand, Vorlagen, Offline-Modus.",
-      },
-      {
-        "@type": "Offer",
-        name: "Pro Jährlich",
-        price: "240",
-        priceCurrency: "CHF",
-        billingDuration: "P1Y",
-        description: "Alle Pro-Features zum Jahrespreis — 2 Monate gratis.",
+        description: "Einmalig CHF 249. 2 Jahre inklusive, danach Gründerpreis CHF 9 pro Monat für immer.",
       },
     ],
   };
@@ -212,13 +204,13 @@ export default function PreisePage() {
               className="inline-flex rounded-md px-2.5 py-1 text-[10px] font-semibold uppercase tracking-widest"
               style={{ background: "rgba(200,121,61,0.10)", color: "var(--color-primary)" }}
             >
-              Für wachsende Betriebe
+              Gründerplatz
             </div>
             <h2
               className="mt-4 text-xl font-bold"
               style={{ color: "var(--color-text)" }}
             >
-              Mehr Volumen, mehr Auftritt
+              2 Jahre inklusive
             </h2>
             <div className="mt-4 space-y-1">
               <div className="flex items-end gap-2">
@@ -226,14 +218,17 @@ export default function PreisePage() {
                   className="text-4xl font-bold leading-none tracking-tight"
                   style={{ color: "var(--color-primary)" }}
                 >
-                  CHF 20
+                  CHF 249
                 </span>
                 <span className="mb-0.5 text-sm" style={{ color: "var(--color-text-soft)" }}>
-                  /Monat (jährlich)
+                  einmalig
                 </span>
               </div>
               <p className="text-sm" style={{ color: "var(--color-text-soft)" }}>
-                oder CHF 28/Monat bei monatlicher Zahlung
+                Karte oder TWINT. 2 Jahre inklusive, danach Gründerpreis CHF 9 pro Monat für immer.
+              </p>
+              <p className="text-sm" style={{ color: "var(--color-text-soft)" }}>
+                Danach regulär CHF 19 pro Monat oder CHF 190 pro Jahr, Einrichtung einmalig CHF 99.
               </p>
             </div>
             <p className="mt-4 text-sm leading-6" style={{ color: "var(--color-text-muted)" }}>
@@ -258,7 +253,7 @@ export default function PreisePage() {
               14 Tage gratis testen
             </Link>
             <p className="mt-2 text-center text-xs" style={{ color: "var(--color-text-soft)" }}>
-              Keine Kreditkarte · Upgrade jederzeit · Kündbar monatlich
+              Keine Kreditkarte für den Test · Gründerplatz jederzeit · 20 Plätze
             </p>
           </article>
         </section>
