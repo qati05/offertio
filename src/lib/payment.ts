@@ -7,7 +7,7 @@ import type { Land } from "./types";
 export const FREE_LIMIT = 5; // Documents per month for free plan
 
 /** One-time Gründerplatz. Amounts in the Stripe layer are rappen (24900). */
-export const LIFETIME_PRODUCT_NAME = "Lifetime / Gründerplatz";
+export const LIFETIME_PRODUCT_NAME = "Gründerplatz";
 export const LIFETIME_PRICE_CHF = 249;
 
 export const LIFETIME_FEATURES = [
@@ -16,7 +16,7 @@ export const LIFETIME_FEATURES = [
   "E-Mail-Versand",
   "DACH (CH/DE/AT)",
   "3 Sprachen (de/fr/it)",
-  "Kein Abo, keine Verlängerung",
+  "2 Jahre inklusive, danach Gründerpreis CHF 9 pro Monat für immer",
 ] as const;
 
 // ── Pricing ──

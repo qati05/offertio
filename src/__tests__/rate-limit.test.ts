@@ -55,4 +55,30 @@ describe("rate-limit.ts", () => {
     expect(result.ok).toBe(true);
     expect(result.remaining).toBe(4);
   });
+
+  it("denies in production when Upstash throws", async () => {
+    vi.stubEnv("NODE_ENV", "production");
+    vi.stubEnv("UPSTASH_REDIS_REST_URL", "https://example.upstash.io");
+    vi.stubEnv("UPSTASH_REDIS_REST_TOKEN", "token");
+    vi.doMock("@upstash/ratelimit", () => ({
+      Ratelimit: class {
+        static fixedWindow() {
+          return {};
+        }
+        async limit() {
+          throw new Error("redis down");
+        }
+      },
+    }));
+    vi.doMock("@upstash/redis", () => ({
+      Redis: { fromEnv: () => ({}) },
+    }));
+    const { rateLimitAsync } = await import("@/lib/rate-limit");
+    const result = await rateLimitAsync("prod-key", 5, 60000);
+    expect(result.ok).toBe(false);
+    expect(result.retryAfterSeconds).toBe(60);
+    vi.unstubAllEnvs();
+    vi.doUnmock("@upstash/ratelimit");
+    vi.doUnmock("@upstash/redis");
+  });
 });

@@ -68,6 +68,12 @@ describe("Stripe signature", () => {
     expect(verifyStripeSignature(body, header, SECRET, now)).toBe(false);
   });
 
+  it("rejects a timestamp far in the future", () => {
+    const body = "{}";
+    const header = sign(body, SECRET, now + 1000);
+    expect(verifyStripeSignature(body, header, SECRET, now)).toBe(false);
+  });
+
   it("rejects a missing signature", () => {
     expect(verifyStripeSignature("{}", null, SECRET, now)).toBe(false);
     expect(verifyStripeSignature("{}", "", SECRET, now)).toBe(false);
@@ -240,7 +246,7 @@ describe("checkout configuration", () => {
         STRIPE_WEBHOOK_SECRET: "whsec_x",
         NEXT_PUBLIC_SUPABASE_URL: "https://example.supabase.co",
         SUPABASE_SERVICE_ROLE_KEY: "service",
-      } as NodeJS.ProcessEnv),
+      } as unknown as NodeJS.ProcessEnv),
     ).toBe(false);
     expect(
       isStripeCheckoutConfigured({
@@ -248,7 +254,7 @@ describe("checkout configuration", () => {
         STRIPE_WEBHOOK_SECRET: "whsec_x",
         NEXT_PUBLIC_SUPABASE_URL: "https://example.supabase.co",
         SUPABASE_SERVICE_ROLE_KEY: "service",
-      } as NodeJS.ProcessEnv),
+      } as unknown as NodeJS.ProcessEnv),
     ).toBe(true);
   });
 });

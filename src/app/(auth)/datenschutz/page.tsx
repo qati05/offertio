@@ -27,6 +27,7 @@ export default function DatenschutzPage() {
             <li>Kundendaten (Name, Adresse, E-Mail, UID-Nr. des Kunden) — serverseitig gespeichert für Dokumentwiederverwendung</li>
             <li>Erstellte Dokumente (Offerten, Rechnungen) — Metadaten und PDF-Dateien serverseitig in Supabase gespeichert</li>
             <li>Logo-Dateien (optional, in Supabase Storage)</li>
+            <li>Einrichtungsunterlagen von Gründern (Logo, Preisliste, Firmendaten) im privaten Speicher, nur für das eigene Konto sichtbar. Der Eingangszeitpunkt wird gespeichert. Eine Benachrichtigung geht an den Betreiber.</li>
             <li>Dokument-Entwürfe — temporär im lokalen Browser-Speicher (localStorage) für die aktive Sitzung</li>
           </ul>
 

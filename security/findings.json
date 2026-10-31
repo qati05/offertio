@@ -1,0 +1,194 @@
+{
+  "product": "Offertio",
+  "branch": "cursor/security-audit-e308",
+  "base": "cursor/launch-audit-fixes-db7d",
+  "merged": "cursor/landing-gruenderplatz-7a44",
+  "scanners": {
+    "gitleaks": { "version": "8.28.0", "commits": 154, "leaks": 0 },
+    "trufflehog": { "version": "3.90.1", "only_verified": true, "verified_secrets": 0 },
+    "npm_audit_omit_dev": {
+      "after_fixes": { "critical": 0, "high": 1, "moderate": 1, "low": 0 },
+      "note": "Next.js 15.5.28 schliesst die kritischen Advisories von 15.5.15. Offen bleibt postcss, das Next selbst mitbringt. Der Fix waere Next 16."
+    },
+    "osv_scanner": { "version": "2.7.0", "production_note": "Dieselben Produktionspakete wie npm audit. Dev-only-Treffer (vitest) zaehlen nicht zum Launch-Blocker." },
+    "semgrep": {
+      "version": "1.183.0",
+      "configs": ["p/javascript", "p/typescript", "p/react", "p/secrets", "p/owasp-top-ten"],
+      "findings": 0,
+      "parse_warnings": "JSX-Text mit & in fuenf Marketing- und Editor-Dateien. Kein Befund."
+    }
+  },
+  "reviewed_not_findings": [
+    {
+      "topic": "Gruenderplatz-Sitzzaehler",
+      "result": "reserve_founder_seat nimmt pg_advisory_xact_lock, bevor gezaehlt und reserviert wird. Zwei parallele Checkouts serialisieren. Kein Race, der das Sitzlimit ueberschreitet."
+    },
+    {
+      "topic": "Stripe constructEvent",
+      "result": "Der Webhook liest den Rohbody und prueft HMAC-SHA256 ueber timestamp.body mit timingSafeEqual, Toleranz 300 Sekunden in beide Richtungen, bevor JSON ausgewertet wird. Idempotenz inklusive Refunds liegt in stripe_webhook_events (ON CONFLICT). Gleichwertig zu constructEvent, durch Tests gedeckt."
+    },
+    {
+      "topic": "service_role im Client",
+      "result": "getSupabaseAdmin ist mit server-only markiert. Kein NEXT_PUBLIC_-Secret. Der Anon-Key ist absichtlich oeffentlich."
+    }
+  ],
+  "findings": [
+    {
+      "id": "F-01",
+      "severity": "high",
+      "status": "fixed",
+      "title": "Gratis-Limit liess sich am Server vorbei speichern",
+      "summary": "POST /api/dokument/save und /api/recurring/run haben Dokumente ohne Kontingent angelegt. Der Zaehler lief nur, wenn der Browser danach /api/dokument/check-limit aufrief. Parallele Requests konnten das Limit ueberholen.",
+      "location": ["src/app/api/dokument/save/route.ts", "src/app/api/recurring/run/route.ts", "supabase/migrations/036_launch_security_guards.sql"],
+      "fix": "try_consume_dokument_slot erhoeht den Zaehler nur, solange anzahl < Limit, und prueft auth.uid(). Speichern und Serienlauf verbrauchen den Slot vor dem Insert."
+    },
+    {
+      "id": "F-02",
+      "severity": "high",
+      "status": "fixed",
+      "title": "Service-Role signierte fremde PDF-Pfade",
+      "summary": "pdf_url ist vom Kontoinhaber schreibbar. Share und die oeffentliche Ansicht haben den Pfad mit dem Service-Role signiert, auch wenn er in den Ordner eines anderen Kontos zeigte. Der Pfad steht in der signierten URL.",
+      "location": ["src/app/api/dokument/share/route.ts", "src/app/api/public/view/route.ts", "src/app/view/[token]/page.tsx", "supabase/migrations/036_launch_security_guards.sql"],
+      "fix": "isOwnedPdfPath vor jedem Signieren. Trigger enforce_owned_pdf_path lehnt Pfade ausserhalb des eigenen Ordners ab."
+    },
+    {
+      "id": "F-03",
+      "severity": "medium",
+      "status": "fixed",
+      "title": "Oeffentlicher Logo-Bucket war listbar",
+      "summary": "Die Policy Public can view logos erlaubte SELECT auf dem ganzen Bucket logos. Zusammen mit dem oeffentlichen Bucket liessen sich alle Objektnamen und damit die User-UUIDs auflisten (Splinter 0025).",
+      "location": ["supabase/migrations/010_production_hardening.sql", "supabase/migrations/036_launch_security_guards.sql"],
+      "fix": "SELECT nur noch fuer den eigenen Ordner und nur fuer authenticated. Direkte Public-URLs des Buckets bleiben fuer das Logo auf der Rechnung."
+    },
+    {
+      "id": "F-04",
+      "severity": "medium",
+      "status": "fixed",
+      "title": "Resend liess beliebige Empfaenger und Absendertext zu",
+      "summary": "Ein angemeldetes Konto konnte bis zu 20 Mails pro Minute an beliebige Adressen schicken und den Firmennamen im Betreff frei setzen. RESEND_API_BASE_URL wurde ungeprueft als Fetch-Ziel benutzt.",
+      "location": ["src/app/api/send-offerte/route.ts", "src/lib/email.ts", "src/lib/operator-mail.ts"],
+      "fix": "Versand nur mit eigenem share_token, Empfaenger muss kunde_email des Dokuments sein, Firmenname kommt aus dem Profil, 30 Mails pro Stunde, Host nur *.resend.com ueber HTTPS."
+    },
+    {
+      "id": "F-05",
+      "severity": "medium",
+      "status": "fixed",
+      "title": "Gruender-Uploads: SVG-Entity und CSV-Formel",
+      "summary": "detectSvg pruefte den Rohtext. &#106;avascript: umging die javascript:-Sperre. CSV ohne Formelpruefung konnte beim Oeffnen durch den Betreiber eine Tabellenformel ausloesen. application/octet-stream war im Bucket erlaubt.",
+      "location": ["src/lib/founder-setup.ts", "src/components/FounderSetupForm.tsx", "supabase/migrations/036_launch_security_guards.sql"],
+      "fix": "Entities werden dekodiert, externe URLs und aktive SVG-Elemente abgelehnt, Formelzellen in CSV abgelehnt, octet-stream aus dem Bucket entfernt."
+    },
+    {
+      "id": "F-06",
+      "severity": "medium",
+      "status": "fixed",
+      "title": "SECURITY DEFINER ohne festen search_path",
+      "summary": "Migration 025 hat handle_new_user ersetzt und SET search_path entfernt (Splinter 0011). generate_referral_code war fuer die API ausfuehrbar.",
+      "location": ["supabase/migrations/025_referrals.sql", "supabase/migrations/036_launch_security_guards.sql"],
+      "fix": "Beide Funktionen mit search_path = public. EXECUTE fuer anon und authenticated entzogen. Refund-Sperre auf stripe_payment_intent_id bleibt in Migration 035 erhalten."
+    },
+    {
+      "id": "F-07",
+      "severity": "high",
+      "status": "fixed",
+      "title": "Next.js 15.5.15 mit kritischen Advisories",
+      "summary": "npm audit meldete unter 15.5.15 eine kritische Middleware-Umgehung und DoS-Advisories fuer Server Components. Zod lag unter 4.6.6.",
+      "location": ["package.json"],
+      "fix": "Next.js 15.5.28 und Zod 4.6.7. Transitive Pakete, die ohne Next 16 aktualisierbar waren, sind nachgezogen."
+    },
+    {
+      "id": "F-08",
+      "severity": "low",
+      "status": "fixed",
+      "title": "Passwort-Reset ohne Host-Allowlist",
+      "summary": "passwordResetRedirect hat jede uebergebene Origin an /callback?type=recovery gehaengt.",
+      "location": ["src/lib/auth-redirect.ts", "src/app/(auth)/login/page.tsx", "src/app/(auth)/callback/route.ts"],
+      "fix": "Nur getoffertio.ch, www, die konfigurierte SITE_URL und localhost. Recovery gewinnt gegen den gespeicherten Next-Pfad. Cookie Secure auf HTTPS."
+    },
+    {
+      "id": "F-09",
+      "severity": "low",
+      "status": "fixed",
+      "title": "Stripe-Signatur nur gegen alte Zeitstempel",
+      "summary": "Ohne das Webhook-Geheimnis nicht faelschbar. Ein Zeitstempel in der Zukunft waere aber beliebig lange gueltig gewesen, sobald eine Signatur existierte.",
+      "location": ["src/lib/stripe-billing.ts"],
+      "fix": "Toleranzfenster gilt in beide Richtungen, analog zu constructEvent."
+    },
+    {
+      "id": "F-10",
+      "severity": "low",
+      "status": "fixed",
+      "title": "Redis-Ausfall hat Limits geoeffnet",
+      "summary": "Wenn Upstash konfiguriert ist und der Aufruf wirft, fiel der Limiter auf den Speicher der einzelnen Instanz zurueck. Auf Vercel ist das kein gemeinsames Limit.",
+      "location": ["src/lib/rate-limit.ts"],
+      "fix": "In Produktion wird der Request abgelehnt, wenn Redis wirft. Ohne gesetzte Upstash-Variablen bleibt der Speicher-Fallback (siehe F-15)."
+    },
+    {
+      "id": "F-11",
+      "severity": "low",
+      "status": "fixed",
+      "title": "Cookie-Flags und Edge-Header unvollstaendig",
+      "summary": "CSP mit frame-ancestors, HSTS und X-Frame-Options lagen in Middleware und next.config. vercel.json setzte sie nicht. Supabase-Cookies hatten keine expliziten Flags.",
+      "location": ["vercel.json", "src/lib/supabase-cookies.ts", "src/middleware.ts", "next.config.ts"],
+      "fix": "HSTS, nosniff, DENY, Referrer-Policy und Permissions-Policy am Edge. Cookies HttpOnly, SameSite=Lax, Secure in Produktion. CSP bleibt Nonce-basiert in der Middleware, damit sie nicht mit einem zweiten statischen CSP kollidiert."
+    },
+    {
+      "id": "F-12",
+      "severity": "info",
+      "status": "fixed",
+      "title": "Empfaenger-Link hing am Login",
+      "summary": "/view und /api/public waren nicht oeffentlich. Der Share-Link in der Mail fuehrte Unangemeldete auf /login. Die Token-Routen selbst sind UUID-gebunden und rate-limited.",
+      "location": ["src/middleware.ts"],
+      "fix": "/view/ und /api/public/ sind oeffentliche Pfade. Signieren und Ablehnen bleiben hinter NEXT_PUBLIC_ENABLE_SIGNING."
+    },
+    {
+      "id": "F-13",
+      "severity": "low",
+      "status": "fixed",
+      "title": "Supabase-CLI-Cache war versioniert",
+      "summary": "supabase/.temp/pooler-url nennt Host und Projektkennung. Ein Passwort stand nicht in der URL. Gitleaks und Trufflehog (only-verified) haben kein Geheimnis gemeldet.",
+      "location": ["supabase/.temp/pooler-url", ".gitignore"],
+      "fix": "Cache aus dem Index genommen und ignoriert. Die Historie seit dem Initial-Commit bleibt; dort war kein Passwort."
+    },
+    {
+      "id": "F-14",
+      "severity": "high",
+      "status": "open",
+      "title": "postcss innerhalb von Next.js",
+      "summary": "npm audit --omit=dev meldet postcss <=8.5.22 (XSS beim Stringify, Lesen von Source-Maps) und Next als Abhaengigen. npm audit fix --force wuerde Next 16 installieren.",
+      "location": ["package-lock.json"],
+      "fix": "Nicht in diesem Launch-PR auf Next 16 springen. Naechsten 15.5-Patch beobachten oder ein geplantes Next-16-Upgrade mit vollem Build machen.",
+      "needs_live": false
+    },
+    {
+      "id": "F-15",
+      "severity": "medium",
+      "status": "open",
+      "title": "Ohne Upstash gilt das Limit nur pro Instanz",
+      "summary": "Fehlen UPSTASH_REDIS_REST_URL und UPSTASH_REDIS_REST_TOKEN, zaehlt der Limiter im Speicher. Auf Vercel umgeht das Streuen ueber Instanzen die Grenzen fuer Mail, Checkout und oeffentliche Token.",
+      "location": ["src/lib/rate-limit.ts", ".env.local.example"],
+      "fix": "Beide Variablen in Produktion setzen (EU-Region, falls waehlbar). Danach greift F-10 bei einem Redis-Ausfall.",
+      "needs_live": true
+    },
+    {
+      "id": "F-16",
+      "severity": "info",
+      "status": "open",
+      "title": "Splinter 0003: auth.uid() nicht in (select ...)",
+      "summary": "Aeltere Policies rufen auth.uid() direkt auf. Das ist korrekt als Autorisierung, kostet aber Initplan-Zeit. Kein Datenleck.",
+      "location": ["supabase/migrations"],
+      "fix": "Optional in einer Folge-Migration auf (select auth.uid()) umstellen. Nicht launch-blockierend.",
+      "needs_live": false
+    }
+  ],
+  "needs_live": [
+    "Migrationen 033 bis 036 auf dem Zuerich-Projekt einspielen, bevor der neue Code deployt wird. Ohne 036 antwortet Speichern mit 500 (fail closed).",
+    "Supabase Auth: Redirect-URLs nur https://getoffertio.ch/callback und localhost. Site URL auf die Apex setzen.",
+    "Stripe-Webhook https://getoffertio.ch/api/webhooks/stripe mit Rohbody, whsec, Events checkout.session.completed, checkout.session.async_payment_succeeded, checkout.session.expired, charge.refunded, refund.created, refund.updated, refund.failed falls genutzt.",
+    "Resend: Domain getoffertio.ch, Absender offerte@getoffertio.ch, OPERATOR_EMAIL gesetzt.",
+    "Upstash-Redis fuer die Limits (F-15).",
+    "Nach Migration 036 pruefen, dass bestehende Logo-Public-URLs weiter laden. Listing des Buckets logos darf mit dem Anon-Key nicht mehr alle Ordner zeigen.",
+    "ZAP-Baseline gegen https://getoffertio.ch, sobald die Domain live und mit den Headern aus vercel.json ausgeliefert wird. HSTS-Preload erst nach stabilem HTTPS inklusive Subdomains beantragen.",
+    "NEXT_PUBLIC_ENABLE_SIGNING bleibt false, bis Einwilligung und E-Mail-Bestaetigung des Empfaengers stehen."
+  ]
+}

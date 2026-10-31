@@ -2,7 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { createSupabaseServer } from "@/lib/supabase-server";
 import { getSupabaseAdmin } from "@/lib/supabase-admin";
 import { getCustomerDisplayName, makePrimaryCustomerLookupKey } from "@/lib/customers";
-import { isAllowedOrigin, isValidBase64, isSafeDocumentIdentifier, isValidUUID } from "@/lib/security";
+import { isAllowedOrigin, isPdfPayload, isValidBase64, isSafeDocumentIdentifier, isValidUUID } from "@/lib/security";
+import { consumeFreeDocumentSlot } from "@/lib/document-quota";
 import { rateLimitAsync } from "@/lib/rate-limit";
 import { logger } from "@/lib/logger";
 import type { KundenInfo } from "@/lib/types";
@@ -165,14 +166,19 @@ export async function POST(request: NextRequest) {
       normalizedPreisMode = preisMode;
     }
 
+    const { data: userProfile, error: profileError } = await supabase
+      .from("profiles")
+      .select("land, uid_mwst, kleinunternehmer, plan, trial_ends_at")
+      .eq("id", user.id)
+      .maybeSingle();
+    if (profileError) {
+      logger.error("dokument-save:profile", profileError, { userId: user.id });
+      return json({ error: "Profil konnte nicht gelesen werden." }, 500);
+    }
+
     // DE/AT legal requirements — look up the user's country once for all rules.
     let issuerLand: string = "CH";
     if (typ === "rechnung") {
-      const { data: userProfile } = await supabase
-        .from("profiles")
-        .select("land, uid_mwst, kleinunternehmer")
-        .eq("id", user.id)
-        .maybeSingle();
       issuerLand = userProfile?.land || "CH";
 
       // Rechnungen must include Leistungsdatum in DE/AT
@@ -209,6 +215,11 @@ export async function POST(request: NextRequest) {
     const pdfBytes = Buffer.byteLength(pdfBase64, "base64");
     if (pdfBytes <= 0 || pdfBytes > MAX_PDF_BYTES) {
       return json({ error: "PDF ist zu gross." }, 413);
+    }
+
+    const pdfBuffer = Buffer.from(pdfBase64, "base64");
+    if (!isPdfPayload(pdfBuffer)) {
+      return json({ error: "Die Datei ist kein PDF." }, 400);
     }
 
     const admin = getSupabaseAdmin();
@@ -250,8 +261,7 @@ export async function POST(request: NextRequest) {
 
     // 1. Upload PDF to Storage
     const fileName = `${user.id}/${nummer}_${Date.now()}.pdf`;
-    const pdfBuffer = Buffer.from(pdfBase64, "base64");
-    
+
     const { error: uploadError } = await admin.storage
       .from("pdfs")
       .upload(fileName, pdfBuffer, {
@@ -306,6 +316,23 @@ export async function POST(request: NextRequest) {
 
     const resolvedNummer = await resolveUniqueNummer(nummer, existingDocumentId || null);
     // ---
+
+    if (!existingDocumentId) {
+      const slot = await consumeFreeDocumentSlot(
+        supabase,
+        user.id,
+        userProfile?.plan,
+        userProfile?.trial_ends_at,
+      );
+      if (slot === "blocked") {
+        await removeUploadedPdf(admin, fileName, "quota");
+        return json({ error: "Monatslimit erreicht" }, 403);
+      }
+      if (slot === "error") {
+        await removeUploadedPdf(admin, fileName, "quota-error");
+        return json({ error: "Monatslimit konnte nicht geprüft werden." }, 500);
+      }
+    }
 
     let verifiedSource: { id: string; nummer: string } | null = null;
     if (typ === "rechnung" && sourceDocumentId) {

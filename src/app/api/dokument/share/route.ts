@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { createSupabaseServer } from "@/lib/supabase-server";
 import { getSupabaseAdmin } from "@/lib/supabase-admin";
 import { isAllowedOrigin, isValidUUID } from "@/lib/security";
+import { isOwnedPdfPath } from "@/lib/account-export";
 import { rateLimitAsync } from "@/lib/rate-limit";
 import { logger } from "@/lib/logger";
 
@@ -68,7 +69,7 @@ export async function POST(request: NextRequest) {
     return json({ error: "Datenbankfehler" }, 500);
   }
 
-  if (!doc || !doc.pdf_url) {
+  if (!doc || !doc.pdf_url || !isOwnedPdfPath(user.id, doc.pdf_url)) {
     return json({ error: "Dokument nicht gefunden" }, 404);
   }
 
