@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import { headers } from "next/headers";
 import PublicLanding from "@/components/landing/PublicLanding";
 import { getCachedFounderSeats } from "@/lib/founder-seats";
 import {
@@ -9,10 +8,12 @@ import {
   getFounderMinTermDate,
   getSubscriptionPriceChf,
   isFounderOfferExpired,
+  zurichDataLabel,
 } from "@/lib/sale-page";
 import { SITE_URL, siteUrl } from "@/lib/site";
 
 export const preferredRegion = "fra1";
+export const revalidate = 30;
 
 export const metadata: Metadata = {
   title: SALE_TITLE,
@@ -21,6 +22,7 @@ export const metadata: Metadata = {
     title: SALE_TITLE,
     description: SALE_DESCRIPTION,
     url: SITE_URL,
+    siteName: "Offertio",
     type: "website",
     locale: "de_CH",
     images: [
@@ -40,21 +42,35 @@ export const metadata: Metadata = {
   },
   alternates: {
     canonical: SITE_URL,
+    languages: {
+      "de-CH": SITE_URL,
+    },
   },
   robots: {
     index: true,
     follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      "max-image-preview": "large",
+      "max-snippet": -1,
+    },
   },
 };
 
-export default async function Home() {
-  const nonce = (await headers()).get("x-nonce") ?? "";
-  const [seats, subscriptionPrice, minTermDate] = await Promise.all([
-    getCachedFounderSeats(),
-    Promise.resolve(getSubscriptionPriceChf()),
-    Promise.resolve(getFounderMinTermDate()),
-  ]);
-  const expired = isFounderOfferExpired();
+function LandingDocument({
+  seats,
+  subscriptionPrice,
+  expired,
+  minTermDate,
+  dataLabel,
+}: {
+  seats: Awaited<ReturnType<typeof getCachedFounderSeats>>;
+  subscriptionPrice: ReturnType<typeof getSubscriptionPriceChf>;
+  expired: boolean;
+  minTermDate: ReturnType<typeof getFounderMinTermDate>;
+  dataLabel: ReturnType<typeof zurichDataLabel>;
+}) {
   const faqs = buildFaqs(subscriptionPrice);
 
   const faqJsonLd = {
@@ -74,14 +90,36 @@ export default async function Home() {
     url: SITE_URL,
     applicationCategory: "BusinessApplication",
     operatingSystem: "Web",
+    inLanguage: "de-CH",
     description: SALE_DESCRIPTION,
     offers: {
       "@type": "Offer",
       name: "Gründerplatz",
       price: "249",
       priceCurrency: "CHF",
+      url: siteUrl("/gruenderplatz"),
       description: "Einmalig CHF 249. 2 Jahre inklusive, danach Gründerpreis CHF 9 pro Monat für immer.",
-      availability: expired ? "https://schema.org/Discontinued" : "https://schema.org/InStock",
+      availability: expired
+        ? "https://schema.org/Discontinued"
+        : seats?.remaining === 0
+          ? "https://schema.org/SoldOut"
+          : "https://schema.org/InStock",
+    },
+  };
+
+  const organizationJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "Organization",
+    name: "Offertio",
+    url: SITE_URL,
+    logo: siteUrl("/favicon.svg"),
+    email: "datenschutz@getoffertio.ch",
+    address: {
+      "@type": "PostalAddress",
+      streetAddress: "Marbacherstrasse 12",
+      postalCode: "9445",
+      addressLocality: "Rebstein",
+      addressCountry: "CH",
     },
   };
 
@@ -92,17 +130,24 @@ export default async function Home() {
         subscriptionPrice={subscriptionPrice}
         expired={expired}
         minTermDate={minTermDate}
+        dataLabel={dataLabel}
       />
-      <script
-        nonce={nonce}
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }}
-      />
-      <script
-        nonce={nonce}
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(offerJsonLd) }}
-      />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(organizationJsonLd) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(offerJsonLd) }} />
     </>
+  );
+}
+
+export default async function Home() {
+  const seats = await getCachedFounderSeats();
+  return (
+    <LandingDocument
+      seats={seats}
+      subscriptionPrice={getSubscriptionPriceChf()}
+      expired={isFounderOfferExpired()}
+      minTermDate={getFounderMinTermDate()}
+      dataLabel={zurichDataLabel(process.env.NEXT_PUBLIC_DATA_REGION)}
+    />
   );
 }

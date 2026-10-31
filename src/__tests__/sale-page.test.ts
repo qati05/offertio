@@ -17,8 +17,10 @@ import {
   isFounderOfferExpired,
   parseSeatAvailability,
   saleOfferState,
+  regularPriceAnchor,
   seatCounter,
   subscriptionPriceSentence,
+  zurichDataLabel,
 } from "@/lib/sale-page";
 
 describe("subscription price placeholder", () => {
@@ -33,14 +35,15 @@ describe("subscription price placeholder", () => {
     expect(getSubscriptionPriceChf("CHF 29")).toBeNull();
     expect(getSubscriptionPriceChf("0")).toBeNull();
     expect(subscriptionPriceSentence(null)).toBeNull();
-    expect(subscriptionPriceSentence("19")).toContain("Danach regulär CHF 19 pro Monat");
-    expect(subscriptionPriceSentence("19")).toContain("CHF 190 pro Jahr");
-    expect(subscriptionPriceSentence("19")).toContain("CHF 99");
+    expect(subscriptionPriceSentence("19")).toBe(regularPriceAnchor("19"));
+    expect(regularPriceAnchor("19")).toBe(
+      "Danach regulär CHF 19 pro Monat oder CHF 190 pro Jahr, Einrichtung einmalig CHF 99.",
+    );
   });
 
   it("keeps the founder term when the regular price is hidden", () => {
     expect(afterSeatsAnswer(null)).toBe(`${FOUNDER_TERM_LINE}.`);
-    expect(afterSeatsAnswer("19")).toContain("danach regulär CHF 19 pro Monat");
+    expect(afterSeatsAnswer("19")).toContain(regularPriceAnchor("19"));
     const without = buildFaqs(null).find((faq) => faq.question.startsWith("Was passiert"));
     expect(without?.answer).not.toMatch(/CHF 19/);
     expect(without?.answer).toContain(FOUNDER_TERM_LINE);
@@ -102,12 +105,22 @@ describe("seat counter", () => {
   });
 });
 
+describe("zurich data claim", () => {
+  it("shows the line only for the Zurich region", () => {
+    expect(zurichDataLabel(undefined)).toBe("Kundendaten in Zürich");
+    expect(zurichDataLabel("eu-central-2")).toBe("Kundendaten in Zürich");
+    expect(zurichDataLabel("zuerich")).toBe("Kundendaten in Zürich");
+    expect(zurichDataLabel("")).toBeNull();
+    expect(zurichDataLabel("us-east-1")).toBeNull();
+  });
+});
+
 describe("approved copy", () => {
   it("keeps the Swiss wording and the single CTA label", () => {
     const blob = [SALE_TITLE, SALE_DESCRIPTION, SALE_H1, ...SALE_INCLUDED, FOUNDER_CTA_LABEL].join("\n");
     expect(blob).not.toMatch(/ß/);
     expect(blob).not.toMatch(/Minuten/);
-    expect(blob).not.toMatch(/Lifetime|für immer nutzen|nie wieder/i);
+    expect(blob).not.toMatch(/Lifetime|für immer nutzen|lebenslanger Zugang|nie wieder/i);
     expect(FOUNDER_CTA_LABEL).toBe("Gründerplatz sichern, CHF 249");
   });
 });

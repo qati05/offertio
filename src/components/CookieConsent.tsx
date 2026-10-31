@@ -58,19 +58,7 @@ export default function CookieConsent() {
   if (!visible) return null;
 
   return (
-    <div
-      role="dialog"
-      aria-label="Cookie-Einstellungen"
-      style={{
-        position: "fixed",
-        bottom: 0,
-        left: 0,
-        right: 0,
-        zIndex: 9999,
-        padding: "0 16px calc(16px + env(safe-area-inset-bottom, 0px))",
-        pointerEvents: "none",
-      }}
-    >
+    <div role="dialog" aria-label="Cookie-Einstellungen" className="cookie-consent">
       <div
         style={{
           maxWidth: 480,
@@ -87,6 +75,7 @@ export default function CookieConsent() {
           style={{
             fontSize: 13,
             lineHeight: 1.6,
+            fontFamily: "system-ui, sans-serif",
             color: "var(--app-text, #1a1a1a)",
             margin: 0,
           }}
@@ -96,7 +85,7 @@ export default function CookieConsent() {
           <a
             href="/datenschutz"
             style={{
-              color: "var(--color-primary, #C8793D)",
+              color: "#9A5528",
               textDecoration: "underline",
               textUnderlineOffset: 2,
             }}
@@ -107,23 +96,24 @@ export default function CookieConsent() {
         <div
           style={{
             display: "flex",
-            gap: 10,
+            gap: 12,
             marginTop: 14,
             justifyContent: "flex-end",
+            flexWrap: "wrap",
           }}
         >
           <button
             onClick={handleDecline}
             style={{
-              padding: "8px 18px",
-              fontSize: 13,
-              fontWeight: 500,
+              minHeight: 48,
+              padding: "12px 18px",
+              fontSize: 14,
+              fontWeight: 600,
               borderRadius: 10,
-              border: "1px solid var(--card-border, #e5e5e5)",
-              background: "transparent",
-              color: "var(--app-text-muted, #666)",
+              border: "1px solid #c8c2ba",
+              background: "#fff",
+              color: "#1a1916",
               cursor: "pointer",
-              transition: "background 0.15s",
             }}
           >
             Ablehnen
@@ -131,15 +121,15 @@ export default function CookieConsent() {
           <button
             onClick={handleAccept}
             style={{
-              padding: "8px 18px",
-              fontSize: 13,
+              minHeight: 48,
+              padding: "12px 18px",
+              fontSize: 14,
               fontWeight: 600,
               borderRadius: 10,
               border: "none",
-              background: "var(--color-primary, #C8793D)",
+              background: "#9A5528",
               color: "#fff",
               cursor: "pointer",
-              transition: "opacity 0.15s",
             }}
           >
             Akzeptieren
