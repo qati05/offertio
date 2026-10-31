@@ -225,7 +225,10 @@ export default function PreisePage() {
                 </span>
               </div>
               <p className="text-sm" style={{ color: "var(--color-text-soft)" }}>
-                Karte oder TWINT · danach CHF 9 pro Monat
+                Karte oder TWINT. 2 Jahre inklusive, danach Gründerpreis CHF 9 pro Monat für immer.
+              </p>
+              <p className="text-sm" style={{ color: "var(--color-text-soft)" }}>
+                Danach regulär CHF 19 pro Monat oder CHF 190 pro Jahr, Einrichtung einmalig CHF 99.
               </p>
             </div>
             <p className="mt-4 text-sm leading-6" style={{ color: "var(--color-text-muted)" }}>

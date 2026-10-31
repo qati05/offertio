@@ -32,6 +32,13 @@ export const SALE_DEMO_CAPTION =
 
 export const SALE_INCLUDED_TITLE = "Was drin ist";
 
+/** Natural Deutschschweiz phrases. Body copy underneath stays the approved text. */
+export const SALE_KICKER = "Rechnungsprogramm für die Einzelfirma";
+export const SALE_WHY_H3 = "Offerte erstellen";
+export const SALE_INCLUDED_H3 = "QR-Rechnung erstellen, Swiss QR-Bill";
+export const SALE_KMU_LINE = "Für KMU Schweiz";
+export const ZURICH_DATA_LABEL = "Kundendaten in Zürich";
+
 export const SALE_INCLUDED = [
   "Offerten und Rechnungen als PDF mit Ihrem Logo",
   "Swiss QR-Rechnung, korrekt nach Schweizer Standard",
@@ -128,9 +135,26 @@ export function getSubscriptionPriceChf(
   return value;
 }
 
+/** Anchor after the 20 founder seats. Comma matches the approved offer line. */
+export function regularPriceAnchor(price: string): string {
+  return `Danach regulär CHF ${price} pro Monat oder CHF ${REGULAR_YEARLY_PRICE_CHF} pro Jahr, Einrichtung einmalig CHF ${SETUP_FEE_CHF}.`;
+}
+
 export function subscriptionPriceSentence(price: string | null): string | null {
   if (!price) return null;
-  return `Danach regulär CHF ${price} pro Monat oder CHF ${REGULAR_YEARLY_PRICE_CHF} pro Jahr. Einrichtung einmalig CHF ${SETUP_FEE_CHF}.`;
+  return regularPriceAnchor(price);
+}
+
+/**
+ * Zurich claim only when config says the data region is eu-central-2.
+ * Unset uses that region, because production is required to run there.
+ * Any other value hides the line.
+ */
+export function zurichDataLabel(raw: string | undefined): string | null {
+  if (raw === undefined) return ZURICH_DATA_LABEL;
+  const value = raw.trim().toLowerCase();
+  if (value === "eu-central-2" || value === "zurich" || value === "zuerich") return ZURICH_DATA_LABEL;
+  return null;
 }
 
 /**
@@ -252,7 +276,7 @@ const FAQ_CALL = {
 export function afterSeatsAnswer(price: string | null): string {
   const kept = `${FOUNDER_TERM_LINE}.`;
   if (!price) return kept;
-  return `Dann gibt es Offertio nur noch regulär: danach regulär CHF ${price} pro Monat oder CHF ${REGULAR_YEARLY_PRICE_CHF} pro Jahr, Einrichtung einmalig CHF ${SETUP_FEE_CHF}. ${kept}`;
+  return `Dann gibt es Offertio nur noch zum regulären Preis. ${regularPriceAnchor(price)} ${kept}`;
 }
 
 export function buildFaqs(price: string | null): SaleFaq[] {

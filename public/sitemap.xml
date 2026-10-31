@@ -8,8 +8,7 @@
     <changefreq>weekly</changefreq>
     <priority>1.0</priority>
     <xhtml:link rel="alternate" hreflang="de-CH" href="https://getoffertio.ch/" />
-    <xhtml:link rel="alternate" hreflang="de-DE" href="https://getoffertio.ch/" />
-    <xhtml:link rel="alternate" hreflang="de-AT" href="https://getoffertio.ch/" />
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://getoffertio.ch/" />
   </url>
 
   <!-- Preise (standalone SEO-Seite) -->

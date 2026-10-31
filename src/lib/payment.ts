@@ -16,7 +16,7 @@ export const LIFETIME_FEATURES = [
   "E-Mail-Versand",
   "DACH (CH/DE/AT)",
   "3 Sprachen (de/fr/it)",
-  "2 Jahre inklusive, danach CHF 9 pro Monat",
+  "2 Jahre inklusive, danach Gründerpreis CHF 9 pro Monat für immer",
 ] as const;
 
 // ── Pricing ──

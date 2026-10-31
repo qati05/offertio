@@ -56,6 +56,10 @@ export async function middleware(request: NextRequest) {
 
   const requestHeaders = new Headers(request.headers);
   requestHeaders.set("x-nonce", nonce);
+  // Next reads the nonce from the request CSP and applies it to its own scripts,
+  // including the one that moves title and meta description into <head>.
+  requestHeaders.set("Content-Security-Policy", csp);
+  requestHeaders.set("x-pathname", path);
 
   let supabaseResponse = NextResponse.next({ request: { headers: requestHeaders } });
   supabaseResponse.headers.set("Content-Security-Policy", csp);
