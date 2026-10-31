@@ -111,7 +111,7 @@ export default function LifetimeCheckout({ trialEndsAt, onClose }: LifetimeCheck
   const description = alreadyLifetime
     ? "Die Free-Limits gelten für dich nicht mehr. Dokumente bleiben unlimitiert."
     : inTrial
-      ? `Du testest Offertio mit vollem Zugriff (${TRIAL_DAYS} Tage). Der Gründerplatz ist eine einmalige Zahlung — danach läuft alles weiter, ohne Abo.`
+      ? `Du testest Offertio mit vollem Zugriff (${TRIAL_DAYS} Tage). Der Gründerplatz ist einmalig CHF 249: 2 Jahre inklusive, danach Gründerpreis CHF 9 pro Monat für immer.`
       : `Du hast ${docCount}/${FREE_LIMIT} Dokumente genutzt. Mit dem Gründerplatz erstellst du unbegrenzt Offerten und Rechnungen.`;
 
   return (
@@ -122,6 +122,11 @@ export default function LifetimeCheckout({ trialEndsAt, onClose }: LifetimeCheck
         </div>
         <h2 className="upgrade-title">{title}</h2>
         <p className="upgrade-desc">{description}</p>
+        {alreadyLifetime && (
+          <a href="/einrichtung" className="mt-4 inline-flex text-sm font-semibold underline" style={{ color: "var(--color-primary-strong)" }}>
+            Logo und Preisliste schicken
+          </a>
+        )}
 
         {!alreadyLifetime && (
           <div className="upgrade-remaining-box">
@@ -148,7 +153,7 @@ export default function LifetimeCheckout({ trialEndsAt, onClose }: LifetimeCheck
           <div className="pb-2 text-sm" style={{ color: "var(--app-text-muted)" }}>einmalig</div>
         </div>
         <p className="mt-2 text-xs leading-6" style={{ color: "var(--app-text-soft)" }}>
-          Lebenslanger Zugang. Kein Abo. Zahlung mit Karte oder TWINT.
+          2 Jahre inklusive, danach Gründerpreis CHF 9 pro Monat für immer. Zahlung mit Karte oder TWINT.
         </p>
         {typeof status?.remaining === "number" && status.seatLimit && !alreadyLifetime && (
           <p className="mt-1 text-xs leading-6" style={{ color: "var(--app-text-soft)" }}>

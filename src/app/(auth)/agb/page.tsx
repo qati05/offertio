@@ -9,7 +9,7 @@ export default function AGBPage() {
           Allgemeine Geschäftsbedingungen (AGB)
         </h1>
         <p style={{ color: "var(--color-text-muted)", fontSize: 13, marginBottom: 32 }}>
-          Zuletzt aktualisiert: März 2026
+          Zuletzt aktualisiert: Oktober 2026
         </p>
 
         <div style={{ fontSize: 14, lineHeight: 1.7, color: "var(--color-text)" }}>
@@ -33,14 +33,18 @@ export default function AGBPage() {
           <h2 style={{ fontSize: 18, marginTop: 32, marginBottom: 12 }}>3. Kostenlose & kostenpflichtige Nutzung</h2>
           <p>
             Der Free-Plan erlaubt die Erstellung von bis zu 5 Dokumenten pro Monat.
-            Der Gründerplatz ist eine einmalige Zahlung (CHF 249, Karte oder TWINT) und hebt
-            die Free-Limits dauerhaft auf. Es gibt kein Abo. Preise stehen auf der Webseite.
+            Der Gründerplatz ist eine einmalige Zahlung (CHF 249, Karte oder TWINT) und deckt
+            die ersten 2 Jahre. Danach gilt der Gründerpreis von CHF 9 pro Monat. Dieses
+            monatliche Abo wird später angebunden und startet nicht automatisch mit der
+            Einmalzahlung. Nach den 20 Gründerplätzen kostet Offertio regulär CHF 19 pro
+            Monat oder CHF 190 pro Jahr. Die Einrichtung kostet einmalig CHF 99.
           </p>
 
           <h2 style={{ fontSize: 18, marginTop: 32, marginBottom: 12 }}>4. Laufzeit</h2>
           <p>
-            Der Gründerplatz hat keine Laufzeit und keine automatische Verlängerung.
-            Die Kontolöschung ist jederzeit in den Einstellungen möglich.
+            Die Einmalzahlung gilt für 2 Jahre ab Zahlungseingang. Danach gilt der
+            Gründerpreis von CHF 9 pro Monat. Die Einmalzahlung verlängert sich nicht
+            automatisch. Die Kontolöschung ist jederzeit in den Einstellungen möglich.
             Gesetzliche Aufbewahrungspflichten für bereits erstellte Rechnungen bleiben beim Nutzer.
           </p>
 

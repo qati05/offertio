@@ -1,6 +1,6 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
-import { getDachConfig } from "@/lib/dach";
+import { supabaseCookieOptions } from "@/lib/supabase-cookies";
 
 function buildCsp(nonce: string): string {
   return [
@@ -37,6 +37,8 @@ function isPublicPath(path: string): boolean {
     path.startsWith("/vergleich") ||
     path === "/preise" ||
     path.startsWith("/api/webhooks/") ||
+    path.startsWith("/api/public/") ||
+    path.startsWith("/view/") ||
     path === "/api/health" ||
     path.startsWith("/_next/") ||
     path === "/sw.js" ||
@@ -54,6 +56,10 @@ export async function middleware(request: NextRequest) {
 
   const requestHeaders = new Headers(request.headers);
   requestHeaders.set("x-nonce", nonce);
+  // Next reads the nonce from the request CSP and applies it to its own scripts,
+  // including the one that moves title and meta description into <head>.
+  requestHeaders.set("Content-Security-Policy", csp);
+  requestHeaders.set("x-pathname", path);
 
   let supabaseResponse = NextResponse.next({ request: { headers: requestHeaders } });
   supabaseResponse.headers.set("Content-Security-Policy", csp);
@@ -66,6 +72,7 @@ export async function middleware(request: NextRequest) {
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
+      cookieOptions: supabaseCookieOptions(),
       cookies: {
         getAll() {
           return request.cookies.getAll();
@@ -87,10 +94,20 @@ export async function middleware(request: NextRequest) {
   if (!user) {
     const url = request.nextUrl.clone();
     url.pathname = "/login";
+    if (path === "/gruenderplatz" || path === "/einrichtung") {
+      url.search = "";
+      url.searchParams.set("next", path);
+    }
     return NextResponse.redirect(url);
   }
 
-  if (!path.startsWith("/onboarding") && !path.startsWith("/einstellungen") && !path.startsWith("/api/")) {
+  if (
+    !path.startsWith("/onboarding") &&
+    !path.startsWith("/einstellungen") &&
+    !path.startsWith("/api/") &&
+    path !== "/gruenderplatz" &&
+    path !== "/einrichtung"
+  ) {
     const { data: profile } = await supabase
       .from("profiles")
       .select("onboarding_complete, land, uid_mwst, steuernummer, fn_nr")

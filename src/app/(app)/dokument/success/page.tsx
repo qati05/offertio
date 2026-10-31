@@ -88,6 +88,7 @@ export default function DokumentSuccessPage() {
   const [info, setInfo] = useState<SuccessInfo | null>(null);
   const [showConfetti, setShowConfetti] = useState(false);
   const [reminderSent, setReminderSent] = useState(false);
+  const [mailState, setMailState] = useState<"idle" | "sending" | "sent" | "error">("idle");
 
   useEffect(() => {
     try {
@@ -148,6 +149,49 @@ export default function DokumentSuccessPage() {
     message = `Eine Kopie wurde an ${email} gesendet.${downloaded ? " Das PDF liegt zusätzlich auf deinem Gerät." : ""}`;
   } else if (downloaded) {
     message = "Das PDF liegt auf deinem Gerät — sauber und bereit.";
+  }
+
+  async function sendDocumentEmail() {
+    const kunde = info?.kunde;
+    if (!kunde?.email) return;
+    setMailState("sending");
+    const shareToken = info?.shareToken;
+    const publicUrl = shareToken ? `${window.location.origin}/view/${shareToken}` : null;
+    const label = typ === "offerte" ? "Offerte" : "Rechnung";
+    const bodyLines = [
+      `Guten Tag${kunde.name ? ` ${kunde.name}` : ""},`,
+      "",
+      `anbei erhalten Sie ${typ === "offerte" ? "unsere Offerte" : "unsere Rechnung"} ${nummer}.`,
+      publicUrl ? `Dokument ansehen und PDF herunterladen: ${publicUrl}` : "Bitte finden Sie das PDF im Anhang.",
+      "",
+      "Freundliche Grüsse",
+    ];
+    const mailto = `mailto:${encodeURIComponent(kunde.email)}?subject=${encodeURIComponent(
+      `${label} ${nummer}`,
+    )}&body=${encodeURIComponent(bodyLines.join("\n"))}`;
+
+    try {
+      const res = await fetch("/api/send-offerte", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          to: kunde.email,
+          kind: typ,
+          nummer,
+          kundeName: kunde.name,
+          shareToken: shareToken || undefined,
+        }),
+      });
+      if (res.ok) {
+        setMailState("sent");
+        return;
+      }
+      if (res.status !== 503) setMailState("error");
+      else setMailState("idle");
+    } catch {
+      setMailState("error");
+    }
+    window.location.href = mailto;
   }
 
   function handleReminder() {
@@ -292,42 +336,34 @@ export default function DokumentSuccessPage() {
 
             {/* Email CTA — opens user's mail client with a public view link
                 (no PDF attachment, no domain verification required). */}
-            {info?.kunde?.email && delivery !== "email" && (() => {
-              const shareToken = info?.shareToken;
-              const publicUrl =
-                shareToken && typeof window !== "undefined"
-                  ? `${window.location.origin}/view/${shareToken}`
-                  : null;
-              const bodyLines = [
-                `Guten Tag${info.kunde.name ? ` ${info.kunde.name}` : ""},`,
-                "",
-                `anbei erhalten Sie ${typ === "offerte" ? "unsere Offerte" : "unsere Rechnung"} ${nummer}.`,
-                publicUrl
-                  ? `Dokument ansehen und PDF herunterladen: ${publicUrl}`
-                  : "Bitte finden Sie das PDF im Anhang.",
-                "",
-                "Freundliche Grüsse",
-              ];
-              return (
-                <a
-                  href={`mailto:${encodeURIComponent(info.kunde.email)}?subject=${encodeURIComponent(
-                    `${typ === "offerte" ? "Offerte" : "Rechnung"} ${nummer}`
-                  )}&body=${encodeURIComponent(bodyLines.join("\n"))}`}
-                  className="auth-submit"
-                  style={{
-                    textDecoration: "none",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    gap: 8,
-                    marginTop: 24,
-                  }}
-                >
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
-                  Per E-Mail an {info.kunde.name || info.kunde.email} senden
-                </a>
-              );
-            })()}
+            {info?.kunde?.email && delivery !== "email" && (
+              <button
+                type="button"
+                className="auth-submit"
+                disabled={mailState === "sending" || mailState === "sent"}
+                onClick={() => { void sendDocumentEmail(); }}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  gap: 8,
+                  marginTop: 24,
+                  width: "100%",
+                }}
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+                {mailState === "sent"
+                  ? "E-Mail gesendet"
+                  : mailState === "sending"
+                    ? "Wird gesendet..."
+                    : `Per E-Mail an ${info.kunde.name || info.kunde.email} senden`}
+              </button>
+            )}
+            {mailState === "error" && (
+              <p className="mt-2 text-xs" style={{ color: "var(--color-error)" }}>
+                E-Mail konnte nicht gesendet werden. Der Link zu deinem E-Mail-Programm wurde geöffnet.
+              </p>
+            )}
 
             <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:justify-center">
               <a

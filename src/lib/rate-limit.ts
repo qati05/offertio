@@ -86,10 +86,10 @@ export async function rateLimitAsync(
       const retryAfterSeconds = success ? 0 : Math.max(1, Math.ceil((reset - Date.now()) / 1000));
       return { ok: success, remaining, retryAfterSeconds };
     } catch {
-      // Redis unavailable — fall back to in-memory limiter.
-      // Log server-side so ops can detect Redis outages.
+      // A Redis outage must not open every limit on a multi-instance host.
       if (typeof process !== "undefined" && process.env.NODE_ENV === "production") {
-        console.warn(JSON.stringify({ level: "warn", context: "rate-limit", message: "Redis unavailable, falling back to in-memory limiter", key, ts: new Date().toISOString() }));
+        console.warn(JSON.stringify({ level: "warn", context: "rate-limit", message: "Redis unavailable, denying request", key, ts: new Date().toISOString() }));
+        return { ok: false, remaining: 0, retryAfterSeconds: 60 };
       }
     }
   }

@@ -42,7 +42,7 @@ const faq = [
   },
   {
     q: "Was ist der Gründerplatz?",
-    a: "Eine einmalige Zahlung von CHF 249. Danach gilt der lebenslange Zugang: keine Monatsgrenze, kein Abo, keine Verlängerung.",
+    a: "Eine einmalige Zahlung von CHF 249. 2 Jahre inklusive, danach Gründerpreis CHF 9 pro Monat für immer.",
   },
   {
     q: "Wie viele Gründerplätze gibt es?",
@@ -75,7 +75,7 @@ export default function PreisePage() {
         name: "Gründerplatz",
         price: "249",
         priceCurrency: "CHF",
-        description: "Einmaliger lebenslanger Zugang. Unbegrenzte Dokumente, kein Abo.",
+        description: "Einmalig CHF 249. 2 Jahre inklusive, danach Gründerpreis CHF 9 pro Monat für immer.",
       },
     ],
   };
@@ -210,7 +210,7 @@ export default function PreisePage() {
               className="mt-4 text-xl font-bold"
               style={{ color: "var(--color-text)" }}
             >
-              Einmal zahlen, fertig
+              2 Jahre inklusive
             </h2>
             <div className="mt-4 space-y-1">
               <div className="flex items-end gap-2">
@@ -225,7 +225,10 @@ export default function PreisePage() {
                 </span>
               </div>
               <p className="text-sm" style={{ color: "var(--color-text-soft)" }}>
-                Karte oder TWINT · kein Abo
+                Karte oder TWINT. 2 Jahre inklusive, danach Gründerpreis CHF 9 pro Monat für immer.
+              </p>
+              <p className="text-sm" style={{ color: "var(--color-text-soft)" }}>
+                Danach regulär CHF 19 pro Monat oder CHF 190 pro Jahr, Einrichtung einmalig CHF 99.
               </p>
             </div>
             <p className="mt-4 text-sm leading-6" style={{ color: "var(--color-text-muted)" }}>

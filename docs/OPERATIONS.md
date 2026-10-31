@@ -123,7 +123,7 @@ Stripe dashboard steps before going live:
 2. Optional: create a Product named `Lifetime / Gründerplatz` with a one-time Price of **CHF 249.00**. Copy the Price id into `STRIPE_LIFETIME_PRICE_ID`. If the variable is empty, Checkout sends the amount inline.
 3. Developers → API keys: put the secret key in `STRIPE_SECRET_KEY`. No publishable key is required.
 4. Developers → Webhooks → Add endpoint `https://getoffertio.ch/api/webhooks/stripe`.
-5. Subscribe to `checkout.session.completed`, `checkout.session.async_payment_succeeded`, and `checkout.session.expired`.
+5. Subscribe to `checkout.session.completed`, `checkout.session.async_payment_succeeded`, `checkout.session.expired`, `charge.refunded`, `refund.created`, and `refund.updated`. A full refund of the CHF 249 charge sets `plan` back to `free` and releases the founder seat.
 6. Copy the signing secret into `STRIPE_WEBHOOK_SECRET`.
 7. Set `STRIPE_FOUNDER_SEAT_LIMIT=20` (or another cap). Apply the Supabase migration first.
 8. Send a test event from the webhook page, or pay with a test card (`4242…`) and confirm `profiles.plan` becomes `lifetime`.

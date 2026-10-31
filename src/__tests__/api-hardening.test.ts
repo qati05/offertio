@@ -13,6 +13,7 @@ const exportVorlagenMock = vi.fn();
 const buildZugferdXmlMock = vi.fn();
 const embedZugferdXmlMock = vi.fn();
 const customerUpsertMock = vi.fn();
+const rpcMock = vi.fn();
 
 vi.mock("server-only", () => ({}));
 
@@ -21,6 +22,7 @@ vi.mock("@/lib/supabase-server", () => ({
     auth: {
       getUser: getUserMock,
     },
+    rpc: rpcMock,
     from: (table: string) => {
       if (table === "profiles") {
         return {
@@ -221,6 +223,7 @@ beforeEach(() => {
   exportCustomersMock.mockResolvedValue({ data: [], error: null });
   exportVorlagenMock.mockResolvedValue({ data: [], error: null });
   customerUpsertMock.mockReturnValue({ data: { id: "customer-1" }, error: null });
+  rpcMock.mockResolvedValue({ data: 1, error: null });
 });
 
 describe("account delete hardening", () => {
@@ -417,6 +420,40 @@ describe("document save hardening", () => {
     );
 
     expect(response.status).not.toBe(400);
+  });
+
+  it("rejects a payload that is not a PDF before upload", async () => {
+    const { POST } = await import("@/app/api/dokument/save/route");
+    const response = await POST(
+      sameOriginPost("/api/dokument/save", {
+        pdfBase64: Buffer.from("<html>not a pdf</html>").toString("base64"),
+        typ: "offerte",
+        nummer: "OF-2026-014",
+        kundenname: "Muster AG",
+        betrag: 10,
+        datum: "2026-04-11",
+      }),
+    );
+    expect(response.status).toBe(400);
+    expect(uploadMock).not.toHaveBeenCalled();
+  });
+
+  it("refuses a new document when the free slot is already taken", async () => {
+    rpcMock.mockResolvedValueOnce({ data: null, error: null });
+    const { POST } = await import("@/app/api/dokument/save/route");
+    const response = await POST(
+      sameOriginPost("/api/dokument/save", {
+        pdfBase64: Buffer.from("%PDF-1.4\n").toString("base64"),
+        typ: "offerte",
+        nummer: "OF-2026-015",
+        kundenname: "Muster AG",
+        betrag: 10,
+        datum: "2026-04-11",
+      }),
+    );
+    expect(response.status).toBe(403);
+    expect(uploadMock).toHaveBeenCalledOnce();
+    expect(removeMock).toHaveBeenCalledOnce();
   });
 });
 

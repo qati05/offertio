@@ -131,7 +131,7 @@ export function buildLifetimeLineItems(priceId: string | null): Record<string, u
         unit_amount: LIFETIME_PRICE_RAPPEN,
         product_data: {
           name: LIFETIME_PRODUCT_NAME,
-          description: "Einmaliger lebenslanger Zugang zu Offertio. Kein Abo.",
+          description: "Einmalig CHF 249. 2 Jahre inklusive, danach Gründerpreis CHF 9 pro Monat für immer.",
         },
       },
     },
@@ -150,6 +150,12 @@ export function buildLifetimeCheckoutParams(
       product: "lifetime",
     },
     line_items: buildLifetimeLineItems(input.priceId ?? null),
+    payment_intent_data: {
+      metadata: {
+        user_id: input.userId,
+        product: "lifetime",
+      },
+    },
     success_url: input.successUrl,
     cancel_url: input.cancelUrl,
     expires_at: input.expiresAt,
@@ -224,7 +230,7 @@ export function verifyStripeSignature(
   }
 
   if (timestamp === null || signatures.length === 0) return false;
-  if (toleranceSeconds > 0 && timestamp < nowSeconds - toleranceSeconds) return false;
+  if (toleranceSeconds > 0 && Math.abs(nowSeconds - timestamp) > toleranceSeconds) return false;
 
   const expected = crypto
     .createHmac("sha256", secret)
@@ -239,21 +245,29 @@ export function verifyStripeSignature(
   });
 }
 
-export type StripeCheckoutSessionPayload = {
+export type StripeObjectPayload = {
   id?: string;
+  object?: string;
   payment_status?: string;
   mode?: string;
+  status?: string;
+  refunded?: boolean;
   client_reference_id?: string | null;
   customer?: string | { id?: string } | null;
+  payment_intent?: string | { id?: string } | null;
   metadata?: Record<string, string> | null;
   amount_total?: number | null;
+  amount?: number | null;
+  amount_refunded?: number | null;
   currency?: string | null;
 };
+
+export type StripeCheckoutSessionPayload = StripeObjectPayload;
 
 export type StripeEventPayload = {
   id?: string;
   type?: string;
-  data?: { object?: StripeCheckoutSessionPayload };
+  data?: { object?: StripeObjectPayload };
 };
 
 export type StripeWebhookDecision =
@@ -265,13 +279,32 @@ export type StripeWebhookDecision =
       userId: string;
       sessionId: string;
       customerId: string | null;
+      paymentIntentId: string | null;
     }
-  | { action: "release"; eventId: string; sessionId: string };
+  | { action: "release"; eventId: string; sessionId: string }
+  | {
+      action: "revoke";
+      eventId: string;
+      eventType: string;
+      userId: string | null;
+      customerId: string | null;
+      paymentIntentId: string | null;
+      sessionId: string | null;
+      amount: number;
+      currency: string;
+    };
 
-function customerIdOf(session: StripeCheckoutSessionPayload): string | null {
+function customerIdOf(session: StripeObjectPayload): string | null {
   const customer = session.customer;
   if (typeof customer === "string" && customer) return customer;
   if (customer && typeof customer === "object" && customer.id) return customer.id;
+  return null;
+}
+
+function paymentIntentIdOf(object: StripeObjectPayload): string | null {
+  const paymentIntent = object.payment_intent;
+  if (typeof paymentIntent === "string" && paymentIntent) return paymentIntent;
+  if (paymentIntent && typeof paymentIntent === "object" && paymentIntent.id) return paymentIntent.id;
   return null;
 }
 
@@ -307,6 +340,74 @@ function paidLifetimeSession(
     userId,
     sessionId: session.id,
     customerId: customerIdOf(session),
+    paymentIntentId: paymentIntentIdOf(session),
+  };
+}
+
+const REFUND_EVENT_TYPES = new Set([
+  "charge.refunded",
+  "refund.created",
+  "refund.updated",
+  "charge.refund.updated",
+]);
+
+/**
+ * A full refund of the CHF 249 charge revokes lifetime access.
+ * Partial refunds do not: the seat stays occupied until the whole payment is returned.
+ */
+function refundDecision(event: StripeEventPayload): StripeWebhookDecision {
+  if (!event.id || !event.type) return { action: "ignore", reason: "malformed" };
+  const object = event.data?.object;
+  if (!object?.id) return { action: "ignore", reason: "missing-object" };
+
+  const currency = object.currency?.toLowerCase();
+  if (currency && currency !== LIFETIME_CURRENCY) {
+    return { action: "ignore", reason: "unexpected-currency" };
+  }
+
+  const isCharge = event.type === "charge.refunded";
+  if (!isCharge) {
+    if (object.status && object.status !== "succeeded") {
+      return { action: "ignore", reason: object.status === "failed" ? "refund-failed" : "refund-pending" };
+    }
+    if (object.amount !== LIFETIME_PRICE_RAPPEN) {
+      return {
+        action: "ignore",
+        reason: object.amount != null && object.amount < LIFETIME_PRICE_RAPPEN ? "partial-refund" : "unexpected-amount",
+      };
+    }
+  } else {
+    const amount = object.amount ?? null;
+    const amountRefunded = object.amount_refunded ?? null;
+    if (amount != null && amount !== LIFETIME_PRICE_RAPPEN) {
+      return { action: "ignore", reason: "unexpected-amount" };
+    }
+    const fullyRefunded =
+      object.refunded === true ||
+      (amountRefunded != null && amount != null && amountRefunded >= amount && amountRefunded === LIFETIME_PRICE_RAPPEN);
+    if (!fullyRefunded) {
+      return { action: "ignore", reason: amountRefunded != null && amountRefunded > 0 ? "partial-refund" : "unpaid" };
+    }
+  }
+
+  const metadataUser = object.metadata?.user_id;
+  const userId = isValidUUID(metadataUser) ? metadataUser : null;
+  const customerId = customerIdOf(object);
+  const paymentIntentId = paymentIntentIdOf(object);
+  if (!userId && !customerId && !paymentIntentId) {
+    return { action: "ignore", reason: "unidentifiable-refund" };
+  }
+
+  return {
+    action: "revoke",
+    eventId: event.id,
+    eventType: event.type,
+    userId,
+    customerId,
+    paymentIntentId,
+    sessionId: null,
+    amount: LIFETIME_PRICE_RAPPEN,
+    currency: LIFETIME_CURRENCY,
   };
 }
 
@@ -331,6 +432,10 @@ export function decideStripeEvent(event: StripeEventPayload): StripeWebhookDecis
 
   if (event.type === "checkout.session.async_payment_succeeded") {
     return paidLifetimeSession(event, false);
+  }
+
+  if (REFUND_EVENT_TYPES.has(event.type)) {
+    return refundDecision(event);
   }
 
   return { action: "ignore", reason: "unhandled-type" };

@@ -35,6 +35,7 @@ function paidEvent(overrides: Partial<StripeCheckoutSessionPayload> = {}): Strip
         currency: "chf",
         client_reference_id: USER_ID,
         customer: "cus_123",
+        payment_intent: "pi_123",
         metadata: { user_id: USER_ID, product: "lifetime" },
         ...overrides,
       },
@@ -67,6 +68,12 @@ describe("Stripe signature", () => {
     expect(verifyStripeSignature(body, header, SECRET, now)).toBe(false);
   });
 
+  it("rejects a timestamp far in the future", () => {
+    const body = "{}";
+    const header = sign(body, SECRET, now + 1000);
+    expect(verifyStripeSignature(body, header, SECRET, now)).toBe(false);
+  });
+
   it("rejects a missing signature", () => {
     expect(verifyStripeSignature("{}", null, SECRET, now)).toBe(false);
     expect(verifyStripeSignature("{}", "", SECRET, now)).toBe(false);
@@ -87,6 +94,7 @@ describe("decideStripeEvent", () => {
       userId: USER_ID,
       sessionId: "cs_test_1",
       customerId: "cus_123",
+      paymentIntentId: "pi_123",
       eventId: "evt_lifetime_1",
     });
   });
@@ -126,6 +134,89 @@ describe("decideStripeEvent", () => {
     ).toEqual({ action: "release", eventId: "evt_exp", sessionId: "cs_exp" });
   });
 
+  it("revokes lifetime on a full charge.refunded for the Gründerplatz", () => {
+    expect(
+      decideStripeEvent({
+        id: "evt_refund_1",
+        type: "charge.refunded",
+        data: {
+          object: {
+            id: "ch_123",
+            amount: LIFETIME_PRICE_RAPPEN,
+            amount_refunded: LIFETIME_PRICE_RAPPEN,
+            currency: "chf",
+            refunded: true,
+            customer: "cus_123",
+            payment_intent: "pi_123",
+            metadata: { user_id: USER_ID, product: "lifetime" },
+          },
+        },
+      }),
+    ).toMatchObject({
+      action: "revoke",
+      eventId: "evt_refund_1",
+      userId: USER_ID,
+      customerId: "cus_123",
+      paymentIntentId: "pi_123",
+      amount: LIFETIME_PRICE_RAPPEN,
+      currency: "chf",
+    });
+  });
+
+  it("ignores a partial refund so the seat stays taken", () => {
+    expect(
+      decideStripeEvent({
+        id: "evt_partial",
+        type: "charge.refunded",
+        data: {
+          object: {
+            id: "ch_123",
+            amount: LIFETIME_PRICE_RAPPEN,
+            amount_refunded: 1000,
+            currency: "chf",
+            refunded: false,
+            customer: "cus_123",
+            payment_intent: "pi_123",
+          },
+        },
+      }),
+    ).toMatchObject({ action: "ignore", reason: "partial-refund" });
+  });
+
+  it("revokes on refund.updated only after the refund succeeded", () => {
+    expect(
+      decideStripeEvent({
+        id: "evt_re_ok",
+        type: "refund.updated",
+        data: {
+          object: {
+            id: "re_123",
+            amount: LIFETIME_PRICE_RAPPEN,
+            currency: "chf",
+            status: "succeeded",
+            payment_intent: "pi_123",
+          },
+        },
+      }).action,
+    ).toBe("revoke");
+
+    expect(
+      decideStripeEvent({
+        id: "evt_re_pending",
+        type: "refund.created",
+        data: {
+          object: {
+            id: "re_124",
+            amount: LIFETIME_PRICE_RAPPEN,
+            currency: "chf",
+            status: "pending",
+            payment_intent: "pi_123",
+          },
+        },
+      }),
+    ).toMatchObject({ action: "ignore", reason: "refund-pending" });
+  });
+
   it("ignores unrelated event types", () => {
     expect(decideStripeEvent({ id: "evt_x", type: "invoice.paid" })).toMatchObject({
       action: "ignore",
@@ -155,7 +246,7 @@ describe("checkout configuration", () => {
         STRIPE_WEBHOOK_SECRET: "whsec_x",
         NEXT_PUBLIC_SUPABASE_URL: "https://example.supabase.co",
         SUPABASE_SERVICE_ROLE_KEY: "service",
-      } as NodeJS.ProcessEnv),
+      } as unknown as NodeJS.ProcessEnv),
     ).toBe(false);
     expect(
       isStripeCheckoutConfigured({
@@ -163,7 +254,7 @@ describe("checkout configuration", () => {
         STRIPE_WEBHOOK_SECRET: "whsec_x",
         NEXT_PUBLIC_SUPABASE_URL: "https://example.supabase.co",
         SUPABASE_SERVICE_ROLE_KEY: "service",
-      } as NodeJS.ProcessEnv),
+      } as unknown as NodeJS.ProcessEnv),
     ).toBe(true);
   });
 });
@@ -211,6 +302,10 @@ describe("TWINT fallback", () => {
     expect(firstParams.mode).toBe("payment");
     expect(firstParams.line_items[0].price_data.currency).toBe("chf");
     expect(firstParams.line_items[0].price_data.unit_amount).toBe(24900);
+    const metadata = (client.create as ReturnType<typeof vi.fn>).mock.calls[0][0] as {
+      payment_intent_data: { metadata: { user_id: string; product: string } };
+    };
+    expect(metadata.payment_intent_data.metadata).toEqual({ user_id: USER_ID, product: "lifetime" });
   });
 
   it("keeps TWINT when Stripe accepts it", async () => {
@@ -291,8 +386,68 @@ describe("POST /api/webhooks/stripe", () => {
       p_user_id: USER_ID,
       p_session_id: "cs_test_1",
       p_customer_id: "cus_123",
+      p_payment_intent_id: "pi_123",
       p_seat_limit: 20,
     });
+  });
+
+  it("revokes lifetime and asks the database to free the founder seat", async () => {
+    rpc.mockResolvedValue({ data: { ok: true, reason: "revoked" }, error: null });
+    const event = {
+      id: "evt_refund_1",
+      type: "charge.refunded",
+      data: {
+        object: {
+          id: "ch_123",
+          amount: LIFETIME_PRICE_RAPPEN,
+          amount_refunded: LIFETIME_PRICE_RAPPEN,
+          currency: "chf",
+          refunded: true,
+          customer: "cus_123",
+          payment_intent: "pi_123",
+          metadata: { user_id: USER_ID, product: "lifetime" },
+        },
+      },
+    };
+    const body = JSON.stringify(event);
+    const response = await post(body, sign(body));
+    const payload = await response.json();
+    expect(response.status).toBe(200);
+    expect(payload.result).toBe("revoked");
+    expect(rpc).toHaveBeenCalledTimes(1);
+    expect(rpc.mock.calls[0][0]).toBe("revoke_lifetime_for_refund");
+    expect(rpc.mock.calls[0][1]).toMatchObject({
+      p_event_id: "evt_refund_1",
+      p_user_id: USER_ID,
+      p_customer_id: "cus_123",
+      p_payment_intent_id: "pi_123",
+      p_amount: LIFETIME_PRICE_RAPPEN,
+      p_currency: "chf",
+    });
+  });
+
+  it("does not touch the database for a partial refund", async () => {
+    const event = {
+      id: "evt_partial",
+      type: "charge.refunded",
+      data: {
+        object: {
+          id: "ch_123",
+          amount: LIFETIME_PRICE_RAPPEN,
+          amount_refunded: 500,
+          currency: "chf",
+          refunded: false,
+          customer: "cus_123",
+        },
+      },
+    };
+    const body = JSON.stringify(event);
+    const response = await post(body, sign(body));
+    const payload = await response.json();
+    expect(response.status).toBe(200);
+    expect(payload.ignored).toBe(true);
+    expect(payload.reason).toBe("partial-refund");
+    expect(rpc).not.toHaveBeenCalled();
   });
 
   it("returns success for a duplicate delivery without a second grant attempt shape change", async () => {

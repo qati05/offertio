@@ -30,6 +30,10 @@ export interface Profile {
   stripe_checkout_session_id?: string | null;
   /** When the Gründerplatz payment was confirmed */
   lifetime_purchased_at?: string | null;
+  /** Receipt time of the one-time CHF 249 payment. Start of the included 2 years. */
+  founder_paid_at?: string | null;
+  /** founder_paid_at plus 2 years. The later CHF 9 subscription attaches here. */
+  founder_access_until?: string | null;
   /** Legacy Lemon Squeezy subscription ID. No longer written. */
   ls_subscription_id?: string | null;
   /** Legacy Lemon Squeezy customer ID. No longer written. */
