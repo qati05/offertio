@@ -99,8 +99,23 @@ export default function FounderSetupForm({
     const preislistePath = `${userId}/${submissionId}/preisliste.${priceExt}`;
     const supabase = createSupabaseBrowser();
 
+    const logoMime = logoExt === "png" ? "image/png" : logoExt === "svg" ? "image/svg+xml" : "image/jpeg";
+    const priceMime =
+      priceExt === "xlsx"
+        ? "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        : priceExt === "csv"
+          ? "text/csv"
+          : priceExt === "pdf"
+            ? "application/pdf"
+            : priceExt === "png"
+              ? "image/png"
+              : priceExt === "webp"
+                ? "image/webp"
+                : priceExt === "heic"
+                  ? "image/heic"
+                  : "image/jpeg";
     const logoUpload = await supabase.storage.from(FOUNDER_SETUP_BUCKET).upload(logoPath, logo, {
-      contentType: logo.type || "application/octet-stream",
+      contentType: logoMime,
       upsert: false,
     });
     if (logoUpload.error) {
@@ -109,7 +124,7 @@ export default function FounderSetupForm({
       return;
     }
     const priceUpload = await supabase.storage.from(FOUNDER_SETUP_BUCKET).upload(preislistePath, priceList, {
-      contentType: priceList.type || "application/octet-stream",
+      contentType: priceMime,
       upsert: false,
     });
     if (priceUpload.error) {

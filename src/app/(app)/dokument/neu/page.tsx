@@ -793,8 +793,15 @@ export default function DokumentNeuPage() {
           }),
         });
 
+        if (saveRes.status === 403) {
+          showToast("Monatslimit erreicht — bitte auf Pro upgraden.");
+          setFreePlanRemaining(0);
+          setServerAllowed(false);
+          setSending(false);
+          waWindow?.close();
+          return;
+        }
         if (!saveRes.ok) {
-          const saveData = await saveRes.json();
           // Save failed — falls through to cloudSaved=false handling
           cloudSaved = false;
         } else {
@@ -909,21 +916,19 @@ export default function DokumentNeuPage() {
         }
       }
 
-      // Increment counters only after the server confirms the increment.
-      try {
-        const incrRes = await fetch("/api/dokument/check-limit", { method: "POST" });
-        if (incrRes.ok) {
-          const incrData = await incrRes.json();
-          if (incrData.remaining !== undefined) {
-            setFreePlanRemaining(incrData.remaining);
-            setServerAllowed(incrData.remaining > 0);
+      if (cloudSaved && profil && !isPro(profil.plan)) {
+        try {
+          const limitRes = await fetch("/api/dokument/check-limit");
+          if (limitRes.ok) {
+            const limitData = await limitRes.json();
+            if (typeof limitData.remaining === "number") {
+              setFreePlanRemaining(limitData.remaining);
+              setServerAllowed(limitData.remaining > 0);
+            }
           }
-        } else if (incrRes.status === 403) {
-          setFreePlanRemaining(0);
-          setServerAllowed(false);
+        } catch {
+          // The document is already counted server-side.
         }
-      } catch (e) {
-        // Counter increment failed — non-blocking, document already saved
       }
 
       trackDocumentCreated(dokumentTyp, delivery);

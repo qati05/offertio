@@ -32,6 +32,8 @@ describe("founder setup files", () => {
     expect(detectLogo(jpg)?.ext).toBe("jpg");
     expect(detectLogo(svg)?.ext).toBe("svg");
     expect(detectLogo(scripted)).toBeNull();
+    const entity = Buffer.from('<svg><a href="&#106;avascript:alert(1)"><text>x</text></a></svg>', "utf8");
+    expect(detectLogo(entity)).toBeNull();
   });
 
   it("accepts xlsx, csv, pdf and a photo, and rejects html", () => {
@@ -46,6 +48,8 @@ describe("founder setup files", () => {
     expect(detectPriceList(csv)?.ext).toBe("csv");
     expect(detectPriceList(html)).toBeNull();
     expect(detectPriceList(xlsx)?.ext).toBe("xlsx");
+    expect(detectPriceList(Buffer.from("Name,Preis\n=HYPERLINK(\"http://evil\"),1\n", "utf8"))).toBeNull();
+    expect(detectPriceList(Buffer.from("Name,Preis\nRabatt,-10\n", "utf8"))?.ext).toBe("csv");
   });
 
   it("only accepts both files inside the owner's folder", () => {

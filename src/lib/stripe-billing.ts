@@ -230,7 +230,7 @@ export function verifyStripeSignature(
   }
 
   if (timestamp === null || signatures.length === 0) return false;
-  if (toleranceSeconds > 0 && timestamp < nowSeconds - toleranceSeconds) return false;
+  if (toleranceSeconds > 0 && Math.abs(nowSeconds - timestamp) > toleranceSeconds) return false;
 
   const expected = crypto
     .createHmac("sha256", secret)

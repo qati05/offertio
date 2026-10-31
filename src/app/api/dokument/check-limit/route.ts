@@ -6,6 +6,7 @@ import {
   isInTrial,
   trialDaysRemaining,
 } from "@/lib/payment";
+import { consumeFreeDocumentSlot } from "@/lib/document-quota";
 import { isAllowedOrigin } from "@/lib/security";
 import { rateLimitAsync } from "@/lib/rate-limit";
 import { logger } from "@/lib/logger";
@@ -111,46 +112,38 @@ export async function POST(request: Request) {
 
     const plan = profile?.plan || "free";
     const trialEndsAt = profile?.trial_ends_at || null;
-    const hasAccess = hasActiveAccess(plan, trialEndsAt);
-    const monat = getCurrentMonat();
+    const slot = await consumeFreeDocumentSlot(supabase, user.id, plan, trialEndsAt);
 
-    // Pre-flight check for non-access users to avoid incrementing a blocked counter.
-    if (!hasAccess) {
-      const { data: counter } = await supabase
-        .from("dokument_counter")
-        .select("anzahl")
-        .eq("user_id", user.id)
-        .eq("monat", monat)
-        .maybeSingle();
-
-      if ((counter?.anzahl || 0) >= FREE_LIMIT) {
-        return json({ error: "Monatslimit erreicht", remaining: 0 }, 403);
-      }
+    if (slot === "skipped") {
+      return json({
+        ok: true,
+        remaining: Infinity,
+        inTrial: isInTrial(trialEndsAt),
+        trialEndsAt,
+        daysLeft: trialDaysRemaining(trialEndsAt),
+      });
     }
-
-    // Atomic upsert - avoids the TOCTOU race condition of SELECT + UPDATE/INSERT.
-    const { data: newAnzahl, error: rpcError } = await supabase.rpc(
-      "increment_dokument_counter",
-      { p_user_id: user.id, p_monat: monat }
-    );
-
-    if (rpcError) {
-      logger.error("check-limit:POST:rpc", rpcError, { userId: user.id });
+    if (slot === "error") {
+      logger.error("check-limit:POST:rpc", "consume failed", { userId: user.id });
       return json({ error: "Server-Fehler" }, 500);
     }
-
-    // Post-increment guard: the SQL function increments unconditionally,
-    // so verify the returned count is still within the free-tier limit.
-    if (!hasAccess && (newAnzahl as number) > FREE_LIMIT) {
+    if (slot === "blocked") {
       return json({ error: "Monatslimit erreicht", remaining: 0 }, 403);
     }
 
+    const monat = getCurrentMonat();
+    const { data: counter } = await supabase
+      .from("dokument_counter")
+      .select("anzahl")
+      .eq("user_id", user.id)
+      .eq("monat", monat)
+      .maybeSingle();
+    const used = typeof counter?.anzahl === "number" ? counter.anzahl : FREE_LIMIT;
+
     return json({
       ok: true,
-      used: newAnzahl,
-      remaining: hasAccess
-        ? Infinity
-        : Math.max(0, FREE_LIMIT - (newAnzahl as number)),
+      used,
+      remaining: Math.max(0, FREE_LIMIT - used),
       inTrial: isInTrial(trialEndsAt),
       trialEndsAt,
       daysLeft: trialDaysRemaining(trialEndsAt),

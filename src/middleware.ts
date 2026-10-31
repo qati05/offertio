@@ -1,6 +1,6 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
-import { getDachConfig } from "@/lib/dach";
+import { supabaseCookieOptions } from "@/lib/supabase-cookies";
 
 function buildCsp(nonce: string): string {
   return [
@@ -37,6 +37,8 @@ function isPublicPath(path: string): boolean {
     path.startsWith("/vergleich") ||
     path === "/preise" ||
     path.startsWith("/api/webhooks/") ||
+    path.startsWith("/api/public/") ||
+    path.startsWith("/view/") ||
     path === "/api/health" ||
     path.startsWith("/_next/") ||
     path === "/sw.js" ||
@@ -66,6 +68,7 @@ export async function middleware(request: NextRequest) {
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
+      cookieOptions: supabaseCookieOptions(),
       cookies: {
         getAll() {
           return request.cookies.getAll();

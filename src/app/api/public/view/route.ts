@@ -3,7 +3,8 @@ import { getSupabaseAdmin } from "@/lib/supabase-admin";
 import { rateLimitAsync } from "@/lib/rate-limit";
 import { logger } from "@/lib/logger";
 import { publicViewError, type PublicViewLocale } from "@/lib/public-view-i18n";
-import { getClientIp, isValidUUID } from "@/lib/security";
+import { getClientIp, isSafeLogoUrl, isValidUUID } from "@/lib/security";
+import { isOwnedPdfPath } from "@/lib/account-export";
 
 const SIGNED_URL_TTL = 60 * 60; // 1 hour (enough to view, short to limit leakage)
 
@@ -73,7 +74,7 @@ export async function GET(request: NextRequest) {
     .maybeSingle();
 
   let pdfUrl: string | null = null;
-  if (doc.pdf_url) {
+  if (doc.pdf_url && isOwnedPdfPath(doc.user_id, doc.pdf_url)) {
     const { data: signed, error: signErr } = await admin.storage
       .from("pdfs")
       .createSignedUrl(doc.pdf_url, SIGNED_URL_TTL);
@@ -101,6 +102,6 @@ export async function GET(request: NextRequest) {
     firmenOrt: profile?.ort ?? "",
     firmenTelefon: profile?.telefon ?? "",
     firmenLand: profile?.land ?? "CH",
-    logoUrl: profile?.logo_url ?? null,
+    logoUrl: isSafeLogoUrl(profile?.logo_url, doc.user_id) ? profile?.logo_url ?? null : null,
   });
 }

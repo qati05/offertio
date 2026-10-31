@@ -82,3 +82,22 @@ export function isDocumentEmailKind(value: unknown): value is DocumentEmailKind 
 export function canAddressEmail(value: unknown): value is string {
   return typeof value === "string" && isValidEmail(value) && value.length <= 320;
 }
+
+/**
+ * Resend's API host only. A custom base URL cannot point at an internal address.
+ */
+export function resendEmailsEndpoint(raw?: string): string | null {
+  const value = (raw?.trim() || "https://api.resend.com").replace(/\/+$/, "");
+  let url: URL;
+  try {
+    url = new URL(value);
+  } catch {
+    return null;
+  }
+  if (url.protocol !== "https:") return null;
+  if (url.username || url.password || url.search || url.hash) return null;
+  if (url.pathname !== "/" && url.pathname !== "") return null;
+  const host = url.hostname.toLowerCase();
+  if (host !== "api.resend.com" && !host.endsWith(".resend.com")) return null;
+  return `${url.origin}/emails`;
+}

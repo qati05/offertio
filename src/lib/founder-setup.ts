@@ -62,26 +62,56 @@ export function detectLogo(buf: Buffer): LogoKind | null {
   return detectSvg(buf);
 }
 
+function decodeXmlEntities(input: string): string {
+  const fromCode = (code: number): string => {
+    if (!Number.isFinite(code) || code < 0 || code > 0x10ffff || code === 0) return "";
+    try {
+      return String.fromCodePoint(code);
+    } catch {
+      return "";
+    }
+  };
+  return input
+    .replace(/&#x([0-9a-f]+);/gi, (_, hex: string) => fromCode(parseInt(hex, 16)))
+    .replace(/&#(\d+);/g, (_, dec: string) => fromCode(parseInt(dec, 10)))
+    .replace(/&lt;/gi, "<")
+    .replace(/&gt;/gi, ">")
+    .replace(/&quot;/gi, '"')
+    .replace(/&apos;/gi, "'")
+    .replace(/&amp;/gi, "&");
+}
+
+function svgIsUnsafe(text: string): boolean {
+  const decoded = decodeXmlEntities(text).toLowerCase();
+  const withoutXmlns = decoded.replace(
+    /xmlns(?::[a-z0-9]+)?\s*=\s*["']https?:\/\/www\.w3\.org\/[^"']+["']/g,
+    "",
+  );
+  return (
+    decoded.includes("<script") ||
+    decoded.includes("<foreignobject") ||
+    decoded.includes("<iframe") ||
+    decoded.includes("<embed") ||
+    decoded.includes("<object") ||
+    decoded.includes("<!entity") ||
+    decoded.includes("<use") ||
+    decoded.includes("<image") ||
+    decoded.includes("<set") ||
+    decoded.includes("<animate") ||
+    decoded.includes("javascript:") ||
+    decoded.includes("data:") ||
+    /\son[a-z]+\s*=/.test(decoded) ||
+    /https?:|\/\//.test(withoutXmlns)
+  );
+}
+
 function detectSvg(buf: Buffer): LogoKind | null {
   if (buf.length > 1024 * 1024) return null;
   if (buf.includes(0)) return null;
   const text = buf.toString("utf8").trim().replace(/^\uFEFF/, "");
   const head = text.slice(0, 300).toLowerCase();
   if (!head.includes("<svg")) return null;
-  const lower = text.toLowerCase();
-  if (
-    lower.includes("<script") ||
-    lower.includes("<foreignobject") ||
-    lower.includes("<iframe") ||
-    lower.includes("<embed") ||
-    lower.includes("<object") ||
-    lower.includes("<!entity") ||
-    lower.includes("javascript:") ||
-    lower.includes("data:") ||
-    /\son[a-z]+\s*=/.test(lower)
-  ) {
-    return null;
-  }
+  if (svgIsUnsafe(text)) return null;
   return { ext: "svg", mime: "image/svg+xml" };
 }
 
@@ -118,6 +148,14 @@ function isXlsx(buf: Buffer): boolean {
   return buf.includes(Buffer.from("[Content_Types].xml"));
 }
 
+function isFormulaCell(cell: string): boolean {
+  const value = cell.trim().replace(/^"+|"+$/g, "").trim();
+  if (!value) return false;
+  if (/^[=+@]/.test(value)) return true;
+  if (value.startsWith("-") && !/^-\d+([.,]\d+)?$/.test(value)) return true;
+  return false;
+}
+
 function isCsv(buf: Buffer): boolean {
   if (buf.length === 0 || buf.length > 2 * 1024 * 1024) return false;
   if (buf.includes(0)) return false;
@@ -125,6 +163,11 @@ function isCsv(buf: Buffer): boolean {
   const sample = text.slice(0, 4000).toLowerCase();
   if (sample.includes("<script") || sample.includes("<html") || sample.includes("<?php") || sample.includes("<svg")) {
     return false;
+  }
+  for (const line of text.split(/\r\n|\n|\r/)) {
+    for (const cell of line.split(/[,;]/)) {
+      if (isFormulaCell(cell)) return false;
+    }
   }
   return true;
 }

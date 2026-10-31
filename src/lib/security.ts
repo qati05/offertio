@@ -134,6 +134,45 @@ export function getClientIp(headers: Headers): string {
   return "unknown";
 }
 
+/** PDF uploads must start with the PDF header. Leading whitespace up to 16 bytes is tolerated. */
+export function isPdfPayload(bytes: Uint8Array): boolean {
+  const marker = [0x25, 0x50, 0x44, 0x46, 0x2d];
+  const last = Math.min(16, bytes.byteLength - marker.length);
+  for (let start = 0; start <= last; start += 1) {
+    let matches = true;
+    for (let i = 0; i < marker.length; i += 1) {
+      if (bytes[start + i] !== marker[i]) {
+        matches = false;
+        break;
+      }
+    }
+    if (matches) return true;
+  }
+  return false;
+}
+
+/**
+ * Logos shown to other people must be this user's file on the project storage host.
+ * Anything else (external URL, javascript:, another account's folder) is dropped.
+ */
+export function isSafeLogoUrl(
+  url: string | null | undefined,
+  userId: string,
+  supabaseUrl: string | null | undefined = process.env.NEXT_PUBLIC_SUPABASE_URL,
+): boolean {
+  if (!url || !userId || !supabaseUrl) return false;
+  try {
+    const parsed = new URL(url);
+    const project = new URL(supabaseUrl);
+    if (parsed.protocol !== "https:" || parsed.host !== project.host) return false;
+    const prefix = `/storage/v1/object/public/logos/${userId}/`;
+    if (!parsed.pathname.startsWith(prefix) || parsed.pathname.includes("..")) return false;
+    return /^logo\.(png|jpe?g|webp)$/i.test(parsed.pathname.slice(prefix.length).split("/")[0] ?? "");
+  } catch {
+    return false;
+  }
+}
+
 export function isAllowedOrigin(requestUrl: string, origin: string | null): boolean {
   if (!origin) return false;
 

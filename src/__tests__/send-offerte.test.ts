@@ -50,15 +50,26 @@ vi.mock("@/lib/logger", () => ({
 vi.mock("@/lib/supabase-server", () => ({
   createSupabaseServer: vi.fn(async () => ({
     auth: { getUser: getUserMock },
-    from: () => ({
-      select: () => ({
-        eq: () => ({
+    from: (table: string) => {
+      if (table === "profiles") {
+        return {
+          select: () => ({
+            eq: () => ({
+              maybeSingle: async () => ({ data: { firmenname: "Muster AG" }, error: null }),
+            }),
+          }),
+        };
+      }
+      return {
+        select: () => ({
           eq: () => ({
-            maybeSingle: dokumentLookup,
+            eq: () => ({
+              maybeSingle: dokumentLookup,
+            }),
           }),
         }),
-      }),
-    }),
+      };
+    },
   })),
 }));
 
@@ -89,22 +100,53 @@ describe("POST /api/send-offerte", () => {
     });
   }
 
+  const shareToken = "550e8400-e29b-41d4-a716-446655440000";
+
   it("stays disabled without an API key", async () => {
     const { POST } = await import("@/app/api/send-offerte/route");
-    const response = await POST(post({ to: "kunde@firma.ch", kind: "offerte", nummer: "OF-1" }));
+    const response = await POST(post({
+      to: "kunde@firma.ch",
+      kind: "offerte",
+      nummer: "OF-1",
+      shareToken,
+    }));
     expect(response.status).toBe(503);
+    expect(fetch).not.toHaveBeenCalled();
+  });
+
+  it("refuses an arbitrary recipient", async () => {
+    process.env.RESEND_API_KEY = "re_test";
+    dokumentLookup.mockResolvedValue({
+      data: { id: "doc-1", typ: "rechnung", nummer: "RE-2026-001", kunde_email: "kunde@firma.ch" },
+      error: null,
+    });
+    const { POST } = await import("@/app/api/send-offerte/route");
+    const response = await POST(post({
+      to: "other@evil.example",
+      kind: "rechnung",
+      nummer: "RE-2026-001",
+      shareToken,
+      firmenname: "Gefälschte Firma",
+    }));
+    expect(response.status).toBe(400);
     expect(fetch).not.toHaveBeenCalled();
   });
 
   it("sends through Resend from offerte@getoffertio.ch with an idempotency key", async () => {
     process.env.RESEND_API_KEY = "re_test";
+    dokumentLookup.mockResolvedValue({
+      data: { id: "doc-1", typ: "rechnung", nummer: "RE-2026-001", kunde_email: "kunde@firma.ch" },
+      error: null,
+    });
     vi.stubGlobal("fetch", vi.fn(async () => new Response(JSON.stringify({ id: "email_1" }), { status: 200 })));
     const { POST } = await import("@/app/api/send-offerte/route");
     const response = await POST(post({
       to: "kunde@firma.ch",
       kind: "rechnung",
-      nummer: "RE-2026-001",
+      nummer: "IGNORED",
       kundeName: "Anna",
+      shareToken,
+      firmenname: "Gefälschte Firma",
     }));
     expect(response.status).toBe(200);
     expect(fetch).toHaveBeenCalledTimes(1);
@@ -118,6 +160,8 @@ describe("POST /api/send-offerte", () => {
     expect(payload.from).toBe("Offertio <offerte@getoffertio.ch>");
     expect(payload.to).toEqual(["kunde@firma.ch"]);
     expect(payload.subject).toContain("Rechnung RE-2026-001");
+    expect(payload.subject).toContain("Muster AG");
+    expect(payload.subject).not.toContain("Gefälschte");
     expect(payload.text).toContain("Freundliche Grüsse");
   });
 });

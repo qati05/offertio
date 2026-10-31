@@ -7,6 +7,7 @@ import {
   canAddressEmail,
   isDocumentEmailKind,
   renderDocumentEmail,
+  resendEmailsEndpoint,
   resolveFromAddress,
   viewUrlForShareToken,
 } from "@/lib/email";
@@ -38,7 +39,7 @@ export async function POST(request: NextRequest) {
   } = await supabase.auth.getUser();
   if (!user) return json({ error: "Nicht angemeldet." }, 401);
 
-  const rl = await rateLimitAsync(`send-offerte:${user.id}`, 20, 60_000);
+  const rl = await rateLimitAsync(`send-offerte:${user.id}`, 30, 60 * 60 * 1000);
   if (!rl.ok) {
     return json({ error: "Zu viele Anfragen." }, 429, { "Retry-After": String(rl.retryAfterSeconds) });
   }
@@ -54,8 +55,8 @@ export async function POST(request: NextRequest) {
   const record = body as Record<string, unknown>;
   if (!canAddressEmail(record.to)) return json({ error: "Ungültige Empfängeradresse." }, 400);
   if (!isDocumentEmailKind(record.kind)) return json({ error: "Art muss offerte oder rechnung sein." }, 400);
-  if (typeof record.nummer !== "string" || !isSafeDocumentIdentifier(record.nummer)) {
-    return json({ error: "Ungültige Dokumentnummer." }, 400);
+  if (typeof record.shareToken !== "string" || !isValidUUID(record.shareToken)) {
+    return json({ error: "Ungültiger Freigabelink." }, 400);
   }
 
   const from = resolveFromAddress();
@@ -69,41 +70,53 @@ export async function POST(request: NextRequest) {
     return json({ error: "E-Mail-Versand ist nicht konfiguriert.", configured: false }, 503);
   }
 
-  let viewUrl: string | null = null;
-  if (record.shareToken != null) {
-    if (typeof record.shareToken !== "string" || !isValidUUID(record.shareToken)) {
-      return json({ error: "Ungültiger Freigabelink." }, 400);
-    }
-    const { data: owned, error } = await supabase
-      .from("dokumente")
-      .select("id")
-      .eq("user_id", user.id)
-      .eq("share_token", record.shareToken)
-      .maybeSingle();
-    if (error) {
-      logger.error("send-offerte:token", error);
-      return json({ error: "Datenbankfehler." }, 500);
-    }
-    if (!owned) return json({ error: "Dokument nicht gefunden." }, 404);
-    viewUrl = viewUrlForShareToken(record.shareToken);
+  const endpoint = resendEmailsEndpoint(process.env.RESEND_API_BASE_URL);
+  if (!endpoint) {
+    logger.error("send-offerte:endpoint", "Resend-Basisadresse ist nicht erlaubt");
+    return json({ error: "E-Mail-Versand ist nicht konfiguriert." }, 500);
   }
 
+  const { data: owned, error } = await supabase
+    .from("dokumente")
+    .select("id, typ, nummer, kunde_email")
+    .eq("user_id", user.id)
+    .eq("share_token", record.shareToken)
+    .maybeSingle();
+  if (error) {
+    logger.error("send-offerte:token", error);
+    return json({ error: "Datenbankfehler." }, 500);
+  }
+  if (!owned || (owned.typ !== "offerte" && owned.typ !== "rechnung")) {
+    return json({ error: "Dokument nicht gefunden." }, 404);
+  }
+  if (owned.typ !== record.kind) return json({ error: "Art muss offerte oder rechnung sein." }, 400);
+  if (!isSafeDocumentIdentifier(owned.nummer)) return json({ error: "Ungültige Dokumentnummer." }, 400);
+
+  const recipient = typeof owned.kunde_email === "string" ? owned.kunde_email.trim().toLowerCase() : "";
+  if (!canAddressEmail(recipient) || recipient !== record.to.trim().toLowerCase()) {
+    return json({ error: "Empfänger muss die E-Mail auf dem Dokument sein." }, 400);
+  }
+
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("firmenname")
+    .eq("id", user.id)
+    .maybeSingle();
+
   const kundeName = typeof record.kundeName === "string" ? record.kundeName : "";
-  const firmenname = typeof record.firmenname === "string" ? record.firmenname : "";
   const message = renderDocumentEmail({
-    kind: record.kind,
-    nummer: record.nummer,
+    kind: owned.typ,
+    nummer: owned.nummer,
     kundeName,
-    firmenname,
-    viewUrl,
+    firmenname: profile?.firmenname ?? "",
+    viewUrl: viewUrlForShareToken(record.shareToken),
   });
 
-  const idempotencyKey = `dokument/${user.id}/${record.kind}/${record.nummer}/${record.to.toLowerCase()}`.slice(0, 256);
-  const endpoint = (process.env.RESEND_API_BASE_URL?.trim() || "https://api.resend.com").replace(/\/+$/, "");
+  const idempotencyKey = `dokument/${user.id}/${owned.typ}/${owned.nummer}/${recipient}`.slice(0, 256);
 
   let response: Response;
   try {
-    response = await fetch(`${endpoint}/emails`, {
+    response = await fetch(endpoint, {
       method: "POST",
       headers: {
         Authorization: `Bearer ${apiKey}`,

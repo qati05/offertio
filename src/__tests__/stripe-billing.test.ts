@@ -68,6 +68,12 @@ describe("Stripe signature", () => {
     expect(verifyStripeSignature(body, header, SECRET, now)).toBe(false);
   });
 
+  it("rejects a timestamp far in the future", () => {
+    const body = "{}";
+    const header = sign(body, SECRET, now + 1000);
+    expect(verifyStripeSignature(body, header, SECRET, now)).toBe(false);
+  });
+
   it("rejects a missing signature", () => {
     expect(verifyStripeSignature("{}", null, SECRET, now)).toBe(false);
     expect(verifyStripeSignature("{}", "", SECRET, now)).toBe(false);

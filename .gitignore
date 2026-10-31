@@ -36,6 +36,9 @@ yarn-error.log*
 .env
 .env*.local
 
+# local Supabase CLI cache (project ref and pooler host)
+supabase/.temp/
+
 # vercel
 .vercel
 .claude

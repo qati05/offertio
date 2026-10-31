@@ -1,4 +1,5 @@
 import { isValidEmail } from "@/lib/security";
+import { resendEmailsEndpoint } from "@/lib/email";
 
 export type OperatorNotice = {
   submissionId: string;
@@ -132,9 +133,10 @@ export async function sendOperatorEmail(
   if (!apiKey || !from || !to || !isValidEmail(to)) return { sent: false };
 
   const email = buildOperatorEmail(notice, { from, to });
-  const base = (env.RESEND_API_BASE_URL?.trim() || "https://api.resend.com").replace(/\/+$/, "");
+  const endpoint = resendEmailsEndpoint(env.RESEND_API_BASE_URL);
+  if (!endpoint) return { sent: false };
   try {
-    const response = await fetchImpl(`${base}/emails`, {
+    const response = await fetchImpl(endpoint, {
       method: "POST",
       headers: {
         Authorization: `Bearer ${apiKey}`,

@@ -1,6 +1,8 @@
 import { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { getSupabaseAdmin } from "@/lib/supabase-admin";
+import { isOwnedPdfPath } from "@/lib/account-export";
+import { isSafeLogoUrl, isValidUUID } from "@/lib/security";
 import RecipientViewClient from "./RecipientViewClient";
 
 interface PageProps {
@@ -9,7 +11,7 @@ interface PageProps {
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { token } = await params;
-  if (!/^[0-9a-f-]{36}$/.test(token)) {
+  if (!isValidUUID(token)) {
     return { title: "Dokument" };
   }
 
@@ -32,7 +34,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 export default async function ViewPage({ params }: PageProps) {
   const { token } = await params;
 
-  if (!/^[0-9a-f-]{36}$/.test(token)) {
+  if (!isValidUUID(token)) {
     notFound();
   }
 
@@ -56,12 +58,13 @@ export default async function ViewPage({ params }: PageProps) {
     .maybeSingle();
 
   let pdfUrl: string | null = null;
-  if (doc.pdf_url) {
+  if (doc.pdf_url && isOwnedPdfPath(doc.user_id, doc.pdf_url)) {
     const { data: signed } = await admin.storage
       .from("pdfs")
       .createSignedUrl(doc.pdf_url, 3600);
     pdfUrl = signed?.signedUrl ?? null;
   }
+  const logoUrl = isSafeLogoUrl(profile?.logo_url, doc.user_id) ? profile?.logo_url ?? null : null;
 
   return (
     <RecipientViewClient
@@ -80,7 +83,7 @@ export default async function ViewPage({ params }: PageProps) {
       firmenname={profile?.firmenname ?? ""}
       firmenAdresse={[profile?.adresse, profile?.plz && profile?.ort ? `${profile.plz} ${profile.ort}` : ""].filter(Boolean).join(", ")}
       firmenTelefon={profile?.telefon ?? ""}
-      logoUrl={profile?.logo_url ?? null}
+      logoUrl={logoUrl}
       firmenLand={(profile?.land ?? "CH") as "CH" | "DE" | "AT"}
     />
   );

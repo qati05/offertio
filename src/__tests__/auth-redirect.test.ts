@@ -19,6 +19,15 @@ describe("auth redirects", () => {
       "https://getoffertio.ch/callback?type=recovery",
     );
   });
+
+  it("ignores a password-reset origin outside the allowlist", () => {
+    expect(passwordResetRedirect("https://evil.example/callback")).toBe(
+      "https://getoffertio.ch/callback?type=recovery",
+    );
+    expect(passwordResetRedirect("http://getoffertio.ch")).toBe(
+      "https://getoffertio.ch/callback?type=recovery",
+    );
+  });
 });
 
 describe("migration 033", () => {
